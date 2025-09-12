@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v8 (錯誤修復)</title>
+    <title>遠端遙控 LED 跑馬燈 v9 (穩定版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -100,9 +100,9 @@
             top: 0; right: 0; bottom: 0; left: 0;
             z-index: -1;
             margin: -6px;
-            background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
-            background-size: 200% 200%;
-            animation: rainbow-border-anim 4s linear infinite;
+            background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red); /* 【優化】角度 */
+            background-size: 400% 400%; /* 【優化】尺寸 */
+            animation: rainbow-border-anim 3s linear infinite; /* 【優化】加速 */
         }
 
         #background-effects-container {
@@ -117,7 +117,7 @@
         .controller-preview .marquee-text { font-size: var(--font-size, 40px) !important; }
         .controller-preview.border-style-solid { border-width: 3px; }
         .controller-preview.border-style-rainbow { padding: 3px; }
-        .controller-preview.border-style-rainbow::before { margin: -3px; background-size: 400% 400%; animation-duration: 4s; }
+        .controller-preview.border-style-rainbow::before { margin: -3px; background-size: 400% 400%; animation-duration: 3s; }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -267,7 +267,11 @@
             document.getElementById('controller-session-id').textContent = sessionId;
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
-            if (snap.exists()) updateControllerUI({ ...defaultSettings, ...snap.data() });
+            if (snap.exists()) {
+                // 將載入的設定與預設值合併，避免舊版設定缺少新欄位
+                const loadedSettings = { ...defaultSettings, ...snap.data() };
+                updateControllerUI(loadedSettings);
+             }
             else { alert("找不到此面板 ID"); window.location.href = window.location.href.split('?')[0]; return; }
             setupControllerListeners();
         }
@@ -297,85 +301,93 @@
             updatePreview();
         }
         
+        // 【重構】使用全域物件來儲存當前控制台的狀態
+        let controllerState = { ...defaultSettings };
+
         function setupControllerListeners() {
             ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
                 const el = document.getElementById(id); 
-                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', (e) => {
+                    const key = { 'text-input': 'text', 'font-size-slider': 'fontSize', 'speed-slider': 'scrollSpeed', 'blink-toggle': 'isBlinking'}[id];
+                    const value = el.type === 'checkbox' ? e.target.checked : e.target.value;
+                    updateStateAndSync({ [key]: value });
+                });
             });
             
-            const setupButtonGroupListener = (selector) => {
+            const setupButtonGroupListener = (selector, key) => {
                  document.querySelectorAll(selector).forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
-                        updateSession();
+                        const value = e.currentTarget.dataset[key];
+                        updateButtonGroupState(selector, key, value);
+                        updateStateAndSync({ [key]: value });
                     });
                 });
             };
             
-            setupButtonGroupListener('.direction-btn');
-            setupButtonGroupListener('.bg-effect-btn');
-            setupButtonGroupListener('.text-style-btn');
-            setupButtonGroupListener('.border-style-btn');
+            setupButtonGroupListener('.direction-btn', 'direction');
+            setupButtonGroupListener('.bg-effect-btn', 'effect');
+            setupButtonGroupListener('.text-style-btn', 'style');
+            setupButtonGroupListener('.border-style-btn', 'border');
 
-            document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => { if (e.target.dataset.color) { updatePickerState(p.id, e.target.dataset.color, 'color'); updateSession(); }}));
-            // 【修復】漸層選擇器的事件監聽器
-            document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { const el = e.target.closest('[data-gradient]'); if (el) { updatePickerState(p.id, el.dataset.gradient, 'gradient'); updateSession(); }}));
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { updateColorTab(btn.dataset.tab); updateSession(); }));
-        }
-        
-        function getSettings() {
-            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
-            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
-
-            return {
-                text: document.getElementById('text-input').value, fontSize: document.getElementById('font-size-slider').value,
-                scrollSpeed: document.getElementById('speed-slider').value, isBlinking: document.getElementById('blink-toggle').checked,
-                colorMode: document.querySelector('.tab-btn.border-indigo-500').dataset.tab,
-                textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
-                backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
-                gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[0].value,
-                gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[1].value,
-                outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
-                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
-                backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
-                textStyle: textStyle,
-                backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
+            const setupPickerListener = (pickerId, key, dataAttr) => {
+                document.getElementById(pickerId).addEventListener('click', (e) => {
+                    const target = e.target.closest(`[data-${dataAttr}]`);
+                    if (target) {
+                        const value = target.dataset[dataAttr];
+                        updatePickerState(pickerId, value, dataAttr);
+                        updateStateAndSync({ [key]: value });
+                    }
+                });
             };
+            
+            setupPickerListener('text-color-picker', 'textColor', 'color');
+            setupPickerListener('bg-color-picker', 'backgroundColor', 'color');
+            setupPickerListener('outline-color-picker', 'outlineColor', 'color');
+            setupPickerListener('text-gradient-picker', 'gradientText', 'gradient');
+            setupPickerListener('bg-gradient-picker', 'gradientBg', 'gradient');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', (e) => { 
+                const value = e.currentTarget.dataset.tab;
+                updateColorTab(value);
+                updateStateAndSync({ colorMode: value });
+            }));
         }
         
-        function updateSession() {
-            if (!currentSessionId) return;
-            const settings = getSettings();
-            document.getElementById('font-size-value').textContent = settings.fontSize;
-            document.getElementById('speed-value').textContent = settings.scrollSpeed;
-            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
+        // 【重構】核心更新函式
+        function updateStateAndSync(newState) {
+            // 更新本地狀態
+            controllerState = { ...controllerState, ...newState };
+
+            // 根據新狀態更新UI（例如顯示/隱藏邊框顏色選擇器）
+            document.getElementById('outline-color-section').classList.toggle('hidden', controllerState.textStyle !== 'outline');
+            document.getElementById('font-size-value').textContent = controllerState.fontSize;
+            document.getElementById('speed-value').textContent = controllerState.scrollSpeed;
+
+            // 更新預覽
             updatePreview();
+
+            // 將新狀態同步到 Firebase
+            if (currentSessionId) {
+                const updatedData = { ...newState, updatedAt: serverTimestamp() };
+                setDoc(doc(db, "sessions", currentSessionId), updatedData, { merge: true });
+            }
         }
         
         function updatePreview() {
-            const settings = getSettings();
             const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
-            applySettings(els, settings, true);
+            applySettings(els, controllerState, true);
         }
         
         function createPickers() {
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
-                palette.forEach((item, index) => {
-                    const value = item.value || item; // For gradient palette
+                palette.forEach((item) => {
+                    const value = item.value || item;
                     const el = document.createElement('div');
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
                     el.style.background = value;
-                    // 【修復】統一使用 data-gradient 屬性
-                    if (prop === 'value') { el.dataset.gradient = value; } else { el.dataset.color = value; }
-                    
-                    if (index === 0) el.classList.add('control-btn-active');
-                    if (id === 'outline-color-picker' && item === '#FF3B30') {
-                        document.querySelector(`#${id} > .control-btn-active`)?.classList.remove('control-btn-active');
-                        el.classList.add('control-btn-active');
-                    }
+                    const dataAttr = prop === 'value' ? 'gradient' : 'color';
+                    el.dataset[dataAttr] = value;
                     picker.appendChild(el);
                 });
             };
@@ -384,11 +396,9 @@
             create('outline-color-picker', colorPalette);
         }
 
-        // 【修復】使用更穩定的方式更新按鈕狀態
-        function updatePickerState(id, activeValue, prop) {
+        function updatePickerState(id, activeValue, prop) { 
             document.querySelectorAll(`#${id} > div`).forEach(div => {
-                const isActive = div.dataset[prop] === activeValue;
-                div.classList.toggle('control-btn-active', isActive);
+                div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
             });
         }
         
