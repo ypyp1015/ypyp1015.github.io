@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v6</title>
+    <title>遠端遙控 LED 跑馬燈 v6 (已修復)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -34,7 +34,7 @@
         @keyframes marquee-right { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
         @keyframes blink-effect { 50% { opacity: 0; } }
         
-        /* 【新增】背景邊框動畫 */
+        /* 背景邊框動畫 */
         @keyframes rainbow-border-anim {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
@@ -50,8 +50,8 @@
             color: var(--text-color, #FFFFFF);
             white-space: nowrap;
             display: inline-block;
-            text-shadow: none; /* 預設無陰影 */
-            transition: text-shadow 0.2s; /* 讓切換效果平滑 */
+            text-shadow: none;
+            transition: text-shadow 0.2s;
         }
         .gradient-text {
             background-clip: text;
@@ -59,12 +59,14 @@
             color: transparent;
         }
         
-        /* 【新增】文字風格 */
+        /* 文字風格 */
         .text-style-glow {
              text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
         }
         .text-style-outline {
-             text-shadow: -2px -2px 0 #FF3B30, 2px -2px 0 #FF3B30, -2px 2px 0 #FF3B30, 2px 2px 0 #FF3B30;
+             /* 邊框顏色會動態由 JS 設定 */
+             --outline-color: #FF3B30;
+             text-shadow: -2px -2px 0 var(--outline-color), 2px -2px 0 var(--outline-color), -2px 2px 0 var(--outline-color), 2px 2px 0 var(--outline-color);
         }
         
         .marquee-container-wrapper {
@@ -82,13 +84,13 @@
             overflow: hidden;
             background: var(--bg-color, #000000);
             position: relative;
-            box-sizing: border-box; /* 確保邊框不會撐大元素 */
+            box-sizing: border-box;
         }
         
-        /* 【新增】背景邊框風格 */
+        /* 背景邊框風格 */
         .border-style-solid { border: 5px solid white; }
         .border-style-rainbow {
-            padding: 5px; /* 用 padding 創造空間給偽元素 */
+            padding: 5px;
             border: none;
             position: relative;
         }
@@ -97,7 +99,7 @@
             position: absolute;
             top: 0; right: 0; bottom: 0; left: 0;
             z-index: -1;
-            margin: -5px; /* 擴展到 padding 的位置 */
+            margin: -5px;
             background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
             background-size: 200% 200%;
             animation: rainbow-border-anim 8s ease infinite;
@@ -143,7 +145,6 @@
                 <div class="mb-6"><label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label><textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea></div>
                 <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div></div></div>
                 
-                <!-- 【新增】文字風格 -->
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
 
                 <div class="mb-6"><label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label><input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
@@ -151,7 +152,6 @@
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label><div class="grid grid-cols-3 gap-3"><button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button><button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button><button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button></div></div>
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label><div class="flex flex-wrap gap-4"><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="blink-toggle" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div><span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span></label></div></div>
                 
-                <!-- 【新增】背景邊框 -->
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label><div class="flex flex-wrap gap-3"><button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button><button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 漸變</button></div></div>
                 
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label><div class="flex flex-wrap gap-3"><button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button></div></div>
@@ -219,6 +219,9 @@
             const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
             if (!textEl || !containerEl || !wrapperEl) return;
             
+            const root = document.documentElement;
+            root.style.setProperty('--text-color', settings.textColor);
+            
             textEl.textContent = settings.text;
             containerEl.style.background = settings.colorMode === 'gradient' ? settings.gradientBg : settings.backgroundColor;
             if (settings.colorMode === 'gradient') { textEl.classList.add('gradient-text'); textEl.style.backgroundImage = settings.gradientText; }
@@ -235,13 +238,11 @@
             wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
             wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
             
-            // Text Style
-            textEl.className = 'marquee-text'; // Reset
+            textEl.className = 'marquee-text';
             if (settings.colorMode === 'gradient') textEl.classList.add('gradient-text');
             if (settings.textStyle !== 'normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-            // Background Border
-            containerEl.className = 'display-screen'; // Reset
+            containerEl.className = 'display-screen';
             if (isPreview) containerEl.classList.add('controller-preview');
             if (settings.backgroundBorder !== 'none') containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
 
@@ -281,24 +282,36 @@
             updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
             updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
             
-            document.querySelectorAll('.direction-btn').forEach(btn => { btn.classList.toggle('bg-indigo-600', btn.dataset.direction === settings.scrollDirection); btn.classList.toggle('bg-gray-700', btn.dataset.direction !== settings.scrollDirection); });
-            document.querySelectorAll('.bg-effect-btn').forEach(btn => { btn.classList.toggle('bg-indigo-600', btn.dataset.effect === settings.backgroundEffect); btn.classList.toggle('bg-gray-700', btn.dataset.effect !== settings.backgroundEffect); });
-            document.querySelectorAll('.text-style-btn').forEach(btn => { btn.classList.toggle('bg-indigo-600', btn.dataset.style === settings.textStyle); btn.classList.toggle('bg-gray-700', btn.dataset.style !== settings.textStyle); });
-            document.querySelectorAll('.border-style-btn').forEach(btn => { btn.classList.toggle('bg-indigo-600', btn.dataset.border === settings.backgroundBorder); btn.classList.toggle('bg-gray-700', btn.dataset.border !== settings.backgroundBorder); });
+            updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
+            updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
+            updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
+            updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
             
             updatePreview();
         }
         
+        // 【修復】重寫事件監聽器以確保正常運作
         function setupControllerListeners() {
-            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { const el = document.getElementById(id); el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); });
-            document.querySelectorAll('.direction-btn, .bg-effect-btn, .text-style-btn, .border-style-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const groupClass = `. ${e.currentTarget.classList[0]}`;
-                    document.querySelectorAll(groupClass).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-                    e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
-                    updateSession();
-                });
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+                const el = document.getElementById(id); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
             });
+            
+            const setupButtonGroupListener = (selector) => {
+                 document.querySelectorAll(selector).forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+                        updateSession();
+                    });
+                });
+            };
+            
+            setupButtonGroupListener('.direction-btn');
+            setupButtonGroupListener('.bg-effect-btn');
+            setupButtonGroupListener('.text-style-btn');
+            setupButtonGroupListener('.border-style-btn');
+
             document.querySelectorAll('#text-color-picker, #bg-color-picker').forEach(p => p.addEventListener('click', (e) => { if (e.target.dataset.color) { updatePickerState(p.id, e.target.dataset.color, 'color'); updateSession(); }}));
             document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { const el = e.target.closest('[data-gradient]'); if (el) { updatePickerState(p.id, el.dataset.gradient, 'gradient'); updateSession(); }}));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { updateColorTab(btn.dataset.tab); updateSession(); }));
@@ -354,12 +367,19 @@
 
         function updatePickerState(id, activeValue, prop) { document.querySelectorAll(`#${id} > div`).forEach(div => div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue)); }
         
+        function updateButtonGroupState(selector, dataAttr, value) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr] === value);
+                btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr] !== value);
+            });
+        }
+
         function updateColorTab(activeTab) {
             document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
             document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab); btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
-                btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab); btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
+                btn.classList.toggle('border-transparent', btn.dataset.tab !== 'activeTab'); btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
             });
         }
 
