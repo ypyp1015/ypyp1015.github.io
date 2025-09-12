@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v11 (最終修復版)</title>
+    <title>遠端遙控 LED 跑馬燈 v12 (架構重構版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -63,7 +63,6 @@
         .text-style-glow {
              text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
         }
-        /* 【修復】移除此處的 --outline-color 預設值，避免覆蓋 JS 設定 */
         .text-style-outline {
              text-shadow: -2px -2px 0 var(--outline-color), 2px -2px 0 var(--outline-color), -2px 2px 0 var(--outline-color), 2px 2px 0 var(--outline-color),
                           -3px 0 0 var(--outline-color), 3px 0 0 var(--outline-color), 0 -3px 0 var(--outline-color), 0 3px 0 var(--outline-color);
@@ -90,20 +89,20 @@
         /* 背景邊框風格 */
         .border-style-solid { border: 8px solid white; }
         .border-style-rainbow {
-            padding: 8px; /* 【優化】加粗 */
+            padding: 8px;
             border: none;
             position: relative;
-            box-shadow: 0 0 25px rgba(255, 100, 255, 0.7); /* 【優化】增加光暈 */
+            box-shadow: 0 0 25px rgba(255, 100, 255, 0.7);
         }
         .border-style-rainbow::before {
             content: '';
             position: absolute;
             top: 0; right: 0; bottom: 0; left: 0;
             z-index: -1;
-            margin: -8px; /* 【優化】配合 padding */
+            margin: -8px;
             background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);
             background-size: 400% 400%;
-            animation: rainbow-border-anim 2s linear infinite; /* 【優化】加速 */
+            animation: rainbow-border-anim 2s linear infinite;
         }
 
         #background-effects-container {
@@ -263,21 +262,33 @@
             document.getElementById('fullscreen-btn').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
         }
         
+        // 【重構】V12 版本的全新狀態管理核心
+        let controllerState = {};
+        let syncTimeout = null;
+
         async function startControllerMode(sessionId) {
-            currentSessionId = sessionId; showView('controller');
+            currentSessionId = sessionId; 
+            showView('controller');
             document.getElementById('controller-session-id').textContent = sessionId;
+            
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
+            
             if (snap.exists()) {
-                const loadedSettings = { ...defaultSettings, ...snap.data() };
-                updateControllerUI(loadedSettings);
+                controllerState = { ...defaultSettings, ...snap.data() };
             } else { 
-                alert("找不到此面板 ID"); window.location.href = window.location.href.split('?')[0]; return; 
+                alert("找不到此面板 ID，將使用預設值。"); 
+                controllerState = { ...defaultSettings };
             }
+            
+            createPickers();
+            renderControllerUI();
             setupControllerListeners();
         }
-
-        function updateControllerUI(settings) {
+        
+        // 渲染整個控制台 UI
+        function renderControllerUI() {
+            const settings = controllerState;
             document.getElementById('text-input').value = settings.text;
             document.getElementById('font-size-slider').value = settings.fontSize;
             document.getElementById('font-size-value').textContent = settings.fontSize;
@@ -300,99 +311,87 @@
             document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
             updatePreview();
         }
-        
+
+        // 事件監聽器只負責更新狀態
         function setupControllerListeners() {
+            // 文字和滑桿
             ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
                 const el = document.getElementById(id); 
-                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', (e) => {
+                    const keyMap = { 'text-input': 'text', 'font-size-slider': 'fontSize', 'speed-slider': 'scrollSpeed', 'blink-toggle': 'isBlinking'};
+                    const value = el.type === 'checkbox' ? e.target.checked : e.target.value;
+                    updateState({ [keyMap[id]]: value });
+                });
             });
             
-            const setupButtonGroupListener = (selector) => {
+            // 按鈕群組
+            const setupButtonGroupListener = (selector, key) => {
                  document.querySelectorAll(selector).forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
-                        updateSession();
-                    });
+                    btn.addEventListener('click', (e) => updateState({ [key]: e.currentTarget.dataset[key] }));
                 });
             };
-            
-            setupButtonGroupListener('.direction-btn');
-            setupButtonGroupListener('.bg-effect-btn');
-            setupButtonGroupListener('.text-style-btn');
-            setupButtonGroupListener('.border-style-btn');
+            setupButtonGroupListener('.direction-btn', 'direction');
+            setupButtonGroupListener('.bg-effect-btn', 'effect');
+            setupButtonGroupListener('.text-style-btn', 'style');
+            setupButtonGroupListener('.border-style-btn', 'border');
+            setupButtonGroupListener('.tab-btn', 'tab');
 
-            document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => { 
-                if (e.target.dataset.color) { 
-                    updatePickerState(p.id, e.target.dataset.color, 'color'); 
-                    updateSession(); 
-                }
-            }));
-            
-            document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { 
-                const el = e.target.closest('[data-gradient]');
-                if (el) { 
-                    updatePickerState(p.id, el.dataset.gradient, 'gradient'); 
-                    updateSession(); 
-                }
-            }));
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
-                updateColorTab(btn.dataset.tab); 
-                updateSession(); 
-            }));
-        }
-        
-        function getSettings() {
-            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
-            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
-
-            return {
-                text: document.getElementById('text-input').value, fontSize: document.getElementById('font-size-slider').value,
-                scrollSpeed: document.getElementById('speed-slider').value, isBlinking: document.getElementById('blink-toggle').checked,
-                colorMode: document.querySelector('.tab-btn.border-indigo-500').dataset.tab,
-                textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
-                backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
-                gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[0].value,
-                gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[1].value,
-                outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
-                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
-                backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
-                textStyle: textStyle,
-                backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
+            // 顏色選擇器
+            const setupPickerListener = (pickerId, key, dataAttr) => {
+                document.getElementById(pickerId).addEventListener('click', (e) => {
+                    const target = e.target.closest(`[data-${dataAttr}]`);
+                    if (target) updateState({ [key]: target.dataset[dataAttr] });
+                });
             };
+            setupPickerListener('text-color-picker', 'textColor', 'color');
+            setupPickerListener('bg-color-picker', 'backgroundColor', 'color');
+            setupPickerListener('outline-color-picker', 'outlineColor', 'color');
+            setupPickerListener('text-gradient-picker', 'gradientText', 'gradient');
+            setupPickerListener('bg-gradient-picker', 'gradientBg', 'gradient');
         }
         
-        function updateSession() {
-            if (!currentSessionId) return;
-            const settings = getSettings();
-            document.getElementById('font-size-value').textContent = settings.fontSize;
-            document.getElementById('speed-value').textContent = settings.scrollSpeed;
-            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
-            updatePreview();
+        // 統一的狀態更新函式
+        function updateState(newState) {
+             // 處理頁籤切換的特殊邏輯
+            if (newState.tab) {
+                controllerState.colorMode = newState.tab;
+                delete newState.tab;
+            }
+            // 合併新狀態
+            controllerState = { ...controllerState, ...newState };
+            // 重新渲染UI
+            renderControllerUI();
+            // 延遲同步到 Firebase
+            debouncedSync();
         }
         
+        // 更新預覽
         function updatePreview() {
-            const settings = getSettings();
             const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
-            applySettings(els, settings, true);
+            applySettings(els, controllerState, true);
+        }
+
+        // 防抖函式，避免過於頻繁地寫入 Firebase
+        function debouncedSync() {
+            clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(() => {
+                if (currentSessionId) {
+                    const stateToSync = { ...controllerState, updatedAt: serverTimestamp() };
+                    setDoc(doc(db, "sessions", currentSessionId), stateToSync, { merge: true });
+                }
+            }, 200);
         }
         
         function createPickers() {
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
-                palette.forEach((item, index) => {
+                palette.forEach((item) => {
                     const value = item.value || item;
                     const el = document.createElement('div');
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
                     el.style.background = value;
                     const dataAttr = prop === 'value' ? 'gradient' : 'color';
                     el.dataset[dataAttr] = value;
-                    if (index === 0) el.classList.add('control-btn-active');
-                    if (id === 'outline-color-picker' && item === '#FF3B30') {
-                        document.querySelector(`#${id} > .control-btn-active`)?.classList.remove('control-btn-active');
-                        el.classList.add('control-btn-active');
-                    }
                     picker.appendChild(el);
                 });
             };
@@ -401,12 +400,9 @@
             create('outline-color-picker', colorPalette);
         }
 
-        function updatePickerState(id, activeValue, prop) {
+        function updatePickerState(id, activeValue, prop) { 
             document.querySelectorAll(`#${id} > div`).forEach(div => {
-                div.classList.remove('control-btn-active');
-                if (div.dataset[prop] === activeValue) {
-                    div.classList.add('control-btn-active');
-                }
+                div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
             });
         }
         
@@ -429,7 +425,6 @@
         document.getElementById('create-display-btn').addEventListener('click', () => { window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
         document.getElementById('open-controller-btn').addEventListener('click', () => { const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
         
-        createPickers();
     </script>
 </body>
 </html>
