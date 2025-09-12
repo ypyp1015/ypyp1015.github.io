@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v4</title>
+    <title>遠端遙控 LED 跑馬燈 v5</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -29,12 +29,18 @@
             font-family: 'DotGothic16', sans-serif;
         }
 
-        /* 跑馬燈動畫 */
-        @keyframes marquee-left { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
-        @keyframes marquee-right { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+        /* 【修正】跑馬燈動畫 */
+        @keyframes marquee-left {
+            from { transform: translateX(100vw); }
+            to { transform: translateX(-100%); }
+        }
+        @keyframes marquee-right {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100vw); }
+        }
         @keyframes blink-effect { 50% { opacity: 0; } }
         
-        /* 【新增】眼睛動畫 */
+        /* 眼睛動畫 */
         @keyframes eye-blink-anim {
             0%, 40%, 100% { transform: scaleY(1); }
             42% { transform: scaleY(0.1); }
@@ -64,17 +70,17 @@
             left: 0;
             width: 100%;
             transform: translateY(-50%);
+            overflow: hidden; /* 【修正】新增 overflow hidden 來配合新動畫 */
         }
 
         .display-screen {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background: var(--bg-color, #000000); /* 改為 background 以支援漸層 */
+            background: var(--bg-color, #000000);
             position: relative;
         }
 
-        /* 【新增】背景特效容器 */
         #background-effects-container {
             position: absolute;
             inset: 0;
@@ -84,6 +90,7 @@
             justify-content: center;
             align-items: center;
             gap: 20px;
+            pointer-events: none; /* 避免遮擋點擊事件 */
         }
         .eye {
             width: 80px;
@@ -106,26 +113,23 @@
             animation: eye-move-anim 10s infinite;
         }
         
-        /* 控制台預覽畫面樣式 */
         .controller-preview {
             height: 120px;
             border-radius: 0.5rem;
             position: relative;
             overflow: hidden;
             background: var(--bg-color, #000000);
-            border: 1px solid #374151; /* border-gray-700 */
+            border: 1px solid #374151;
         }
         .controller-preview .marquee-text {
              font-size: var(--font-size, 40px) !important;
         }
 
-        /* 隱藏滾動條 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* 控制台按鈕選中樣式 */
         .control-btn-active {
-            box-shadow: 0 0 0 3px #4f46e5; /* ring-indigo-500 */
+            box-shadow: 0 0 0 3px #4f46e5;
         }
     </style>
 </head>
@@ -134,7 +138,7 @@
     <!-- 主容器 -->
     <div id="app-container" class="h-full w-full">
 
-        <!-- 1. 首頁畫面 (無變更) -->
+        <!-- 1. 首頁畫面 -->
         <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
              <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
             <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
@@ -165,7 +169,7 @@
                 <div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div>
             </div>
             <button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg xmlns="http://www.w.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
             </button>
         </div>
 
@@ -176,7 +180,6 @@
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label><div class="controller-preview"><div class="marquee-container-wrapper" id="preview-marquee-container-wrapper"><div class="marquee-text" id="preview-marquee-text"></div></div></div></div>
                 <div class="mb-6"><label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label><textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="在此輸入文字..."></textarea></div>
                 
-                <!-- 顏色控制 -->
                 <div class="mb-6 p-4 bg-gray-900 rounded-lg">
                     <div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div>
                     <div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div>
@@ -187,7 +190,6 @@
                 <div class="mb-6"><label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度 (數字越小越快): <span id="speed-value">10</span>s</label><input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label><div class="grid grid-cols-3 gap-3"><button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button><button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button><button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button></div></div>
                 
-                <!-- 【新增】背景動畫控制 -->
                  <div class="mb-6">
                     <label class="block mb-2 text-sm font-medium text-gray-300">特效</label>
                     <div class="flex flex-wrap gap-4">
@@ -212,16 +214,16 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase 設定 (請替換成您自己的) ---
+        // --- 【更新】Firebase 設定 ---
         const firebaseConfig = {
-  	    apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
-  	    authDomain: "led-run-c168b.firebaseapp.com",
-  	    projectId: "led-run-c168b",
-  	    storageBucket: "led-run-c168b.firebasestorage.app",
-  	    messagingSenderId: "555557259748",
-  	    appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
-  	    measurementId: "G-7JH5TLX99R"
-	};
+            apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
+            authDomain: "led-run-c168b.firebaseapp.com",
+            projectId: "led-run-c168b",
+            storageBucket: "led-run-c168b.appspot.com",
+            messagingSenderId: "555557259748",
+            appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
+            measurementId: "G-7JH5TLX99R"
+        };
         
         // --- 初始化 Firebase ---
         let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！請檢查您的設定。"); }
@@ -233,10 +235,10 @@
         const defaultSettings = {
             text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000",
             fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false,
-            colorMode: "solid", // 新增: solid | gradient
+            colorMode: "solid",
             gradientText: "linear-gradient(90deg, #e94057, #f27121)",
-            gradientBg: "linear-gradient(90deg, #120c56, #000000)",
-            backgroundEffect: "none", // 新增: none | eyes
+            gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
+            backgroundEffect: "none",
             updatedAt: serverTimestamp()
         };
         
@@ -312,8 +314,8 @@
             wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
             wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
             
-            // 背景特效
             if (bgEffectEl) {
+                // 背景特效只在顯示端作用，預覽時清除
                 if (settings.backgroundEffect === 'eyes' && !isPreview) {
                     bgEffectEl.innerHTML = `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`;
                 } else { bgEffectEl.innerHTML = ''; }
@@ -410,7 +412,8 @@
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600 transition-shadow';
                     el.style.background = value;
                     if (prop === 'value') el.dataset.gradient = value; else el.dataset.color = value;
-                    if ((pickerId.includes('text') && index === 0) || (pickerId.includes('bg') && index === 1 && pickerId.includes('color'))) el.classList.add('control-btn-active');
+                    // 【修正】確保每個選擇器都有一個預設選中項
+                    if (index === 0) el.classList.add('control-btn-active');
                     picker.appendChild(el);
                 });
             };
