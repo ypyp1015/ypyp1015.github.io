@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v7 (功能優化)</title>
+    <title>遠端遙控 LED 跑馬燈 v8 (錯誤修復)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -102,7 +102,7 @@
             margin: -6px;
             background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
             background-size: 200% 200%;
-            animation: rainbow-border-anim 4s linear infinite; /* 【優化】加速動畫 */
+            animation: rainbow-border-anim 4s linear infinite;
         }
 
         #background-effects-container {
@@ -147,7 +147,6 @@
                 
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
                 
-                <!-- 【新增】邊框顏色選擇器 (預設隱藏) -->
                 <div id="outline-color-section" class="mb-6 hidden"><label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label><div class="flex flex-wrap gap-3" id="outline-color-picker"></div></div>
 
                 <div class="mb-6"><label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label><input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
@@ -223,7 +222,7 @@
             const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
             if (!textEl || !containerEl || !wrapperEl) return;
             
-            const root = containerEl; // Apply variables locally for previews
+            const root = containerEl;
             root.style.setProperty('--text-color', settings.textColor);
             root.style.setProperty('--outline-color', settings.outlineColor);
             
@@ -320,7 +319,9 @@
             setupButtonGroupListener('.border-style-btn');
 
             document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => { if (e.target.dataset.color) { updatePickerState(p.id, e.target.dataset.color, 'color'); updateSession(); }}));
+            // 【修復】漸層選擇器的事件監聽器
             document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { const el = e.target.closest('[data-gradient]'); if (el) { updatePickerState(p.id, el.dataset.gradient, 'gradient'); updateSession(); }}));
+            
             document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { updateColorTab(btn.dataset.tab); updateSession(); }));
         }
         
@@ -363,13 +364,15 @@
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
                 palette.forEach((item, index) => {
-                    const value = item[prop] || item;
+                    const value = item.value || item; // For gradient palette
                     const el = document.createElement('div');
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
                     el.style.background = value;
-                    el.dataset[prop || 'color'] = value;
+                    // 【修復】統一使用 data-gradient 屬性
+                    if (prop === 'value') { el.dataset.gradient = value; } else { el.dataset.color = value; }
+                    
                     if (index === 0) el.classList.add('control-btn-active');
-                    if (id === 'outline-color-picker' && item === '#FF3B30') { // Default outline color
+                    if (id === 'outline-color-picker' && item === '#FF3B30') {
                         document.querySelector(`#${id} > .control-btn-active`)?.classList.remove('control-btn-active');
                         el.classList.add('control-btn-active');
                     }
@@ -381,7 +384,13 @@
             create('outline-color-picker', colorPalette);
         }
 
-        function updatePickerState(id, activeValue, prop) { document.querySelectorAll(`#${id} > div`).forEach(div => div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue)); }
+        // 【修復】使用更穩定的方式更新按鈕狀態
+        function updatePickerState(id, activeValue, prop) {
+            document.querySelectorAll(`#${id} > div`).forEach(div => {
+                const isActive = div.dataset[prop] === activeValue;
+                div.classList.toggle('control-btn-active', isActive);
+            });
+        }
         
         function updateButtonGroupState(selector, dataAttr, value) {
             document.querySelectorAll(selector).forEach(btn => {
@@ -406,4 +415,5 @@
     </script>
 </body>
 </html>
+
 
