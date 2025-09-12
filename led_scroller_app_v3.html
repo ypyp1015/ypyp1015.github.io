@@ -262,119 +262,101 @@
             document.getElementById('fullscreen-btn').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
         }
         
-        // V13 穩定版控制台邏輯
-        let controllerState = {};
-        
+        // V14 穩定版控制台邏輯
         async function startControllerMode(sessionId) {
             currentSessionId = sessionId; 
             showView('controller');
             document.getElementById('controller-session-id').textContent = sessionId;
-            
-            createPickers(); // 【修正】先建立按鈕
-            
+
+            createPickers(); // 必須先建立 DOM 元素
+
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
             
-            controllerState = snap.exists() ? { ...defaultSettings, ...snap.data() } : { ...defaultSettings };
+            const loadedSettings = snap.exists() ? { ...defaultSettings, ...snap.data() } : { ...defaultSettings };
             
-            updateControllerUI(); // 根據 state 初始化 UI
-            setupControllerListeners();
+            setupControllerListeners(loadedSettings); // 將初始設定傳入
+            updateControllerUI(loadedSettings); // 首次渲染
         }
         
-        // 根據 controllerState 更新整個 UI
-        function updateControllerUI() {
-            document.getElementById('text-input').value = controllerState.text;
-            document.getElementById('font-size-slider').value = controllerState.fontSize;
-            document.getElementById('font-size-value').textContent = controllerState.fontSize;
-            document.getElementById('speed-slider').value = controllerState.scrollSpeed;
-            document.getElementById('speed-value').textContent = controllerState.scrollSpeed;
-            document.getElementById('blink-toggle').checked = controllerState.isBlinking;
+        function updateControllerUI(settings) {
+            document.getElementById('text-input').value = settings.text;
+            document.getElementById('font-size-slider').value = settings.fontSize;
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-slider').value = settings.scrollSpeed;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            document.getElementById('blink-toggle').checked = settings.isBlinking;
 
-            updateColorTab(controllerState.colorMode);
-            updatePickerState('text-color-picker', controllerState.textColor, 'color');
-            updatePickerState('bg-color-picker', controllerState.backgroundColor, 'color');
-            updatePickerState('text-gradient-picker', controllerState.gradientText, 'gradient');
-            updatePickerState('bg-gradient-picker', controllerState.gradientBg, 'gradient');
-            updatePickerState('outline-color-picker', controllerState.outlineColor, 'color');
+            updateColorTab(settings.colorMode);
+            updatePickerState('text-color-picker', settings.textColor, 'color');
+            updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
+            updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
+            updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
+            updatePickerState('outline-color-picker', settings.outlineColor, 'color');
             
-            updateButtonGroupState('.direction-btn', 'direction', controllerState.scrollDirection);
-            updateButtonGroupState('.bg-effect-btn', 'effect', controllerState.backgroundEffect);
-            updateButtonGroupState('.text-style-btn', 'style', controllerState.textStyle);
-            updateButtonGroupState('.border-style-btn', 'border', controllerState.backgroundBorder);
+            updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
+            updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
+            updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
+            updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
 
-            document.getElementById('outline-color-section').classList.toggle('hidden', controllerState.textStyle !== 'outline');
-            updatePreview();
+            document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+            updatePreview(settings);
         }
 
-        function setupControllerListeners() {
-            // 文字和滑桿直接更新 state 和 UI
-            const handleSimpleInput = (id, key) => {
-                const el = document.getElementById(id);
-                const eventType = el.type === 'checkbox' ? 'change' : 'input';
-                el.addEventListener(eventType, () => {
-                    controllerState[key] = el.type === 'checkbox' ? el.checked : el.value;
-                    updateControllerUI();
-                    syncState();
-                });
-            };
-            handleSimpleInput('text-input', 'text');
-            handleSimpleInput('font-size-slider', 'fontSize');
-            handleSimpleInput('speed-slider', 'scrollSpeed');
-            handleSimpleInput('blink-toggle', 'isBlinking');
+        function setupControllerListeners(initialSettings) {
+            let currentSettings = { ...initialSettings };
+            let syncTimeout;
 
-            // 處理所有按鈕群組的點擊
-            const handleGroupClick = (selector, key) => {
+            const updateAndSync = (newValues) => {
+                currentSettings = { ...currentSettings, ...newValues };
+                updateControllerUI(currentSettings);
+                
+                clearTimeout(syncTimeout);
+                syncTimeout = setTimeout(() => {
+                    if (currentSessionId) {
+                        setDoc(doc(db, "sessions", currentSessionId), { ...newValues, updatedAt: serverTimestamp() }, { merge: true });
+                    }
+                }, 200);
+            };
+
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+                const el = document.getElementById(id); 
+                const keyMap = { 'text-input': 'text', 'font-size-slider': 'fontSize', 'speed-slider': 'scrollSpeed', 'blink-toggle': 'isBlinking'};
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', () => {
+                    const value = el.type === 'checkbox' ? el.checked : el.value;
+                    updateAndSync({ [keyMap[id]]: value });
+                });
+            });
+
+            const setupGroupListener = (selector, key) => {
                 document.querySelectorAll(selector).forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        controllerState[key] = btn.dataset[key];
-                        updateControllerUI();
-                        syncState();
-                    });
+                    btn.addEventListener('click', () => updateAndSync({ [key]: btn.dataset[key] }));
                 });
             };
-            handleGroupClick('.direction-btn', 'direction');
-            handleGroupClick('.text-style-btn', 'style');
-            handleGroupClick('.border-style-btn', 'border');
-            handleGroupClick('.bg-effect-btn', 'effect');
-            handleGroupClick('.tab-btn', 'colorMode');
+            setupGroupListener('.direction-btn', 'direction');
+            setupGroupListener('.text-style-btn', 'style');
+            setupGroupListener('.border-style-btn', 'border');
+            setupGroupListener('.bg-effect-btn', 'effect');
+            setupGroupListener('.tab-btn', 'colorMode');
 
-            // 處理所有顏色選擇器的點擊
-            const handlePickerClick = (pickerId, key, dataAttr) => {
+            const setupPickerListener = (pickerId, key, dataAttr) => {
                 document.getElementById(pickerId).addEventListener('click', (e) => {
                     const target = e.target.closest(`[data-${dataAttr}]`);
-                    if (target) {
-                        controllerState[key] = target.dataset[dataAttr];
-                        updateControllerUI();
-                        syncState();
-                    }
+                    if (target) updateAndSync({ [key]: target.dataset[dataAttr] });
                 });
             };
-            handlePickerClick('text-color-picker', 'textColor', 'color');
-            handlePickerClick('bg-color-picker', 'backgroundColor', 'color');
-            handlePickerClick('outline-color-picker', 'outlineColor', 'color');
-            handlePickerClick('text-gradient-picker', 'gradientText', 'gradient');
-            handlePickerClick('bg-gradient-picker', 'gradientBg', 'gradient');
+            setupPickerListener('text-color-picker', 'textColor', 'color');
+            setupPickerListener('bg-color-picker', 'backgroundColor', 'color');
+            setupPickerListener('outline-color-picker', 'outlineColor', 'color');
+            setupPickerListener('text-gradient-picker', 'gradientText', 'gradient');
+            setupPickerListener('bg-gradient-picker', 'gradientBg', 'gradient');
         }
 
-        // 更新預覽畫面
-        function updatePreview() {
+        function updatePreview(settings) {
             const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
-            applySettings(els, controllerState, true);
+            applySettings(els, settings, true);
         }
 
-        // 同步狀態到 Firebase (帶延遲)
-        let syncTimeout;
-        function syncState() {
-            clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(() => {
-                if (currentSessionId) {
-                    const stateToSync = { ...controllerState, updatedAt: serverTimestamp() };
-                    setDoc(doc(db, "sessions", currentSessionId), stateToSync, { merge: true });
-                }
-            }, 200);
-        }
-        
-        // 建立顏色按鈕
         function createPickers() {
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
@@ -386,14 +368,13 @@
                     const dataAttr = prop === 'value' ? 'gradient' : 'color';
                     el.dataset[dataAttr] = value;
                     picker.appendChild(el);
-});
+                });
             };
             create('text-color-picker', colorPalette); create('bg-color-picker', colorPalette);
             create('text-gradient-picker', gradientPalette, 'value'); create('bg-gradient-picker', gradientPalette, 'value');
             create('outline-color-picker', colorPalette);
         }
 
-        // 更新按鈕的選中樣式
         function updatePickerState(id, activeValue, prop) { 
             document.querySelectorAll(`#${id} > div`).forEach(div => {
                 div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
@@ -414,7 +395,6 @@
             });
         }
 
-        // 首頁按鈕
         document.getElementById('create-display-btn').addEventListener('click', () => { window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
         document.getElementById('open-controller-btn').addEventListener('click', () => { const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
         
