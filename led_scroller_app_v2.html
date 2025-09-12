@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>遠端遙控 LED 跑馬燈 v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        /* 自訂樣式與動畫 */
+        body {
+            font-family: 'Inter', '微軟正黑體', sans-serif;
+            overscroll-behavior: none; /* 防止行動裝置的滑動刷新 */
+        }
+        .led-font {
+            font-family: 'DotGothic16', sans-serif;
+        }
+
+        /* 跑馬燈動畫 */
+        @keyframes marquee-left {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
+        @keyframes marquee-right {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(100%); }
+        }
+        
+        /* 閃爍效果 */
+        @keyframes blink-effect {
+            50% { opacity: 0; }
+        }
+
+        .marquee-text {
+            /* 透過 CSS 變數來動態控制樣式 */
+            font-size: var(--font-size, 80px);
+            color: var(--text-color, #FFFFFF);
+            /* animation 屬性將由 JS 動態設定 */
+            white-space: nowrap;
+            display: inline-block; /* 修正：讓 transform 有效 */
+        }
+        
+        .marquee-container {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            transform: translateY(-50%);
+            background-color: var(--bg-color, #000000);
+        }
+
+        .display-screen {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color, #000000);
+            position: relative;
+        }
+
+        /* 隱藏滾動條 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white overflow-hidden h-screen">
+
+    <div id="app-container" class="h-full w-full">
+
+        <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center">
+            <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
+            <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
+            <div class="space-y-4 w-full max-w-xs">
+                <button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                    建立新的顯示面板
+                </button>
+                <p class="text-gray-500">或</p>
+                <div class="relative">
+                    <input type="text" id="session-id-input" placeholder="輸入面板 ID 進入控制台" class="w-full bg-gray-800 border border-gray-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="open-controller-btn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-3 rounded-md">進入</button>
+                </div>
+            </div>
+            <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
+        </div>
+
+        <div id="display-view" class="hidden h-full w-full">
+            <div class="display-screen" id="display-screen">
+                <div class="marquee-container" id="marquee-container">
+                    <div class="marquee-text" id="marquee-text">
+                        <span>請稍候...</span>
+                    </div>
+                </div>
+            </div>
+            <div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-50 p-4 rounded-lg text-white transition-opacity duration-500 hover:opacity-100 opacity-20">
+                <p class="text-sm">用另一台設備掃描QR碼或輸入ID來控制此面板：</p>
+                <p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p>
+                <div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div>
+            </div>
+        </div>
+
+        <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
+             <div class="p-6 max-w-md mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold led-font">控制台</h2>
+                    <p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p>
+                </div>
+                <div class="mb-6">
+                    <label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
+                    <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="在此輸入文字..."></textarea>
+                </div>
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label>
+                    <div class="flex flex-wrap gap-3" id="text-color-picker"></div>
+                </div>
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label>
+                    <div class="flex flex-wrap gap-3" id="bg-color-picker"></div>
+                </div>
+                <div class="mb-6">
+                    <label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label>
+                    <input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <div class="mb-6">
+                    <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度 (數字越小越快): <span id="speed-value">10</span>s</label>
+                    <input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button>
+                        <button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button>
+                        <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-300">特效</label>
+                    <div class="flex items-center space-x-4">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" id="blink-toggle" class="sr-only peer">
+                          <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                          <span class="ml-3 text-sm font-medium text-gray-300">閃爍效果</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-8">
+                     <a href="./led_scroller_app_v2.html" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">
+                        返回首頁
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase 設定 (請替換成您自己的) ---
+const firebaseConfig = {
+  apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
+  authDomain: "led-run-c168b.firebaseapp.com",
+  projectId: "led-run-c168b",
+  storageBucket: "led-run-c168b.firebasestorage.app",
+  messagingSenderId: "555557259748",
+  appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
+  measurementId: "G-7JH5TLX99R"
+};
+        
+        // --- 初始化 Firebase ---
+        let db;
+        try {
+             const app = initializeApp(firebaseConfig);
+             db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase 初始化失敗，請檢查您的 firebaseConfig 是否正確。", e);
+            if (e.code === 'invalid-api-key') {
+                alert("Firebase 連線失敗！\n\n您尚未設定 Firebase。請依照指示，將您自己的 Firebase 專案設定貼入程式碼中。");
+            } else {
+                alert("Firebase 連線失敗！請檢查您的設定或網路連線。");
+            }
+        }
+
+        // --- DOM 元素 ---
+        const homeView = document.getElementById('home-view');
+        const displayView = document.getElementById('display-view');
+        const controllerView = document.getElementById('controller-view');
+        
+        let currentSessionId = null;
+        let unsubscribe = null;
+
+        const defaultSettings = {
+            text: "Hello World 👋", textColor: "#FFFFFF", backgroundColor: "#000000",
+            fontSize: 80, scrollSpeed: 10, scrollDirection: "none",
+            isBlinking: false, updatedAt: serverTimestamp()
+        };
+        const colorPalette = [
+            '#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#34C759', 
+            '#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#A2845E', '#636366'
+        ];
+        
+        // --- 核心邏輯 ---
+
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('display')) { startDisplayMode(params.get('display')); }
+            else if (params.has('controller')) { startControllerMode(params.get('controller')); }
+            else { showView('home'); }
+        });
+
+        function showView(viewName) {
+            [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${viewName}-view`).classList.remove('hidden');
+        }
+
+        function generateSessionId() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        async function startDisplayMode(sessionId) {
+            currentSessionId = sessionId;
+            showView('display');
+            
+            document.getElementById('session-id-display').textContent = sessionId;
+            const controllerUrl = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
+            document.getElementById('qrcode-container').innerHTML = '';
+            new QRCode(document.getElementById("qrcode-container"), { text: controllerUrl, width: 128, height: 128 });
+
+            const sessionRef = doc(db, "sessions", sessionId);
+            const sessionSnap = await getDoc(sessionRef);
+            if (!sessionSnap.exists()) { await setDoc(sessionRef, defaultSettings); }
+
+            listenToSessionChanges(sessionId);
+        }
+
+        function listenToSessionChanges(sessionId) {
+             if (unsubscribe) unsubscribe();
+            const sessionRef = doc(db, "sessions", sessionId);
+            unsubscribe = onSnapshot(sessionRef, (doc) => {
+                if (doc.exists()) { updateDisplay(doc.data()); }
+                else { document.getElementById('marquee-text').textContent = "此面板ID已失效"; }
+            });
+        }
+        
+        // 【修正】更新顯示面板的樣式
+        function updateDisplay(settings) {
+            const marqueeText = document.getElementById('marquee-text');
+            const displayScreen = document.getElementById('display-screen');
+            const root = document.documentElement;
+
+            marqueeText.textContent = settings.text || defaultSettings.text;
+            
+            root.style.setProperty('--font-size', `${settings.fontSize || defaultSettings.fontSize}px`);
+            root.style.setProperty('--text-color', settings.textColor || defaultSettings.textColor);
+            root.style.setProperty('--bg-color', settings.backgroundColor || defaultSettings.backgroundColor);
+            
+            // 動態組合 animation 樣式，解決閃爍與滾動衝突
+            let animationStyles = [];
+            const direction = settings.scrollDirection || defaultSettings.scrollDirection;
+            const speed = settings.scrollSpeed || defaultSettings.scrollSpeed;
+
+            if (direction !== 'none') {
+                animationStyles.push(`${direction} ${speed}s linear infinite`);
+            }
+            if (settings.isBlinking) {
+                animationStyles.push('blink-effect 1s step-end infinite');
+            }
+            
+            if (direction === 'none') {
+                marqueeText.style.transform = 'none'; // 靜止時置中
+            } else {
+                marqueeText.style.transform = ''; // 滾動時移除 transform
+            }
+
+            marqueeText.style.animation = animationStyles.join(', ');
+        }
+
+        async function startControllerMode(sessionId) {
+            currentSessionId = sessionId;
+            showView('controller');
+            document.getElementById('controller-session-id').textContent = sessionId;
+
+            const sessionRef = doc(db, "sessions", sessionId);
+            const sessionSnap = await getDoc(sessionRef);
+
+            if (sessionSnap.exists()) {
+                updateControllerUI(sessionSnap.data());
+            } else {
+                alert("找不到這個面板 ID，請確認 ID 是否正確。");
+                window.location.href = window.location.href.split('?')[0];
+                return;
+            }
+            setupControllerListeners();
+        }
+
+        function updateControllerUI(settings) {
+            document.getElementById('text-input').value = settings.text;
+            document.getElementById('font-size-slider').value = settings.fontSize;
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-slider').value = settings.scrollSpeed;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            document.getElementById('blink-toggle').checked = settings.isBlinking;
+
+            updateColorPickerActiveState('text-color-picker', settings.textColor);
+            updateColorPickerActiveState('bg-color-picker', settings.backgroundColor);
+            
+            document.querySelectorAll('.direction-btn').forEach(btn => {
+                btn.classList.toggle('bg-indigo-600', btn.dataset.direction === settings.scrollDirection);
+                btn.classList.toggle('bg-gray-700', btn.dataset.direction !== settings.scrollDirection);
+            });
+        }
+        
+        function setupControllerListeners() {
+            const inputs = ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'];
+            inputs.forEach(id => {
+                 const element = document.getElementById(id);
+                 const eventType = element.type === 'checkbox' ? 'change' : 'input';
+                 element.addEventListener(eventType, () => updateSessionFromController());
+            });
+
+            document.querySelectorAll('.direction-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.direction-btn').forEach(b => {
+                        b.classList.remove('bg-indigo-600');
+                        b.classList.add('bg-gray-700');
+                    });
+                    e.currentTarget.classList.add('bg-indigo-600');
+                    e.currentTarget.classList.remove('bg-gray-700');
+                    updateSessionFromController();
+                });
+            });
+        }
+
+        function updateSessionFromController() {
+            if (!currentSessionId) return;
+            const newSettings = {
+                text: document.getElementById('text-input').value,
+                fontSize: document.getElementById('font-size-slider').value,
+                scrollSpeed: document.getElementById('speed-slider').value,
+                isBlinking: document.getElementById('blink-toggle').checked,
+                textColor: document.querySelector('#text-color-picker .ring-2').dataset.color,
+                backgroundColor: document.querySelector('#bg-color-picker .ring-2').dataset.color,
+                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
+                updatedAt: serverTimestamp()
+            };
+            
+            document.getElementById('font-size-value').textContent = newSettings.fontSize;
+            document.getElementById('speed-value').textContent = newSettings.scrollSpeed;
+
+            setDoc(doc(db, "sessions", currentSessionId), newSettings, { merge: true });
+        }
+        
+        function createColorPickers() {
+            const textColorPicker = document.getElementById('text-color-picker');
+            const bgColorPicker = document.getElementById('bg-color-picker');
+            [textColorPicker, bgColorPicker].forEach(p => p.innerHTML = '');
+
+            colorPalette.forEach((color, index) => {
+                const createDiv = (isText) => {
+                    const d = document.createElement('div');
+                    d.dataset.color = color;
+                    d.style.backgroundColor = color;
+                    const defaultRing = (isText && index === 0) || (!isText && index === 1);
+                    d.className = `w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600 ${defaultRing ? 'ring-2 ring-offset-2 ring-offset-gray-800 ring-white' : ''}`;
+                    return d;
+                };
+                textColorPicker.appendChild(createDiv(true));
+                bgColorPicker.appendChild(createDiv(false));
+            });
+
+            textColorPicker.addEventListener('click', (e) => handleColorPick(e, 'text-color-picker'));
+            bgColorPicker.addEventListener('click', (e) => handleColorPick(e, 'bg-color-picker'));
+        }
+
+        function handleColorPick(event, containerId) {
+            if (event.target.dataset.color) {
+                updateColorPickerActiveState(containerId, event.target.dataset.color);
+                updateSessionFromController();
+            }
+        }
+
+        function updateColorPickerActiveState(containerId, activeColor) {
+             document.querySelectorAll(`#${containerId} > div`).forEach(div => {
+                div.classList.toggle('ring-2', div.dataset.color.toLowerCase() === activeColor.toLowerCase());
+                div.classList.toggle('ring-offset-2', div.dataset.color.toLowerCase() === activeColor.toLowerCase());
+                div.classList.toggle('ring-offset-gray-800', div.dataset.color.toLowerCase() === activeColor.toLowerCase());
+                div.classList.toggle('ring-white', div.dataset.color.toLowerCase() === activeColor.toLowerCase());
+            });
+        }
+        
+        document.getElementById('create-display-btn').addEventListener('click', () => {
+            const newSessionId = generateSessionId();
+            const newUrl = `${window.location.href.split('?')[0]}?display=${newSessionId}`;
+            window.location.href = newUrl;
+        });
+
+        document.getElementById('open-controller-btn').addEventListener('click', () => {
+            const sessionId = document.getElementById('session-id-input').value.trim().toUpperCase();
+            if (sessionId) {
+                const newUrl = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
+                window.location.href = newUrl;
+            } else { alert('請輸入面板 ID'); }
+        });
+        
+        createColorPickers();
+    </script>
+</body>
+</html>
