@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v13 (最終穩定版)</title>
+    <title>遠端遙控 LED 跑馬燈 v14 (最終穩定版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -270,12 +270,13 @@
             showView('controller');
             document.getElementById('controller-session-id').textContent = sessionId;
             
+            createPickers(); // 【修正】先建立按鈕
+            
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
             
             controllerState = snap.exists() ? { ...defaultSettings, ...snap.data() } : { ...defaultSettings };
             
-            createPickers();
             updateControllerUI(); // 根據 state 初始化 UI
             setupControllerListeners();
         }
@@ -301,7 +302,6 @@
             updateButtonGroupState('.text-style-btn', 'style', controllerState.textStyle);
             updateButtonGroupState('.border-style-btn', 'border', controllerState.backgroundBorder);
 
-            // 【修復】將 UI 更新邏輯放在這裡，確保每次狀態改變都正確執行
             document.getElementById('outline-color-section').classList.toggle('hidden', controllerState.textStyle !== 'outline');
             updatePreview();
         }
@@ -386,7 +386,7 @@
                     const dataAttr = prop === 'value' ? 'gradient' : 'color';
                     el.dataset[dataAttr] = value;
                     picker.appendChild(el);
-                });
+});
             };
             create('text-color-picker', colorPalette); create('bg-color-picker', colorPalette);
             create('text-gradient-picker', gradientPalette, 'value'); create('bg-gradient-picker', gradientPalette, 'value');
