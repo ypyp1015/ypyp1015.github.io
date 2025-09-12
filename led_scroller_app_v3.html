@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v16 (重寫穩定版)</title>
+    <title>遠端遙控 LED 跑馬燈 v11 (最終修復版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -63,6 +63,7 @@
         .text-style-glow {
              text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
         }
+        /* 【修復】移除此處的 --outline-color 預設值，避免覆蓋 JS 設定 */
         .text-style-outline {
              text-shadow: -2px -2px 0 var(--outline-color), 2px -2px 0 var(--outline-color), -2px 2px 0 var(--outline-color), 2px 2px 0 var(--outline-color),
                           -3px 0 0 var(--outline-color), 3px 0 0 var(--outline-color), 0 -3px 0 var(--outline-color), 0 3px 0 var(--outline-color);
@@ -89,20 +90,20 @@
         /* 背景邊框風格 */
         .border-style-solid { border: 8px solid white; }
         .border-style-rainbow {
-            padding: 8px;
+            padding: 8px; /* 【優化】加粗 */
             border: none;
             position: relative;
-            box-shadow: 0 0 25px rgba(255, 100, 255, 0.7);
+            box-shadow: 0 0 25px rgba(255, 100, 255, 0.7); /* 【優化】增加光暈 */
         }
         .border-style-rainbow::before {
             content: '';
             position: absolute;
             top: 0; right: 0; bottom: 0; left: 0;
             z-index: -1;
-            margin: -8px;
+            margin: -8px; /* 【優化】配合 padding */
             background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);
             background-size: 400% 400%;
-            animation: rainbow-border-anim 2s linear infinite;
+            animation: rainbow-border-anim 2s linear infinite; /* 【優化】加速 */
         }
 
         #background-effects-container {
@@ -262,126 +263,136 @@
             document.getElementById('fullscreen-btn').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
         }
         
-        // ===================================================================
-        // V15 全新重構的穩定版控制台邏輯
-        // ===================================================================
-
-        let controllerState = {};
-        let syncTimeout;
-
         async function startControllerMode(sessionId) {
-            currentSessionId = sessionId; 
-            showView('controller');
+            currentSessionId = sessionId; showView('controller');
             document.getElementById('controller-session-id').textContent = sessionId;
-
-            createPickers();
-
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
-            
-            controllerState = snap.exists() ? { ...defaultSettings, ...snap.data() } : { ...defaultSettings };
-            
+            if (snap.exists()) {
+                const loadedSettings = { ...defaultSettings, ...snap.data() };
+                updateControllerUI(loadedSettings);
+            } else { 
+                alert("找不到此面板 ID"); window.location.href = window.location.href.split('?')[0]; return; 
+            }
             setupControllerListeners();
-            renderControllerUI();
         }
-        
-        function renderControllerUI() {
-            // 更新簡單輸入
-            document.getElementById('text-input').value = controllerState.text;
-            document.getElementById('font-size-slider').value = controllerState.fontSize;
-            document.getElementById('font-size-value').textContent = controllerState.fontSize;
-            document.getElementById('speed-slider').value = controllerState.scrollSpeed;
-            document.getElementById('speed-value').textContent = controllerState.scrollSpeed;
-            document.getElementById('blink-toggle').checked = controllerState.isBlinking;
 
-            // 更新所有按鈕群組的選中狀態
-            updateButtonGroupState('.direction-btn', 'direction', controllerState.scrollDirection);
-            updateButtonGroupState('.text-style-btn', 'style', controllerState.textStyle);
-            updateButtonGroupState('.border-style-btn', 'border', controllerState.backgroundBorder);
-            updateButtonGroupState('.bg-effect-btn', 'effect', controllerState.backgroundEffect);
-            updateColorTab(controllerState.colorMode);
-            
-            // 更新所有顏色選擇器的選中狀態
-            updatePickerState('text-color-picker', controllerState.textColor, 'color');
-            updatePickerState('bg-color-picker', controllerState.backgroundColor, 'color');
-            updatePickerState('text-gradient-picker', controllerState.gradientText, 'gradient');
-            updatePickerState('bg-gradient-picker', controllerState.gradientBg, 'gradient');
-            updatePickerState('outline-color-picker', controllerState.outlineColor, 'color');
+        function updateControllerUI(settings) {
+            document.getElementById('text-input').value = settings.text;
+            document.getElementById('font-size-slider').value = settings.fontSize;
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-slider').value = settings.scrollSpeed;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            document.getElementById('blink-toggle').checked = settings.isBlinking;
 
-            // 更新區塊的可見性
-            document.getElementById('outline-color-section').classList.toggle('hidden', controllerState.textStyle !== 'outline');
+            updateColorTab(settings.colorMode);
+            updatePickerState('text-color-picker', settings.textColor, 'color');
+            updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
+            updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
+            updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
+            updatePickerState('outline-color-picker', settings.outlineColor, 'color');
             
-            // 更新預覽
+            updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
+            updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
+            updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
+            updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
+
+            document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
             updatePreview();
         }
-
-        function updateState(newState) {
-            controllerState = { ...controllerState, ...newState };
-            renderControllerUI();
-            debouncedSync();
-        }
-
+        
         function setupControllerListeners() {
-            const handleSimpleInput = (id, key, isCheckbox = false) => {
-                const el = document.getElementById(id);
-                el.addEventListener(isCheckbox ? 'change' : 'input', () => {
-                    updateState({ [key]: isCheckbox ? el.checked : el.value });
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+                const el = document.getElementById(id); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
+            });
+            
+            const setupButtonGroupListener = (selector) => {
+                 document.querySelectorAll(selector).forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+                        updateSession();
+                    });
                 });
             };
-            handleSimpleInput('text-input', 'text');
-            handleSimpleInput('font-size-slider', 'fontSize');
-            handleSimpleInput('speed-slider', 'scrollSpeed');
-            handleSimpleInput('blink-toggle', 'isBlinking', true);
+            
+            setupButtonGroupListener('.direction-btn');
+            setupButtonGroupListener('.bg-effect-btn');
+            setupButtonGroupListener('.text-style-btn');
+            setupButtonGroupListener('.border-style-btn');
 
-            const handleGroupClick = (selector, key) => {
-                document.querySelectorAll(selector).forEach(btn => {
-                    btn.addEventListener('click', () => updateState({ [key]: btn.dataset[key] }));
-                });
-            };
-            handleGroupClick('.direction-btn', 'direction');
-            handleGroupClick('.text-style-btn', 'style');
-            handleGroupClick('.border-style-btn', 'border');
-            handleGroupClick('.bg-effect-btn', 'effect');
-            handleGroupClick('.tab-btn', 'colorMode');
-
-            const handlePickerClick = (pickerId, key, dataAttr) => {
-                document.getElementById(pickerId).addEventListener('click', (e) => {
-                    const target = e.target.closest(`[data-${dataAttr}]`);
-                    if (target) updateState({ [key]: target.dataset[dataAttr] });
-                });
-            };
-            handlePickerClick('text-color-picker', 'textColor', 'color');
-            handlePickerClick('bg-color-picker', 'backgroundColor', 'color');
-            handlePickerClick('outline-color-picker', 'outlineColor', 'color');
-            handlePickerClick('text-gradient-picker', 'gradientText', 'gradient');
-            handlePickerClick('bg-gradient-picker', 'gradientBg', 'gradient');
-        }
-
-        function updatePreview() {
-            const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
-            applySettings(els, controllerState, true);
-        }
-
-        function debouncedSync() {
-            clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(() => {
-                if (currentSessionId) {
-                    const stateToSync = { ...controllerState, updatedAt: serverTimestamp() };
-                    setDoc(doc(db, "sessions", currentSessionId), stateToSync, { merge: true });
+            document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => { 
+                if (e.target.dataset.color) { 
+                    updatePickerState(p.id, e.target.dataset.color, 'color'); 
+                    updateSession(); 
                 }
-            }, 200);
+            }));
+            
+            document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { 
+                const el = e.target.closest('[data-gradient]');
+                if (el) { 
+                    updatePickerState(p.id, el.dataset.gradient, 'gradient'); 
+                    updateSession(); 
+                }
+            }));
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+                updateColorTab(btn.dataset.tab); 
+                updateSession(); 
+            }));
+        }
+        
+        function getSettings() {
+            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
+            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
+
+            return {
+                text: document.getElementById('text-input').value, fontSize: document.getElementById('font-size-slider').value,
+                scrollSpeed: document.getElementById('speed-slider').value, isBlinking: document.getElementById('blink-toggle').checked,
+                colorMode: document.querySelector('.tab-btn.border-indigo-500').dataset.tab,
+                textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
+                backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
+                gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[0].value,
+                gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[1].value,
+                outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
+                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
+                backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
+                textStyle: textStyle,
+                backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
+            };
+        }
+        
+        function updateSession() {
+            if (!currentSessionId) return;
+            const settings = getSettings();
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const settings = getSettings();
+            const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
+            applySettings(els, settings, true);
         }
         
         function createPickers() {
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
-                palette.forEach((item) => {
+                palette.forEach((item, index) => {
                     const value = item.value || item;
                     const el = document.createElement('div');
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
                     el.style.background = value;
                     const dataAttr = prop === 'value' ? 'gradient' : 'color';
                     el.dataset[dataAttr] = value;
+                    if (index === 0) el.classList.add('control-btn-active');
+                    if (id === 'outline-color-picker' && item === '#FF3B30') {
+                        document.querySelector(`#${id} > .control-btn-active`)?.classList.remove('control-btn-active');
+                        el.classList.add('control-btn-active');
+                    }
                     picker.appendChild(el);
                 });
             };
@@ -390,17 +401,22 @@
             create('outline-color-picker', colorPalette);
         }
 
-        function updatePickerState(id, activeValue, prop) { 
+        function updatePickerState(id, activeValue, prop) {
             document.querySelectorAll(`#${id} > div`).forEach(div => {
-                div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
+                div.classList.remove('control-btn-active');
+                if (div.dataset[prop] === activeValue) {
+                    div.classList.add('control-btn-active');
+                }
             });
         }
+        
         function updateButtonGroupState(selector, dataAttr, value) {
             document.querySelectorAll(selector).forEach(btn => {
                 btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr] === value);
                 btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr] !== value);
             });
         }
+
         function updateColorTab(activeTab) {
             document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
             document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
@@ -413,6 +429,7 @@
         document.getElementById('create-display-btn').addEventListener('click', () => { window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
         document.getElementById('open-controller-btn').addEventListener('click', () => { const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
         
+        createPickers();
     </script>
 </body>
 </html>
