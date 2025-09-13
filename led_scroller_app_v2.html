@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v17 (漸層邊框修復版)</title>
+    <title>遠端遙控 LED 跑馬燈 v17. (漸層邊框修復版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -299,7 +299,7 @@
             root.style.setProperty('--outline-color', settings.outlineColor);
 
             textEl.textContent = settings.text;
-            textEl.dataset.text = settings.text; // 【修復】為偽元素設定文字
+            textEl.dataset.text = settings.text; 
 
             const bgMode = settings.bgColorMode || 'solid';
             containerEl.style.background = (bgMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
@@ -325,7 +325,6 @@
             wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
             wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
             
-            // 【修復】確保 class 正確切換
             textEl.classList.remove('text-style-glow', 'text-style-outline');
             if(settings.textStyle && settings.textStyle !== 'normal') {
                 textEl.classList.add(`text-style-${settings.textStyle}`);
