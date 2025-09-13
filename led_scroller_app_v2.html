@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.6.9</title>
+<title>遠端遙控 LED 跑馬燈 v20.7</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,11 +37,17 @@
   }
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
+    /* 使用 text-stroke 來建立真正的文字邊框 */
+    -webkit-text-stroke: 1.5px var(--outline-color); /* 調整 1.5px 來自訂您喜歡的粗細 */
+    -webkit-text-fill-color: transparent; /* 確保漸層能夠顯示 */
+
+    /* (可選) 保留 text-shadow 作為不支援 text-stroke 的舊版瀏覽器的後備方案 */
+    paint-order: stroke fill; /* 優化渲染順序，讓描邊在填充之下 */
     text-shadow:
-      1px 0 0 var(--outline-color),
-     -1px 0 0 var(--outline-color),
-      0 1px 0 var(--outline-color),
-      0 -1px 0 var(--outline-color);
+      1px 1px 0 var(--outline-color),
+     -1px -1px 0 var(--outline-color),
+      1px -1px 0 var(--outline-color),
+     -1px 1px 0 var(--outline-color);
   }
 
   .display-screen{
@@ -1726,6 +1732,7 @@
 </script>
 </body>
 </html>
+
 
 
 
