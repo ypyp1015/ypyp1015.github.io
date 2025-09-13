@@ -791,6 +791,28 @@
       });
     };
     create('text-color-picker', solid16);
+      // --- 自選顏色 ---
+    const textPicker = document.getElementById('text-color-picker');
+    const inputWrap = document.createElement('div');
+    inputWrap.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-600";
+    inputWrap.style.background = "#fff";
+    const colorInput = document.createElement('input');
+    colorInput.type = "color";
+    colorInput.className = "custom-color-input";
+    colorInput.value = "#5588dd";
+    colorInput.title = "自選色碼";
+
+    colorInput.addEventListener('input', e=>{
+      inputWrap.dataset.color = e.target.value;
+      inputWrap.style.background = e.target.value;
+      textPicker.querySelectorAll('div').forEach(div=>div.classList.remove('control-btn-active'));
+      inputWrap.classList.add('control-btn-active');
+      updateSession();
+    });
+
+    inputWrap.appendChild(colorInput);
+    textPicker.appendChild(inputWrap);
+
     create('bg-color-picker', bgSolid16);
     create('grid-color-picker', gridSolid16);
     create('gap-color-picker', gapSolid16);
@@ -836,6 +858,7 @@
 </script>
 </body>
 </html>
+
 
 
 
