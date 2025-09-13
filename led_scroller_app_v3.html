@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v17 (新增 LED 形狀)</title>
+    <title>遠端遙控 LED 跑馬燈 v17.0 (新增 LED 形狀)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -134,7 +134,7 @@
         </div>
 
         <!-- 2. 顯示面板畫面 -->
-        <div id="display-view" class="hidden h-full w-full"><div class="display-screen" id="display-screen"><div id="background-effects-container"></div><div class="marquee-container-wrapper" id="marquee-container-wrapper"><div class="marquee-text" id="marquee-text"><span>請稍候...</span></div></div></div><div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500"><p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p><p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p><div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div></div><button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button></div>
+        <div id="display-view" class="hidden h-full w-full"><div class="display-screen" id="display-screen"><div id="background-effects-container"></div><div class="marquee-container-wrapper" id="marquee-container-wrapper"><div class="marquee-text" id="marquee-text"><span>請稍候...</span></div></div></div><div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500"><p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p><p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p><div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div></div><button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button></div>
 
         <!-- 3. 控制台畫面 -->
         <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
@@ -174,25 +174,67 @@
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc", authDomain: "led-run-c168b.firebaseapp.com", projectId: "led-run-c168b",
-            storageBucket: "led-run-c168b.appspot.com", messagingSenderId: "555557259748", appId: "1:555557259748:web:7a79d35743bcbadbf11ff1", measurementId: "G-7JH5TLX99R"
+            apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
+            authDomain: "led-run-c168b.firebaseapp.com",
+            projectId: "led-run-c168b",
+            storageBucket: "led-run-c168b.appspot.com",
+            messagingSenderId: "555557259748",
+            appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
+            measurementId: "G-7JH5TLX99R"
         };
-        let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
+        let db;
+        try {
+            db = getFirestore(initializeApp(firebaseConfig));
+        } catch (e) {
+            console.error("Firebase 初始化失敗", e);
+            alert("Firebase 連線失敗！");
+        }
 
-        const homeView = document.getElementById('home-view'), displayView = document.getElementById('display-view'), controllerView = document.getElementById('controller-view');
+        const homeView = document.getElementById('home-view'),
+              displayView = document.getElementById('display-view'),
+              controllerView = document.getElementById('controller-view');
+
         let currentSessionId = null, unsubscribe = null;
-        
-        const defaultSettings = {
-            text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10,
-            scrollDirection: "none", isBlinking: false, colorMode: "solid",
-            gradientText: "linear-gradient(90deg, #e94057, #f27121)", gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
-            backgroundEffect: "none", textStyle: "normal", backgroundBorder: "none", outlineColor: "#FF3B30",
-            ledShape: "dot", updatedAt: serverTimestamp()
+
+        // 控制台本地狀態（解耦文字/背景色彩模式）
+        const controllerState = {
+            textColorMode: 'solid', // 'solid' | 'gradient'
+            bgColorMode: 'solid'    // 'solid' | 'gradient'
         };
-        
+
+        const defaultSettings = {
+            text: "Hello 👋",
+            textColor: "#FFFFFF",
+            backgroundColor: "#000000",
+            fontSize: 80,
+            scrollSpeed: 10,
+            scrollDirection: "none",
+            isBlinking: false,
+            // 獨立的色彩模式
+            textColorMode: 'solid',
+            bgColorMode: 'solid',
+            // 舊欄位保留向下相容
+            colorMode: 'solid',
+            gradientText: "linear-gradient(90deg, #e94057, #f27121)",
+            gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
+            backgroundEffect: "none",
+            textStyle: "normal",
+            backgroundBorder: "none",
+            outlineColor: "#FF3B30",
+            ledShape: "dot", // 新增欄位
+            updatedAt: serverTimestamp()
+        };
+
         const colorPalette = ['#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#007AFF', '#5856D6', '#FF2D55'];
-        const gradientPalette = [ { value: 'linear-gradient(90deg, #F37335, #FDC830)' }, { value: 'linear-gradient(90deg, #2193b0, #6dd5ed)' }, { value: 'linear-gradient(90deg, #56ab2f, #a8e063)' }, { value: 'linear-gradient(90deg, #e94057, #f27121)' }, { value: 'linear-gradient(90deg, #4776E6, #8E54E9)' }, { value: 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)'} ];
-        
+        const gradientPalette = [
+            { value: 'linear-gradient(90deg, #F37335, #FDC830)' },
+            { value: 'linear-gradient(90deg, #2193b0, #6dd5ed)' },
+            { value: 'linear-gradient(90deg, #56ab2f, #a8e063)' },
+            { value: 'linear-gradient(90deg, #e94057, #f27121)' },
+            { value: 'linear-gradient(90deg, #4776E6, #8E54E9)' },
+            { value: 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)'}
+        ];
+
         window.addEventListener('load', () => {
             const params = new URLSearchParams(window.location.search);
             if (params.has('display')) startDisplayMode(params.get('display'));
@@ -200,56 +242,75 @@
             else showView('home');
         });
 
-        function showView(name) { [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
+        function showView(name) {
+            [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden'));
+            document.getElementById(`${name}-view`).classList.remove('hidden');
+        }
         function generateId() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
 
         async function startDisplayMode(sessionId) {
-            currentSessionId = sessionId; showView('display');
+            currentSessionId = sessionId;
+            showView('display');
             document.getElementById('session-id-display').textContent = sessionId;
             const url = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
-            document.getElementById('qrcode-container').innerHTML = ''; new QRCode(document.getElementById("qrcode-container"), { text: url, width: 128, height: 128 });
+            document.getElementById('qrcode-container').innerHTML = '';
+            new QRCode(document.getElementById("qrcode-container"), { text: url, width: 128, height: 128 });
             const ref = doc(db, "sessions", sessionId);
             if (!(await getDoc(ref)).exists()) await setDoc(ref, defaultSettings);
-            listenToChanges(sessionId); setupDisplayListeners();
+            listenToChanges(sessionId);
+            setupDisplayListeners();
         }
 
         function listenToChanges(sessionId) {
             if (unsubscribe) unsubscribe();
             const ref = doc(db, "sessions", sessionId);
-            unsubscribe = onSnapshot(ref, (doc) => {
-                if (doc.exists()) {
-                    const settings = { ...defaultSettings, ...doc.data() };
-                    const els = { textEl: document.getElementById('marquee-text'), containerEl: document.getElementById('display-screen'), wrapperEl: document.getElementById('marquee-container-wrapper'), bgEffectEl: document.getElementById('background-effects-container') };
+            unsubscribe = onSnapshot(ref, (docSnap) => {
+                if (docSnap.exists()) {
+                    const raw = docSnap.data();
+                    const settings = {
+                        ...defaultSettings,
+                        ...raw,
+                        textColorMode: raw.textColorMode || raw.colorMode || 'solid',
+                        bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
+                    };
+                    const els = {
+                        textEl: document.getElementById('marquee-text'),
+                        containerEl: document.getElementById('display-screen'),
+                        wrapperEl: document.getElementById('marquee-container-wrapper'),
+                        bgEffectEl: document.getElementById('background-effects-container')
+                    };
                     applySettings(els, settings);
-                } else { document.getElementById('marquee-text').textContent = "此面板ID已失效"; }
+                } else {
+                    document.getElementById('marquee-text').textContent = "此面板ID已失效";
+                }
             });
         }
         
         function applySettings(els, settings, isPreview = false) {
             const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
             if (!textEl || !containerEl || !wrapperEl) return;
-            
+
             const root = containerEl;
             root.style.setProperty('--text-color', settings.textColor);
             root.style.setProperty('--outline-color', settings.outlineColor);
-            
+
             textEl.textContent = settings.text;
-            
-            const finalColorMode = settings.ledShape !== 'dot' ? 'solid' : settings.colorMode;
 
-            containerEl.style.background = finalColorMode === 'gradient' ? settings.gradientBg : settings.backgroundColor;
+            const bgMode = settings.bgColorMode || 'solid';
+            containerEl.style.background = (bgMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
 
-            // Reset styles first
-            textEl.style.color = 'transparent';
+            // --- 全新的文字渲染邏輯 ---
+            textEl.style.color = 'transparent'; // 先讓文字透明
             textEl.style.backgroundImage = 'none';
+            textEl.style.backgroundColor = 'transparent';
             textEl.style.webkitMaskImage = 'none';
             textEl.style.maskImage = 'none';
             textEl.classList.remove('gradient-text');
 
-            if (settings.ledShape !== 'dot') {
+            if (settings.ledShape && settings.ledShape !== 'dot') {
                 const ledSize = isPreview ? '8px' : '12px';
                 let maskImage;
-                const maskColor = 'black';
+                const maskColor = 'black'; 
 
                 switch (settings.ledShape) {
                     case 'square':
@@ -265,10 +326,11 @@
                         break;
                 }
                 
-                textEl.style.backgroundColor = settings.textColor; // The text color becomes the background for the mask
-                if (settings.colorMode === 'gradient') {
+                const txtMode = settings.textColorMode || 'solid';
+                if (txtMode === 'gradient') {
                     textEl.style.backgroundImage = settings.gradientText;
-                    textEl.style.backgroundColor = 'transparent';
+                } else {
+                    textEl.style.backgroundColor = settings.textColor;
                 }
 
                 textEl.style.webkitMaskImage = maskImage;
@@ -277,187 +339,278 @@
                 textEl.style.maskSize = `${ledSize} ${ledSize}`;
                 textEl.style.webkitMaskRepeat = 'repeat';
                 textEl.style.maskRepeat = 'repeat';
-                textEl.classList.add('gradient-text'); // Re-add for clipping effect
+                textEl.classList.add('gradient-text');
             } else {
-                if (settings.colorMode === 'gradient') {
+                const txtMode = settings.textColorMode || 'solid';
+                if (txtMode === 'gradient') {
                     textEl.classList.add('gradient-text');
                     textEl.style.backgroundImage = settings.gradientText;
                 } else {
                     textEl.style.color = settings.textColor;
                 }
             }
-            
+
             let fontSize = isPreview ? Math.min(settings.fontSize, containerEl.clientHeight * 0.8) : settings.fontSize;
             textEl.style.fontSize = `${fontSize}px`;
-            
+
             let anims = [];
             if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
             if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
             textEl.style.animation = anims.join(', ');
-            
+
             wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
             wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
             
-            const currentClasses = textEl.className.split(' ').filter(c => !c.startsWith('text-style-'));
+            const currentClasses = textEl.className.split(' ').filter(c => !c.startsWith('text-style-') && c !== 'gradient-text');
+            const txtModeCheck = settings.textColorMode || 'solid';
+            if (txtModeCheck === 'gradient' || (settings.ledShape && settings.ledShape !== 'dot') ) currentClasses.push('gradient-text');
             if (settings.textStyle !== 'normal') currentClasses.push(`text-style-${settings.textStyle}`);
             textEl.className = currentClasses.join(' ');
-
+            
             containerEl.className = isPreview ? 'display-screen controller-preview' : 'display-screen';
             if (settings.backgroundBorder !== 'none') containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
 
             if (bgEffectEl) {
-                bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes' && !isPreview) ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : '';
+                bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes' && !isPreview)
+                    ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`
+                    : '';
             }
         }
 
         function setupDisplayListeners() {
             const info = document.getElementById('info-overlay');
-            document.getElementById('display-view').addEventListener('click', (e) => { if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
+            document.getElementById('display-view').addEventListener('click', (e) => {
+                if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
+            });
             setTimeout(() => info.classList.add('opacity-0'), 5000);
-            document.getElementById('fullscreen-btn').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+            document.getElementById('fullscreen-btn').addEventListener('click', () => {
+                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+                else document.exitFullscreen();
+            });
         }
         
-        let controllerState = {};
-        
         async function startControllerMode(sessionId) {
-            currentSessionId = sessionId; 
+            currentSessionId = sessionId;
             showView('controller');
             document.getElementById('controller-session-id').textContent = sessionId;
 
-            createPickers(); 
+            createPickers();
             const ref = doc(db, "sessions", sessionId);
             const snap = await getDoc(ref);
-            
-            controllerState = snap.exists() ? { ...defaultSettings, ...snap.data() } : { ...defaultSettings };
-            
-            renderControllerUI();
+            if (snap.exists()) {
+                const raw = snap.data();
+                const loadedSettings = {
+                    ...defaultSettings,
+                    ...raw,
+                    textColorMode: raw.textColorMode || raw.colorMode || 'solid',
+                    bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
+                };
+                controllerState.textColorMode = loadedSettings.textColorMode;
+                controllerState.bgColorMode = loadedSettings.bgColorMode;
+                updateControllerUI(loadedSettings);
+            } else {
+                alert("找不到此面板 ID");
+                window.location.href = window.location.href.split('?')[0];
+                return;
+            }
             setupControllerListeners();
         }
-        
-        function renderControllerUI() {
-            document.getElementById('text-input').value = controllerState.text;
-            document.getElementById('font-size-slider').value = controllerState.fontSize;
-            document.getElementById('font-size-value').textContent = controllerState.fontSize;
-            document.getElementById('speed-slider').value = controllerState.scrollSpeed;
-            document.getElementById('speed-value').textContent = controllerState.scrollSpeed;
-            document.getElementById('blink-toggle').checked = controllerState.isBlinking;
 
-            updateButtonGroupState('.direction-btn', 'direction', controllerState.scrollDirection);
-            updateButtonGroupState('.text-style-btn', 'style', controllerState.textStyle);
-            updateButtonGroupState('.border-style-btn', 'border', controllerState.backgroundBorder);
-            updateButtonGroupState('.bg-effect-btn', 'effect', controllerState.backgroundEffect);
-            updateButtonGroupState('.led-shape-btn', 'shape', controllerState.ledShape);
-            updateColorTab(controllerState.colorMode);
+        function updateControllerUI(settings) {
+            document.getElementById('text-input').value = settings.text;
+            document.getElementById('font-size-slider').value = settings.fontSize;
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-slider').value = settings.scrollSpeed;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            document.getElementById('blink-toggle').checked = settings.isBlinking;
+
+            const tabToShow = (controllerState.textColorMode === 'gradient' && controllerState.bgColorMode === 'solid') ? 'gradient' :
+                              (controllerState.textColorMode === 'solid' && controllerState.bgColorMode === 'gradient') ? 'gradient' : 'solid';
+            updateColorTab(tabToShow);
+
+            updatePickerState('text-color-picker', settings.textColor, 'color');
+            updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
+            updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
+            updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
+            updatePickerState('outline-color-picker', settings.outlineColor, 'color');
             
-            updatePickerState('text-color-picker', controllerState.textColor, 'color');
-            updatePickerState('bg-color-picker', controllerState.backgroundColor, 'color');
-            updatePickerState('text-gradient-picker', controllerState.gradientText, 'gradient');
-            updatePickerState('bg-gradient-picker', controllerState.gradientBg, 'gradient');
-            updatePickerState('outline-color-picker', controllerState.outlineColor, 'color');
+            updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
+            updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
+            updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
+            updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
+            updateButtonGroupState('.led-shape-btn', 'shape', settings.ledShape);
 
-            document.getElementById('outline-color-section').classList.toggle('hidden', controllerState.textStyle !== 'outline');
+            document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
             updatePreview();
         }
-
-        function updateState(newState) {
-            controllerState = { ...controllerState, ...newState };
-            renderControllerUI();
-            debouncedSync();
-        }
-
+        
         function setupControllerListeners() {
-            const handleSimpleInput = (id, key, isCheckbox = false) => {
-                const el = document.getElementById(id);
-                el.addEventListener(isCheckbox ? 'change' : 'input', () => {
-                    updateState({ [key]: isCheckbox ? el.checked : el.value });
-                });
-            };
-            handleSimpleInput('text-input', 'text');
-            handleSimpleInput('font-size-slider', 'fontSize');
-            handleSimpleInput('speed-slider', 'scrollSpeed');
-            handleSimpleInput('blink-toggle', 'isBlinking', true);
-
-            const handleGroupClick = (selector, key) => {
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+                const el = document.getElementById(id); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
+            });
+            
+            const setupButtonGroupListener = (selector) => {
                 document.querySelectorAll(selector).forEach(btn => {
-                    btn.addEventListener('click', () => updateState({ [key]: btn.dataset[key] }));
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+                        updateSession();
+                    });
                 });
             };
-            handleGroupClick('.direction-btn', 'direction');
-            handleGroupClick('.text-style-btn', 'style');
-            handleGroupClick('.border-style-btn', 'border');
-            handleGroupClick('.bg-effect-btn', 'effect');
-            handleGroupClick('.tab-btn', 'colorMode');
-            handleGroupClick('.led-shape-btn', 'ledShape');
+            
+            setupButtonGroupListener('.direction-btn');
+            setupButtonGroupListener('.bg-effect-btn');
+            setupButtonGroupListener('.text-style-btn');
+            setupButtonGroupListener('.border-style-btn');
+            setupButtonGroupListener('.led-shape-btn');
 
-            const handlePickerClick = (pickerId, key, dataAttr) => {
-                document.getElementById(pickerId).addEventListener('click', (e) => {
-                    const target = e.target.closest(`[data-${dataAttr}]`);
-                    if (target) updateState({ [key]: target.dataset[dataAttr] });
-                });
-            };
-            handlePickerClick('text-color-picker', 'textColor', 'color');
-            handlePickerClick('bg-color-picker', 'backgroundColor', 'color');
-            handlePickerClick('outline-color-picker', 'outlineColor', 'color');
-            handlePickerClick('text-gradient-picker', 'gradientText', 'gradient');
-            handlePickerClick('bg-gradient-picker', 'gradientBg', 'gradient');
-        }
-
-        function updatePreview() {
-            const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
-            applySettings(els, controllerState, true);
-        }
-
-        let syncTimeout;
-        function debouncedSync() {
-            clearTimeout(syncTimeout);
-            syncTimeout = setTimeout(() => {
-                if (currentSessionId) {
-                    const stateToSync = { ...controllerState, updatedAt: serverTimestamp() };
-                    setDoc(doc(db, "sessions", currentSessionId), stateToSync, { merge: true });
+            document.getElementById('text-color-picker').addEventListener('click', (e) => {
+                if (e.target.dataset.color) {
+                    controllerState.textColorMode = 'solid';
+                    updatePickerState('text-color-picker', e.target.dataset.color, 'color');
+                    updateSession();
                 }
-            }, 200);
+            });
+            document.getElementById('bg-color-picker').addEventListener('click', (e) => {
+                if (e.target.dataset.color) {
+                    controllerState.bgColorMode = 'solid';
+                    updatePickerState('bg-color-picker', e.target.dataset.color, 'color');
+                    updateSession();
+                }
+            });
+            document.getElementById('outline-color-picker').addEventListener('click', (e) => {
+                if (e.target.dataset.color) {
+                    updatePickerState('outline-color-picker', e.target.dataset.color, 'color');
+                    updateSession();
+                }
+            });
+
+            document.getElementById('text-gradient-picker').addEventListener('click', (e) => {
+                const el = e.target.closest('[data-gradient]');
+                if (el) {
+                    controllerState.textColorMode = 'gradient';
+                    updatePickerState('text-gradient-picker', el.dataset.gradient, 'gradient');
+                    updateSession();
+                }
+            });
+            document.getElementById('bg-gradient-picker').addEventListener('click', (e) => {
+                const el = e.target.closest('[data-gradient]');
+                if (el) {
+                    controllerState.bgColorMode = 'gradient';
+                    updatePickerState('bg-gradient-picker', el.dataset.gradient, 'gradient');
+                    updateSession();
+                }
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+                updateColorTab(btn.dataset.tab);
+            }));
+        }
+        
+        function getSettings() {
+            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
+            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
+
+            return {
+                text: document.getElementById('text-input').value,
+                fontSize: document.getElementById('font-size-slider').value,
+                scrollSpeed: document.getElementById('speed-slider').value,
+                isBlinking: document.getElementById('blink-toggle').checked,
+                textColorMode: controllerState.textColorMode,
+                bgColorMode: controllerState.bgColorMode,
+                colorMode: controllerState.textColorMode,
+                textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
+                backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
+                gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientText,
+                gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientBg,
+                outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
+                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
+                backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
+                textStyle: textStyle,
+                backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
+                ledShape: document.querySelector('.led-shape-btn.bg-indigo-600').dataset.shape,
+            };
+        }
+        
+        function updateSession() {
+            if (!currentSessionId) return;
+            const settings = getSettings();
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const settings = getSettings();
+            const els = {
+                textEl: document.getElementById('preview-marquee-text'),
+                containerEl: document.querySelector('.controller-preview'),
+                wrapperEl: document.getElementById('preview-marquee-container-wrapper')
+            };
+            applySettings(els, settings, true);
         }
         
         function createPickers() {
             const create = (id, palette, prop) => {
                 const picker = document.getElementById(id); picker.innerHTML = '';
-                palette.forEach((item) => {
+                palette.forEach((item, index) => {
                     const value = item.value || item;
                     const el = document.createElement('div');
                     el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
                     el.style.background = value;
                     const dataAttr = prop === 'value' ? 'gradient' : 'color';
                     el.dataset[dataAttr] = value;
+
+                    if (id === 'outline-color-picker') {
+                        if (value === '#FF3B30') el.classList.add('control-btn-active');
+                    } else if (index === 0) {
+                        el.classList.add('control-btn-active');
+                    }
                     picker.appendChild(el);
                 });
             };
-            create('text-color-picker', colorPalette); create('bg-color-picker', colorPalette);
-            create('text-gradient-picker', gradientPalette, 'value'); create('bg-gradient-picker', gradientPalette, 'value');
+            create('text-color-picker', colorPalette);
+            create('bg-color-picker', colorPalette);
+            create('text-gradient-picker', gradientPalette, 'value');
+            create('bg-gradient-picker', gradientPalette, 'value');
             create('outline-color-picker', colorPalette);
         }
 
-        function updatePickerState(id, activeValue, prop) { 
+        function updatePickerState(id, activeValue, prop) {
             document.querySelectorAll(`#${id} > div`).forEach(div => {
                 div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
             });
         }
+        
         function updateButtonGroupState(selector, dataAttr, value) {
             document.querySelectorAll(selector).forEach(btn => {
                 btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr] === value);
                 btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr] !== value);
             });
         }
+
         function updateColorTab(activeTab) {
             document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
             document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab); btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
-                btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab); btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
+                btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab);
+                btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
+                btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab);
+                btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
             });
         }
 
-        document.getElementById('create-display-btn').addEventListener('click', () => { window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
-        document.getElementById('open-controller-btn').addEventListener('click', () => { const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
+        document.getElementById('create-display-btn').addEventListener('click', () => {
+            window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`;
+        });
+        document.getElementById('open-controller-btn').addEventListener('click', () => {
+            const id = document.getElementById('session-id-input').value.trim().toUpperCase();
+            if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`;
+            else alert('請輸入面板 ID');
+        });
         
     </script>
 </body>
