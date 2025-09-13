@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.2 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.3 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -343,13 +343,9 @@
   function gridMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`; }
   function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }
 
-  // ===================================================================
-  // ========= 核心修正 START (The main fix starts here) =========
-  // ===================================================================
   function applySettings(els, settings, isPreview = false) {
     const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
     if (!textEl || !containerEl || !wrapperEl) return;
-
     const root = containerEl;
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
@@ -358,77 +354,52 @@
     root.style.setProperty('--grid-gradient', settings.gradientGrid);
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-
     containerEl.style.background = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
-
-    // --- 文字設定 ---
     textEl.textContent = settings.text;
     const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
     textEl.style.fontSize = `${fontPx}px`;
-
-    // 1. 重置樣式
     textEl.className = 'marquee-text';
     textEl.style.backgroundImage = '';
     textEl.style.color = '';
-
     const isOutline = settings.textStyle === 'outline';
-
-    // 2. 根據是否為邊框模式，決定渲染邏輯
     if (isOutline) {
-        // --- 邊框模式 ---
-        // 強制使用漸層渲染法
-        textEl.classList.add('gradient-text');
-        textEl.classList.add('text-style-outline');
-
-        // 判斷填充內容：是真漸層，還是由純色偽裝的漸層
+        textEl.classList.add('gradient-text','text-style-outline');
         if (settings.textColorMode === 'gradient') {
             textEl.style.backgroundImage = settings.gradientText;
         } else {
-            // 將純色轉為單色漸層
             const solidColor = settings.textColor;
             textEl.style.backgroundImage = `linear-gradient(90deg, ${solidColor}, ${solidColor})`;
         }
     } else {
-        // --- 標準或發光模式 (非邊框) ---
         if (settings.textColorMode === 'gradient') {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
             textEl.style.color = settings.textColor;
         }
-        
         if (settings.textStyle === 'glow') {
             textEl.classList.add('text-style-glow');
         }
     }
-
-    // 動畫
     let anims = [];
     if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
     textEl.style.animation = anims.join(', ');
-    
-    // 置中
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
-
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
-
     containerEl.classList.remove('border-style-solid', 'border-style-rainbow');
     if (settings.backgroundBorder === 'solid') containerEl.classList.add('border-style-solid');
     if (settings.backgroundBorder === 'rainbow') containerEl.classList.add('border-style-rainbow');
-    
     const sizeNum = Number(settings.gridSize);
     const effSize = Number.isFinite(sizeNum) ? sizeNum : gridSizeState || 20;
     const effPreview = isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize));
     const gridSizePx = effPreview + 'px';
     const pair = gridSizePx + ' ' + gridSizePx;
     root.style.setProperty('--grid-size', gridSizePx);
-
     const gridBg = containerEl.querySelector('.grid-bg');
     const gap = containerEl.querySelector('.gap-overlay');
-
     if (gridBg) {
         if (isGridEnabled) {
             gridBg.style.display = 'block';
@@ -440,28 +411,17 @@
                 gridBg.classList.remove('gradient-grid');
                 gridBg.style.background = settings.gridColor;
             }
-        } else {
-            gridBg.style.display = 'none';
-        }
+        } else { gridBg.style.display = 'none'; }
     }
-
     if (gap) {
         if (isGridEnabled && perforateOn) {
             gap.style.display = 'block';
             gap.style.maskSize = pair; gap.style.WebkitMaskSize = pair;
             root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
-        } else {
-            gap.style.display = 'none';
-        }
+        } else { gap.style.display = 'none'; }
     }
-    
-    if (bgEffectEl) {
-        bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : '';
-    }
+    if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
-  // ===================================================================
-  // ========= 核心修正 END (The main fix ends here) ===========
-  // ===================================================================
 
   function setupDisplayListeners(){
     const info = document.getElementById('info-overlay');
@@ -504,7 +464,6 @@
     const snap = await getDoc(ref);
     const settings = snap.exists() ? { ...defaultSettings, ...snap.data() } : defaultSettings;
     if (!snap.exists()) await setDoc(ref, defaultSettings);
-    
     Object.assign(controllerState, { textColorMode: settings.textColorMode, bgColorMode: settings.bgColorMode, gridColorMode: settings.gridColorMode });
     gridSizeState = Number(settings.gridSize) || 20;
     updateControllerUI(settings);
@@ -518,18 +477,14 @@
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
-
     const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
     document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline');
-    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
-
     updateColorTab('color-tab', settings.textColorMode);
     updateColorTab('grid-color-tab', settings.gridColorMode);
-
     updatePickerState('text-color-picker', settings.textColor, 'color');
     updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
     updatePickerState('grid-color-picker', settings.gridColor, 'color');
@@ -538,29 +493,25 @@
     updatePickerState('grid-gradient-picker', settings.gradientGrid, 'gradient');
     updatePickerState('gap-color-picker', settings.gapColor, 'color');
     updatePickerState('outline-color-picker', settings.outlineColor, 'color');
-
     updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
     updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
     updateButtonGroupState('.text-style-btn','style', settings.textStyle);
     updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-
     updatePreview();
   }
 
   function setupControllerListeners(){
     ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle'].forEach(id=>{
       const el = document.getElementById(id);
-      el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
+      el && el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
     });
-
     document.getElementById('grid-size-slider').addEventListener('input', ()=>{
       gridSizeState = parseInt(document.getElementById('grid-size-slider').value,10);
       document.getElementById('grid-size-value').textContent = String(gridSizeState);
       updateSession();
     });
-
     document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const group = e.currentTarget.classList[0];
@@ -569,7 +520,6 @@
             updateSession();
         });
     });
-
     const setupPicker = (pickerId, mode, stateKey) => {
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
@@ -580,7 +530,6 @@
           }
       });
     };
-    
     setupPicker('text-color-picker', 'color', 'textColorMode');
     setupPicker('bg-color-picker', 'color', 'bgColorMode');
     setupPicker('grid-color-picker', 'color', 'gridColorMode');
@@ -589,7 +538,6 @@
     setupPicker('text-gradient-picker', 'gradient', 'textColorMode');
     setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode');
     setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode');
-
     document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tabGroup = btn.closest('#color-tab, #grid-color-tab');
@@ -618,7 +566,7 @@
       gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientBg,
       gradientGrid: document.querySelector('#grid-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientGrid,
       gapColor: document.querySelector('#gap-color-picker .control-btn-active')?.dataset.color || defaultSettings.gapColor,
-      gapAlpha: parseFloat(document.getElementById('gap-alpha-slider')?.value || 1),
+      gapAlpha: document.getElementById('gap-alpha-slider') ? parseFloat(document.getElementById('gap-alpha-slider').value) : 1,
       outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || defaultSettings.outlineColor,
       textStyle: document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style || 'normal',
       backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600')?.dataset.border || 'none',
@@ -634,14 +582,12 @@
   function updateSession(){
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
-        if (!currentSessionId) { 
-            updatePreview(); 
-            return; 
-        }
         const settings = getSettings();
-        // 更新 Controller UI 狀態前先更新預覽，避免閃爍
-        updatePreview(); 
-        setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
+        // 修正：永遠先更新本地 UI，再發送數據
+        updateControllerUI(settings);
+        if (currentSessionId) { 
+            setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
+        }
     }, 100);
   }
 
@@ -705,8 +651,8 @@
     const isMainColorTab = tabGroupId === 'color-tab';
     const solidPanel = document.getElementById(isMainColorTab ? 'solid-color-panel' : 'grid-solid-color-panel');
     const gradientPanel = document.getElementById(isMainColorTab ? 'gradient-color-panel' : 'grid-gradient-color-panel');
-    solidPanel.style.display = activeTab!=='solid' ? 'none' : 'block';
-    gradientPanel.style.display = activeTab!=='gradient' ? 'none' : 'block';
+    if(solidPanel) solidPanel.style.display = activeTab!=='solid' ? 'none' : 'block';
+    if(gradientPanel) gradientPanel.style.display = activeTab!=='gradient' ? 'none' : 'block';
     document.querySelectorAll(`#${tabGroupId} button`).forEach(btn=>{
       btn.classList.toggle('border-indigo-500', btn.dataset.tab===activeTab);
       btn.classList.toggle('text-white', btn.dataset.tab===activeTab);
@@ -720,3 +666,4 @@
 </script>
 </body>
 </html>
+
