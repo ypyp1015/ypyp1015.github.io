@@ -1,180 +1,436 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LED Scroller</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet">
-  <style>
-    @keyframes marqueeAnim {
-      0% { transform: translateX(100%); }
-      100% { transform: translateX(-100%); }
-    }
-    .marquee-text {
-      font-size: var(--font-size, 80px);
-      white-space: nowrap;
-      display: inline-block;
-      transition: text-shadow 0.2s;
-    }
-    .gradient-text {
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-    .text-style-glow {
-      text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
-    }
-    .text-style-outline {
-      text-shadow:
-        -2px -2px 0 var(--outline-color),
-        2px -2px 0 var(--outline-color),
-        -2px 2px 0 var(--outline-color),
-        2px 2px 0 var(--outline-color),
-        -3px 0 0 var(--outline-color),
-        3px 0 0 var(--outline-color),
-        0 -3px 0 var(--outline-color),
-        0 3px 0 var(--outline-color);
-    }
-    .display-screen {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg-color, #000);
-      position: relative;
-      box-sizing: border-box;
-    }
-    .border-style-solid {
-      border: 8px solid white;
-    }
-    .border-style-rainbow {
-      padding: 8px;
-      position: relative;
-      box-shadow: 0 0 25px rgba(255,100,255,0.7);
-    }
-    .border-style-rainbow::before {
-      content: '';
-      position: absolute;
-      top:0; right:0; bottom:0; left:0;
-      z-index:-1;
-      margin:-8px;
-      background: linear-gradient(45deg, red,orange,yellow,green,blue,indigo,violet,red);
-      background-size:400% 400%;
-      animation: rainbow-border-anim 2s linear infinite;
-    }
-    @keyframes rainbow-border-anim {
-      0%{background-position:0% 50%;}
-      100%{background-position:100% 50%;}
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>遠端遙控 LED 跑馬燈 v11.0 (最終修復版)</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts 的點陣字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+    <!-- 引入 QR Code 生成庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        /* 自訂樣式與動畫 */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a;
+        }
+        body {
+            font-family: 'Inter', '微軟正黑體', sans-serif;
+            overscroll-behavior: none;
+        }
+        .led-font {
+            font-family: 'DotGothic16', sans-serif;
+        }
+
+        /* 跑馬燈動畫 */
+        @keyframes marquee-left { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+        @keyframes marquee-right { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
+        @keyframes blink-effect { 50% { opacity: 0; } }
+        
+        /* 背景邊框動畫 */
+        @keyframes rainbow-border-anim {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 眼睛動畫 */
+        @keyframes eye-blink-anim { 0%, 40%, 100% { transform: scaleY(1); } 42% { transform: scaleY(0.1); } }
+        @keyframes eye-move-anim { 0%, 20% { transform: translateX(0); } 30%, 50% { transform: translateX(-10px); } 60%, 80% { transform: translateX(10px); } 90%, 100% { transform: translateX(0); } }
+
+        .marquee-text {
+            font-size: var(--font-size, 80px);
+            color: var(--text-color, #FFFFFF);
+            white-space: nowrap;
+            display: inline-block;
+            text-shadow: none;
+            transition: text-shadow 0.2s;
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        
+        /* 文字風格 */
+        .text-style-glow {
+             text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
+        }
+        /* 【修復】移除此處的 --outline-color 預設值，避免覆蓋 JS 設定 */
+        .text-style-outline {
+             text-shadow: -2px -2px 0 var(--outline-color), 2px -2px 0 var(--outline-color), -2px 2px 0 var(--outline-color), 2px 2px 0 var(--outline-color),
+                          -3px 0 0 var(--outline-color), 3px 0 0 var(--outline-color), 0 -3px 0 var(--outline-color), 0 3px 0 var(--outline-color);
+        }
+        
+        .marquee-container-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            transform: translateY(-50%);
+            overflow: hidden;
+        }
+
+        .display-screen {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-color, #000000);
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        /* 背景邊框風格 */
+        .border-style-solid { border: 8px solid white; }
+        .border-style-rainbow {
+            padding: 8px; /* 【優化】加粗 */
+            border: none;
+            position: relative;
+            box-shadow: 0 0 25px rgba(255, 100, 255, 0.7); /* 【優化】增加光暈 */
+        }
+        .border-style-rainbow::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: -1;
+            margin: -8px; /* 【優化】配合 padding */
+            background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);
+            background-size: 400% 400%;
+            animation: rainbow-border-anim 2s linear infinite; /* 【優化】加速 */
+        }
+
+        #background-effects-container {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; gap: 20px;
+            pointer-events: none;
+        }
+        .eye { width: 80px; height: 80px; background: white; border-radius: 50%; position: relative; animation: eye-blink-anim 5s infinite; overflow: hidden; }
+        .pupil { width: 40px; height: 40px; background: #222; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: eye-move-anim 10s infinite; }
+        
+        .controller-preview { height: 120px; border-radius: 0.5rem; position: relative; overflow: hidden; background: var(--bg-color, #000000); border: 1px solid #374151; box-sizing: border-box; }
+        .controller-preview .marquee-text { font-size: var(--font-size, 40px) !important; }
+        .controller-preview.border-style-solid { border-width: 4px; }
+        .controller-preview.border-style-rainbow { padding: 4px; box-shadow: 0 0 10px rgba(255, 100, 255, 0.7); }
+        .controller-preview.border-style-rainbow::before { margin: -4px; background-size: 400% 400%; animation-duration: 2s; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .control-btn-active { box-shadow: 0 0 0 3px #4f46e5; }
+    </style>
 </head>
-<body class="bg-gray-800 text-white h-screen overflow-hidden">
+<body class="text-white">
 
-  <!-- Home / Controller / Display Views Omitted for Brevity, keep unchanged -->
+    <div id="app-container" class="h-full w-full">
+        <!-- 1. 首頁畫面 -->
+        <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
+             <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1><p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
+            <div class="space-y-4 w-full max-w-xs"><button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">建立新的顯示面板</button><p class="text-gray-500">或</p><div class="relative"><input type="text" id="session-id-input" placeholder="輸入面板 ID 進入控制台" class="w-full bg-gray-800 border border-gray-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"><button id="open-controller-btn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-3 rounded-md">進入</button></div></div>
+            <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
+        </div>
 
-  <!-- 完整原 UI HTML 結構請保留，此處省略 -->
+        <!-- 2. 顯示面板畫面 -->
+        <div id="display-view" class="hidden h-full w-full"><div class="display-screen" id="display-screen"><div id="background-effects-container"></div><div class="marquee-container-wrapper" id="marquee-container-wrapper"><div class="marquee-text" id="marquee-text"><span>請稍候...</span></div></div></div><div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500"><p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p><p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p><div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div></div><button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        <!-- 3. 控制台畫面 -->
+        <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
+             <div class="p-6 max-w-md mx-auto">
+                <div class="flex items-center justify-between mb-4"><h2 class="text-2xl font-bold led-font">控制台</h2><p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p></div>
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label><div class="controller-preview"><div class="marquee-container-wrapper" id="preview-marquee-container-wrapper"><div class="marquee-text" id="preview-marquee-text"></div></div></div></div>
+                <div class="mb-6"><label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label><textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea></div>
+                <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div></div></div>
+                
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
+                
+                <div id="outline-color-section" class="mb-6 hidden"><label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label><div class="flex flex-wrap gap-3" id="outline-color-picker"></div></div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
-      authDomain: "led-run-c168b.firebaseapp.com",
-      projectId: "led-run-c168b",
-      storageBucket: "led-run-c168b.appspot.com",
-      messagingSenderId: "555557259748",
-      appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
-      measurementId: "G-7JH5TLX99R"
-    };
-    let db;
-    try { db = getFirestore(initializeApp(firebaseConfig)); }
-    catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
+                <div class="mb-6"><label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label><input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
+                <div class="mb-6"><label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label><input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label><div class="grid grid-cols-3 gap-3"><button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button><button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button><button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button></div></div>
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label><div class="flex flex-wrap gap-4"><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="blink-toggle" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div><span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span></label></div></div>
+                
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label><div class="flex flex-wrap gap-3"><button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button><button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 漸變</button></div></div>
+                
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label><div class="flex flex-wrap gap-3"><button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button></div></div>
+                <div class="mt-8 mb-4"><a href="./led_scroller_app_v3.html" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a></div>
+            </div>
+        </div>
+    </div>
 
-    // 原本的 view 切換與啟動邏輯保留
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Helpers injected by fixer: reset text paint and target collection
-    function resetTextPaint(el) {
-      if (!el) return;
-      el.classList.remove('gradient-text');
-      el.style.removeProperty('background');
-      el.style.removeProperty('backgroundImage');
-      el.style.removeProperty('color');
-      el.style.removeProperty('-webkit-text-fill-color');
-    }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc", authDomain: "led-run-c168b.firebaseapp.com", projectId: "led-run-c168b",
+            storageBucket: "led-run-c168b.appspot.com", messagingSenderId: "555557259748", appId: "1:555557259748:web:7a79d35743bcbadbf11ff1", measurementId: "G-7JH5TLX99R"
+        };
+        let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
 
-    function getTargets() {
-      const textEls = [
-        document.getElementById('marquee-text'),
-        document.getElementById('preview-marquee-text')
-      ].filter(Boolean);
-      const screens = Array.from(document.querySelectorAll('.display-screen'));
-      return { textEls, screens };
-    }
+        const homeView = document.getElementById('home-view'), displayView = document.getElementById('display-view'), controllerView = document.getElementById('controller-view');
+        let currentSessionId = null, unsubscribe = null;
+        
+        const defaultSettings = {
+            text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10,
+            scrollDirection: "none", isBlinking: false, colorMode: "solid",
+            gradientText: "linear-gradient(90deg, #e94057, #f27121)", gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
+            backgroundEffect: "none", textStyle: "normal", backgroundBorder: "none", outlineColor: "#FF3B30",
+            updatedAt: serverTimestamp()
+        };
+        
+        const colorPalette = ['#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#007AFF', '#5856D6', '#FF2D55'];
+        const gradientPalette = [ { value: 'linear-gradient(90deg, #F37335, #FDC830)' }, { value: 'linear-gradient(90deg, #2193b0, #6dd5ed)' }, { value: 'linear-gradient(90deg, #56ab2f, #a8e063)' }, { value: 'linear-gradient(90deg, #e94057, #f27121)' }, { value: 'linear-gradient(90deg, #4776E6, #8E54E9)' }, { value: 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)'} ];
+        
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('display')) startDisplayMode(params.get('display'));
+            else if (params.has('controller')) startControllerMode(params.get('controller'));
+            else showView('home');
+        });
 
-    // 取代原本的 applySettings
-    function applySettings(settings) {
-      const { textEls, screens } = getTargets();
+        function showView(name) { [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
+        function generateId() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
 
-      // Text content & size
-      textEls.forEach(el => {
-        if (typeof settings.text === 'string') el.textContent = settings.text;
-        if (settings.fontSize) el.style.setProperty('--font-size', settings.fontSize + 'px');
-
-        // Reset previous paint layers before applying new mode
-        resetTextPaint(el);
-
-        if (settings.colorMode === 'gradient') {
-          el.classList.add('gradient-text');
-          if (settings.gradientText) el.style.background = settings.gradientText;
-          el.style.color = 'transparent';
-          el.style.webkitTextFillColor = 'transparent';
-        } else {
-          if (settings.textColor) el.style.color = settings.textColor;
+        async function startDisplayMode(sessionId) {
+            currentSessionId = sessionId; showView('display');
+            document.getElementById('session-id-display').textContent = sessionId;
+            const url = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
+            document.getElementById('qrcode-container').innerHTML = ''; new QRCode(document.getElementById("qrcode-container"), { text: url, width: 128, height: 128 });
+            const ref = doc(db, "sessions", sessionId);
+            if (!(await getDoc(ref)).exists()) await setDoc(ref, defaultSettings);
+            listenToChanges(sessionId); setupDisplayListeners();
         }
 
-        // Text effects
-        el.classList.toggle('text-style-glow', settings.textStyle === 'glow');
-        el.classList.toggle('text-style-outline', settings.textStyle === 'outline');
-        if (settings.outlineColor) {
-          el.style.setProperty('--outline-color', settings.outlineColor);
+        function listenToChanges(sessionId) {
+            if (unsubscribe) unsubscribe();
+            const ref = doc(db, "sessions", sessionId);
+            unsubscribe = onSnapshot(ref, (doc) => {
+                if (doc.exists()) {
+                    const settings = { ...defaultSettings, ...doc.data() };
+                    const els = { textEl: document.getElementById('marquee-text'), containerEl: document.getElementById('display-screen'), wrapperEl: document.getElementById('marquee-container-wrapper'), bgEffectEl: document.getElementById('background-effects-container') };
+                    applySettings(els, settings);
+                } else { document.getElementById('marquee-text').textContent = "此面板ID已失效"; }
+            });
         }
-      });
+        
+        function applySettings(els, settings, isPreview = false) {
+            const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
+            if (!textEl || !containerEl || !wrapperEl) return;
+            
+            const root = containerEl;
+            root.style.setProperty('--text-color', settings.textColor);
+            root.style.setProperty('--outline-color', settings.outlineColor);
+            
+            textEl.textContent = settings.text;
+            containerEl.style.background = settings.colorMode === 'gradient' ? settings.gradientBg : settings.backgroundColor;
+            if (settings.colorMode === 'gradient') { textEl.classList.add('gradient-text'); textEl.style.backgroundImage = settings.gradientText; }
+            else { textEl.classList.remove('gradient-text'); textEl.style.backgroundImage = ''; textEl.style.color = settings.textColor; }
+            
+            let fontSize = isPreview ? Math.min(settings.fontSize, containerEl.clientHeight * 0.8) : settings.fontSize;
+            textEl.style.fontSize = `${fontSize}px`;
+            
+            let anims = [];
+            if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
+            if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
+            textEl.style.animation = anims.join(', ');
+            
+            wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
+            wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
+            
+            textEl.className = 'marquee-text';
+            if (settings.colorMode === 'gradient') textEl.classList.add('gradient-text');
+            if (settings.textStyle !== 'normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-      // Background (solid/gradient) and background border
-      screens.forEach(sc => {
-        sc.style.removeProperty('background');
-        sc.style.removeProperty('backgroundImage');
+            containerEl.className = 'display-screen';
+            if (isPreview) containerEl.classList.add('controller-preview');
+            if (settings.backgroundBorder !== 'none') containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
 
-        if (settings.colorMode === 'gradient') {
-          if (settings.gradientBg) sc.style.background = settings.gradientBg;
-        } else {
-          if (settings.backgroundColor) sc.style.background = settings.backgroundColor;
+            if (bgEffectEl) {
+                bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes' && !isPreview) ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : '';
+            }
         }
 
-        sc.classList.toggle('border-style-rainbow', settings.backgroundBorder === 'rainbow');
-        sc.classList.toggle('border-style-solid', settings.backgroundBorder === 'solid');
-
-        if (settings.backgroundBorder === 'rainbow') {
-          sc.style.removeProperty('border-color');
-          sc.style.removeProperty('border');
+        function setupDisplayListeners() {
+            const info = document.getElementById('info-overlay');
+            document.getElementById('display-view').addEventListener('click', (e) => { if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
+            setTimeout(() => info.classList.add('opacity-0'), 5000);
+            document.getElementById('fullscreen-btn').addEventListener('click', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
         }
-      });
-    }
+        
+        async function startControllerMode(sessionId) {
+            currentSessionId = sessionId; showView('controller');
+            document.getElementById('controller-session-id').textContent = sessionId;
+            const ref = doc(db, "sessions", sessionId);
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+                const loadedSettings = { ...defaultSettings, ...snap.data() };
+                updateControllerUI(loadedSettings);
+            } else { 
+                alert("找不到此面板 ID"); window.location.href = window.location.href.split('?')[0]; return; 
+            }
+            setupControllerListeners();
+        }
 
-    // 原本的 updateColorTab 加一行呼叫預覽更新
-    function updateColorTab(active) {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('border-indigo-500', btn.dataset.tab === active);
-        btn.classList.toggle('border-transparent', btn.dataset.tab !== active);
-      });
-      document.getElementById('solid-color-panel').classList.toggle('hidden', active !== 'solid');
-      document.getElementById('gradient-color-panel').classList.toggle('hidden', active !== 'gradient');
-      try { updatePreview(); } catch (e) {}
-    }
+        function updateControllerUI(settings) {
+            document.getElementById('text-input').value = settings.text;
+            document.getElementById('font-size-slider').value = settings.fontSize;
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-slider').value = settings.scrollSpeed;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            document.getElementById('blink-toggle').checked = settings.isBlinking;
 
-    // 其餘如 setupControllerListeners、getSettings、updatePreview、updateSession、startControllerMode…等邏輯請保留
-    // 只要呼叫 applySettings 即可套用新版樣式
+            updateColorTab(settings.colorMode);
+            updatePickerState('text-color-picker', settings.textColor, 'color');
+            updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
+            updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
+            updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
+            updatePickerState('outline-color-picker', settings.outlineColor, 'color');
+            
+            updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
+            updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
+            updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
+            updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
 
-  </script>
+            document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+            updatePreview();
+        }
+        
+        function setupControllerListeners() {
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+                const el = document.getElementById(id); 
+                el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
+            });
+            
+            const setupButtonGroupListener = (selector) => {
+                 document.querySelectorAll(selector).forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+                        e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+                        updateSession();
+                    });
+                });
+            };
+            
+            setupButtonGroupListener('.direction-btn');
+            setupButtonGroupListener('.bg-effect-btn');
+            setupButtonGroupListener('.text-style-btn');
+            setupButtonGroupListener('.border-style-btn');
+
+            document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => { 
+                if (e.target.dataset.color) { 
+                    updatePickerState(p.id, e.target.dataset.color, 'color'); 
+                    updateSession(); 
+                }
+            }));
+            
+            document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => { 
+                const el = e.target.closest('[data-gradient]');
+                if (el) { 
+                    updatePickerState(p.id, el.dataset.gradient, 'gradient'); 
+                    updateSession(); 
+                }
+            }));
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+                updateColorTab(btn.dataset.tab); 
+                updateSession(); 
+            }));
+        }
+        
+        function getSettings() {
+            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
+            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
+
+            return {
+                text: document.getElementById('text-input').value, fontSize: document.getElementById('font-size-slider').value,
+                scrollSpeed: document.getElementById('speed-slider').value, isBlinking: document.getElementById('blink-toggle').checked,
+                colorMode: document.querySelector('.tab-btn.border-indigo-500').dataset.tab,
+                textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
+                backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
+                gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[0].value,
+                gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || gradientPalette[1].value,
+                outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
+                scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
+                backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
+                textStyle: textStyle,
+                backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
+            };
+        }
+        
+        function updateSession() {
+            if (!currentSessionId) return;
+            const settings = getSettings();
+            document.getElementById('font-size-value').textContent = settings.fontSize;
+            document.getElementById('speed-value').textContent = settings.scrollSpeed;
+            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const settings = getSettings();
+            const els = { textEl: document.getElementById('preview-marquee-text'), containerEl: document.querySelector('.controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') };
+            applySettings(els, settings, true);
+        }
+        
+        function createPickers() {
+            const create = (id, palette, prop) => {
+                const picker = document.getElementById(id); picker.innerHTML = '';
+                palette.forEach((item, index) => {
+                    const value = item.value || item;
+                    const el = document.createElement('div');
+                    el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
+                    el.style.background = value;
+                    const dataAttr = prop === 'value' ? 'gradient' : 'color';
+                    el.dataset[dataAttr] = value;
+                    if (index === 0) el.classList.add('control-btn-active');
+                    if (id === 'outline-color-picker' && item === '#FF3B30') {
+                        document.querySelector(`#${id} > .control-btn-active`)?.classList.remove('control-btn-active');
+                        el.classList.add('control-btn-active');
+                    }
+                    picker.appendChild(el);
+                });
+            };
+            create('text-color-picker', colorPalette); create('bg-color-picker', colorPalette);
+            create('text-gradient-picker', gradientPalette, 'value'); create('bg-gradient-picker', gradientPalette, 'value');
+            create('outline-color-picker', colorPalette);
+        }
+
+        function updatePickerState(id, activeValue, prop) {
+            document.querySelectorAll(`#${id} > div`).forEach(div => {
+                div.classList.remove('control-btn-active');
+                if (div.dataset[prop] === activeValue) {
+                    div.classList.add('control-btn-active');
+                }
+            });
+        }
+        
+        function updateButtonGroupState(selector, dataAttr, value) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr] === value);
+                btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr] !== value);
+            });
+        }
+
+        function updateColorTab(activeTab) {
+            document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
+            document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab); btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
+                btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab); btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
+            });
+        }
+
+        document.getElementById('create-display-btn').addEventListener('click', () => { window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
+        document.getElementById('open-controller-btn').addEventListener('click', () => { const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
+        
+        createPickers();
+    </script>
 </body>
 </html>
+
