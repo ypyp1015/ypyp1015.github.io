@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>遠端遙控 LED 跑馬燈 v11.3（顯示端立即渲染＋保底修復）</title>
+  <title>遠端遙控 LED 跑馬燈 v11.4（純色修復）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,13 +18,16 @@
     @keyframes blink-effect { 50% { opacity:0; } }
     @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
     @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
+
     .display-screen { width:100%; height:100%; overflow:hidden; position:relative; background:var(--bg-color,#000); box-sizing:border-box; }
-    .marquee-container-wrapper { position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; }
-    #background-effects-container { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
+    .marquee-container-wrapper { position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:2; }
+    #background-effects-container { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:0; }
     .eye { width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
     .pupil { width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
+
     .marquee-text { font-size:var(--font-size,80px); color:var(--text-color,#FFFFFF); white-space:nowrap; display:inline-block; text-shadow:none; transition:text-shadow .2s; line-height:1.1; }
     .gradient-text { background-clip:text; -webkit-background-clip:text; color:transparent; -webkit-text-fill-color:transparent; }
+
     .text-style-glow { text-shadow:0 0 8px var(--text-color,#FFFFFF), 0 0 12px var(--text-color,#FFFFFF); }
     .text-style-outline {
       text-shadow:
@@ -37,8 +40,10 @@
          0   -3px 0 var(--outline-color),
          0    3px 0 var(--outline-color);
     }
+
     .controller-preview { height:120px; border-radius:.5rem; position:relative; overflow:hidden; background:var(--bg-color,#000); border:1px solid #374151; box-sizing:border-box; }
     .controller-preview .marquee-text { font-size: var(--font-size,40px) !important; }
+
     .no-scrollbar::-webkit-scrollbar { display:none; }
     .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
     .control-btn-active { box-shadow:0 0 0 3px #4f46e5; }
@@ -79,7 +84,7 @@
       </button>
     </div>
 
-    <!-- 控制台（維持原結構與 ID） -->
+    <!-- 控制台 -->
     <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
       <div class="p-6 max-w-md mx-auto">
         <div class="flex items-center justify-between mb-4">
@@ -173,14 +178,6 @@
           </div>
         </div>
 
-        <div class="mb-6">
-          <label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label>
-          <div class="flex flex-wrap gap-3">
-            <button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-            <button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button>
-          </div>
-        </div>
-
         <div class="mt-8 mb-4">
           <a href="./led_scroller_app_v3.html" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a>
         </div>
@@ -203,8 +200,7 @@
     };
 
     let db;
-    try { db = getFirestore(initializeApp(firebaseConfig)); }
-    catch (e) { console.error("Firebase 初始化失敗", e); }
+    try { db = getFirestore(initializeApp(firebaseConfig)); } catch(e){ console.error("Firebase 初始化失敗", e); }
 
     const homeView = document.getElementById('home-view'),
           displayView = document.getElementById('display-view'),
@@ -212,7 +208,9 @@
 
     let currentSessionId = null, unsubscribe = null;
 
-    // 與原版一致的預設
+    // 模式狀態（關鍵修復）
+    const controllerState = { textColorMode:'solid', bgColorMode:'solid' };
+
     const defaultSettings = {
       text: "Hello 👋",
       textColor: "#FFFFFF",
@@ -233,7 +231,7 @@
       updatedAt: serverTimestamp()
     };
 
-    const colorPalette = ['#FFFFFF', '#000000', '#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#007AFF', '#5856D6', '#FF2D55'];
+    const colorPalette = ['#FFFFFF','#000000','#FF3B30','#FF9500','#FFCC00','#4CD964','#007AFF','#5856D6','#FF2D55'];
     const gradientPalette = [
       { value: 'linear-gradient(90deg, #F37335, #FDC830)' },
       { value: 'linear-gradient(90deg, #2193b0, #6dd5ed)' },
@@ -243,29 +241,23 @@
       { value: 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)'}
     ];
 
-    window.addEventListener('load', () => {
-      const params = new URLSearchParams(window.location.search);
+    window.addEventListener('load', ()=>{
+      const params = new URLSearchParams(location.search);
       if (params.has('display')) startDisplayMode(params.get('display'));
       else if (params.has('controller')) startControllerMode(params.get('controller'));
       else showView('home');
     });
 
-    function showView(name) {
-      [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden'));
-      document.getElementById(`${name}-view`).classList.remove('hidden');
-    }
+    function showView(name){ [homeView,displayView,controllerView].forEach(v=>v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
     function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
-    // 顯示端：立即渲染 + 之後再接即時更新
-    async function startDisplayMode(sessionId) {
-      currentSessionId = sessionId;
-      showView('display');
-      document.getElementById('session-id-display').textContent = sessionId;
-      const url = `${window.location.href.split('?')}?controller=${sessionId}`;
-      document.getElementById('qrcode-container').innerHTML = '';
-      new QRCode(document.getElementById("qrcode-container"), { text: url, width: 128, height: 128 });
+    async function startDisplayMode(sessionId){
+      currentSessionId=sessionId; showView('display');
+      document.getElementById('session-id-display').textContent=sessionId;
+      const url = `${location.href.split('?')}?controller=${sessionId}`;
+      document.getElementById('qrcode-container').innerHTML=''; new QRCode(document.getElementById("qrcode-container"),{ text:url, width:128, height:128 });
 
-      // 1) 立即以本機預設渲染，避免停在「請稍候…」
+      // 先本地渲染，避免停在「請稍候…」
       applySettings({
         textEl: document.getElementById('marquee-text'),
         containerEl: document.getElementById('display-screen'),
@@ -273,72 +265,54 @@
         bgEffectEl: document.getElementById('background-effects-container')
       }, defaultSettings);
 
-      if (!db) { console.warn('無法連線 Firebase，僅顯示本機預覽'); return; }
+      if (!db) return;
+      const ref = doc(db,"sessions",sessionId);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) await setDoc(ref, defaultSettings, { merge:true });
 
-      // 2) 建立文件（若不存在），再開始監聽
-      const ref = doc(db, "sessions", sessionId);
-      try {
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
-          await setDoc(ref, defaultSettings, { merge: true }); // merge:true 保守建立
-        }
-      } catch (e) {
-        console.error('初始化文件失敗', e);
-        // 保持本機預覽，不中斷
-      }
-
-      // 3) 即時監聽（含錯誤回呼）
       listenToChanges(sessionId);
       setupDisplayListeners();
     }
 
-    function listenToChanges(sessionId) {
+    function listenToChanges(sessionId){
       if (unsubscribe) unsubscribe();
-      const ref = doc(db, "sessions", sessionId);
-      unsubscribe = onSnapshot(ref,
-        (docSnap) => {
-          if (docSnap.exists()) {
-            const raw = docSnap.data();
-            const settings = {
-              ...defaultSettings,
-              ...raw,
-              textColorMode: raw.textColorMode || raw.colorMode || 'solid',
-              bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
-            };
-            applySettings({
-              textEl: document.getElementById('marquee-text'),
-              containerEl: document.getElementById('display-screen'),
-              wrapperEl: document.getElementById('marquee-container-wrapper'),
-              bgEffectEl: document.getElementById('background-effects-container')
-            }, settings);
-          } else {
-            // 若被刪除，保留本機預設並給出提示
-            document.getElementById('marquee-text').textContent = "此面板ID已失效";
-          }
-        },
-        (error) => {
-          console.error('onSnapshot 錯誤：', error);
-          // 監聽失敗多由權限或無效查詢造成，保留本機預覽即可
-          // 使用者仍會看到已套用的本機預設畫面
+      const ref = doc(db,"sessions",sessionId);
+      unsubscribe = onSnapshot(ref, (docSnap)=>{
+        if (docSnap.exists()){
+          const raw = docSnap.data();
+          const settings = {
+            ...defaultSettings, ...raw,
+            textColorMode: raw.textColorMode || raw.colorMode || 'solid',
+            bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
+          };
+          applySettings({
+            textEl: document.getElementById('marquee-text'),
+            containerEl: document.getElementById('display-screen'),
+            wrapperEl: document.getElementById('marquee-container-wrapper'),
+            bgEffectEl: document.getElementById('background-effects-container')
+          }, settings);
+        } else {
+          document.getElementById('marquee-text').textContent="此面板ID已失效";
         }
-      );
+      });
     }
 
-    function applySettings(els, settings, isPreview = false) {
+    function applySettings(els, settings, isPreview=false){
       const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
       if (!textEl || !containerEl || !wrapperEl) return;
 
       containerEl.style.setProperty('--text-color', settings.textColor);
       containerEl.style.setProperty('--outline-color', settings.outlineColor);
 
-      // 背景
+      // 背景（依模式）
       const bgMode = settings.bgColorMode || settings.colorMode || 'solid';
-      containerEl.style.background = (bgMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
+      containerEl.style.background = (bgMode==='gradient') ? settings.gradientBg : settings.backgroundColor;
 
       // 文字
       textEl.textContent = settings.text;
       const txtMode = settings.textColorMode || settings.colorMode || 'solid';
-      if (txtMode === 'gradient') {
+      textEl.className='marquee-text';
+      if (txtMode==='gradient'){
         textEl.classList.add('gradient-text');
         textEl.style.backgroundImage = settings.gradientText;
         textEl.style.color = 'transparent';
@@ -353,72 +327,54 @@
       textEl.style.fontSize = `${fontSize}px`;
 
       // 動畫
-      let anims = [];
-      if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
-      if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
-      textEl.style.animation = anims.join(', ');
+      let anims=[]; if (settings.scrollDirection!=='none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`); if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite'); textEl.style.animation = anims.join(', ');
 
-      // 置中（靜止時）
-      wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-      wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
+      // 靜止置中
+      wrapperEl.style.display = settings.scrollDirection==='none' ? 'flex' : 'block';
+      wrapperEl.style.justifyContent = settings.scrollDirection==='none' ? 'center' : '';
 
-      // 文字風格
-      textEl.className = 'marquee-text' + (txtMode === 'gradient' ? ' gradient-text' : '');
-      if (settings.textStyle !== 'normal') textEl.classList.add(`text-style-${settings.textStyle}`);
+      if (settings.textStyle!=='normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-      // 背景特效
-      if (bgEffectEl) {
-        bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes' && !isPreview)
+      if (bgEffectEl){
+        bgEffectEl.innerHTML = (settings.backgroundEffect==='eyes' && !isPreview)
           ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : '';
       }
     }
 
-    function setupDisplayListeners() {
-      const info = document.getElementById('info-overlay');
-      document.getElementById('display-view').addEventListener('click', (e) => {
-        if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
-      });
-      setTimeout(() => info.classList.add('opacity-0'), 5000);
-      document.getElementById('fullscreen-btn').addEventListener('click', () => {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
-      });
+    function setupDisplayListeners(){
+      const info=document.getElementById('info-overlay');
+      document.getElementById('display-view').addEventListener('click',(e)=>{ if(!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
+      setTimeout(()=>info.classList.add('opacity-0'),5000);
+      document.getElementById('fullscreen-btn').addEventListener('click',()=>{ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
     }
 
-    // 控制端
-    async function startControllerMode(sessionId) {
-      currentSessionId = sessionId;
-      showView('controller');
-      document.getElementById('controller-session-id').textContent = sessionId;
-      if (!db) { alert("Firebase 未初始化，控制台無法同步雲端"); return; }
-
-      const ref = doc(db, "sessions", sessionId);
+    async function startControllerMode(sessionId){
+      currentSessionId=sessionId; showView('controller');
+      document.getElementById('controller-session-id').textContent=sessionId;
+      const ref = doc(db,"sessions",sessionId);
       const snap = await getDoc(ref);
-      if (snap.exists()) {
+      let settings = defaultSettings;
+      if (snap.exists()){
         const raw = snap.data();
-        const loadedSettings = {
-          ...defaultSettings,
-          ...raw,
-          textColorMode: raw.textColorMode || raw.colorMode || 'solid',
-          bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
-        };
-        updateControllerUI(loadedSettings);
+        settings = { ...defaultSettings, ...raw, textColorMode: raw.textColorMode || raw.colorMode || 'solid', bgColorMode: raw.bgColorMode || raw.colorMode || 'solid' };
       } else {
-        // 不存在時以預設寫入再載入
-        await setDoc(ref, defaultSettings, { merge: true });
-        updateControllerUI(defaultSettings);
+        await setDoc(ref, defaultSettings, { merge:true });
       }
+      // 將模式寫回狀態（關鍵）
+      controllerState.textColorMode = settings.textColorMode;
+      controllerState.bgColorMode = settings.bgColorMode;
+
+      updateControllerUI(settings);
       setupControllerListeners();
     }
 
-    function updateControllerUI(settings) {
-      document.getElementById('text-input').value = settings.text;
-      document.getElementById('font-size-slider').value = settings.fontSize;
-      document.getElementById('font-size-value').textContent = settings.fontSize;
-      document.getElementById('speed-slider').value = settings.scrollSpeed;
-      document.getElementById('speed-value').textContent = settings.scrollSpeed;
-      document.getElementById('blink-toggle').checked = settings.isBlinking;
+    function updateControllerUI(settings){
+      document.getElementById('text-input').value=settings.text;
+      document.getElementById('font-size-slider').value=settings.fontSize; document.getElementById('font-size-value').textContent=settings.fontSize;
+      document.getElementById('speed-slider').value=settings.scrollSpeed; document.getElementById('speed-value').textContent=settings.scrollSpeed;
+      document.getElementById('blink-toggle').checked=settings.isBlinking;
 
-      const tabToShow = (settings.textColorMode === 'gradient' || settings.bgColorMode === 'gradient') ? 'gradient' : 'solid';
+      const tabToShow=(settings.textColorMode==='gradient'||settings.bgColorMode==='gradient')?'gradient':'solid';
       updateColorTab(tabToShow);
 
       updatePickerState('text-color-picker', settings.textColor, 'color');
@@ -427,57 +383,39 @@
       updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
       updatePickerState('outline-color-picker', settings.outlineColor, 'color');
 
-      updateButtonGroupState('.direction-btn', 'direction', settings.scrollDirection);
-      updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
-      updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
-      updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
+      updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
+      updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
+      updateButtonGroupState('.text-style-btn','style', settings.textStyle);
+      updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
 
-      document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+      document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline');
       updatePreview();
     }
 
-    function setupControllerListeners() {
-      ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => {
-        const el = document.getElementById(id);
-        el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession);
+    function setupControllerListeners(){
+      ['text-input','font-size-slider','speed-slider','blink-toggle'].forEach(id=>{
+        const el=document.getElementById(id);
+        el.addEventListener(el.type==='checkbox'?'change':'input', updateSession);
       });
 
-      const setupButtonGroupListener = (selector) => {
-        document.querySelectorAll(selector).forEach(btn => {
-          btn.addEventListener('click', (e) => {
-            document.querySelectorAll(selector).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-            e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
-            updateSession();
-          });
-        });
-      };
+      const setupButtonGroupListener=(selector)=>{ document.querySelectorAll(selector).forEach(btn=>{ btn.addEventListener('click',(e)=>{ document.querySelectorAll(selector).forEach(b=>b.classList.replace('bg-indigo-600','bg-gray-700')); e.currentTarget.classList.replace('bg-gray-700','bg-indigo-600'); updateSession(); }); }); };
+      setupButtonGroupListener('.direction-btn'); setupButtonGroupListener('.bg-effect-btn'); setupButtonGroupListener('.text-style-btn'); setupButtonGroupListener('.border-style-btn');
 
-      setupButtonGroupListener('.direction-btn');
-      setupButtonGroupListener('.bg-effect-btn');
-      setupButtonGroupListener('.text-style-btn');
-      setupButtonGroupListener('.border-style-btn');
+      // 純色：點擊即切換到 solid
+      document.getElementById('text-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset?.color){ controllerState.textColorMode='solid'; updatePickerState('text-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
+      document.getElementById('bg-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset?.color){ controllerState.bgColorMode='solid'; updatePickerState('bg-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
 
-      document.querySelectorAll('#text-color-picker, #bg-color-picker, #outline-color-picker').forEach(p => p.addEventListener('click', (e) => {
-        if (e.target.dataset?.color) {
-          updatePickerState(p.id, e.target.dataset.color, 'color');
-          updateSession();
-        }
-      }));
+      // 漸層：點擊即切換到 gradient
+      document.getElementById('text-gradient-picker').addEventListener('click',(e)=>{ const el=e.target.closest('[data-gradient]'); if(el){ controllerState.textColorMode='gradient'; updatePickerState('text-gradient-picker', el.dataset.gradient, 'gradient'); updateSession(); }});
+      document.getElementById('bg-gradient-picker').addEventListener('click',(e)=>{ const el=e.target.closest('[data-gradient]'); if(el){ controllerState.bgColorMode='gradient'; updatePickerState('bg-gradient-picker', el.dataset.gradient, 'gradient'); updateSession(); }});
 
-      document.querySelectorAll('#text-gradient-picker, #bg-gradient-picker').forEach(p => p.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-gradient]');
-        if (el) {
-          updatePickerState(p.id, el.dataset.gradient, 'gradient');
-          updateSession();
-        }
-      }));
-
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => updateColorTab(btn.dataset.tab)));
+      // Tab 只切換面板顯示，不改變模式
+      document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>updateColorTab(btn.dataset.tab)));
     }
 
-    function getSettings() {
-      const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
-      document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
+    function getSettings(){
+      const textStyle=document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
+      document.getElementById('outline-color-section').classList.toggle('hidden', textStyle!=='outline');
 
       return {
         text: document.getElementById('text-input').value,
@@ -485,10 +423,9 @@
         scrollSpeed: document.getElementById('speed-slider').value,
         isBlinking: document.getElementById('blink-toggle').checked,
 
-        // 使用 UI 狀態（以目前選中按鈕推斷）
-        textColorMode: document.querySelector('#text-gradient-picker .control-btn-active') ? 'gradient' : 'solid',
-        bgColorMode: document.querySelector('#bg-gradient-picker .control-btn-active') ? 'gradient' : 'solid',
-        colorMode: document.querySelector('#text-gradient-picker .control-btn-active') ? 'gradient' : 'solid',
+        textColorMode: controllerState.textColorMode,
+        bgColorMode: controllerState.bgColorMode,
+        colorMode: controllerState.textColorMode, /* 與舊資料相容 */
 
         textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || '#FFFFFF',
         backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || '#000000',
@@ -503,17 +440,17 @@
       };
     }
 
-    function updateSession() {
-      if (!currentSessionId || !db) return;
-      const settings = getSettings();
-      document.getElementById('font-size-value').textContent = settings.fontSize;
-      document.getElementById('speed-value').textContent = settings.scrollSpeed;
-      setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
+    function updateSession(){
+      if (!currentSessionId || !db) { updatePreview(); return; }
+      const settings=getSettings();
+      document.getElementById('font-size-value').textContent=settings.fontSize;
+      document.getElementById('speed-value').textContent=settings.scrollSpeed;
+      setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
       updatePreview();
     }
 
-    function updatePreview() {
-      const settings = getSettings();
+    function updatePreview(){
+      const settings=getSettings();
       applySettings({
         textEl: document.getElementById('preview-marquee-text'),
         containerEl: document.querySelector('.controller-preview'),
@@ -521,19 +458,20 @@
       }, settings, true);
     }
 
-    function createPickers() {
-      const create = (id, palette, prop) => {
-        const picker = document.getElementById(id); if (!picker) return; picker.innerHTML = '';
-        palette.forEach((item, index) => {
-          const value = item.value || item;
-          const el = document.createElement('div');
-          el.className = 'w-8 h-8 rounded-md cursor-pointer border-2 border-gray-600';
-          el.style.background = value;
-          const dataAttr = prop === 'value' ? 'gradient' : 'color';
-          el.dataset[dataAttr] = value;
-          if (id === 'outline-color-picker') {
-            if (value === '#FF3B30') el.classList.add('control-btn-active');
-          } else if (index === 0) el.classList.add('control-btn-active');
+    function createPickers(){
+      const create=(id,palette,prop)=>{
+        const picker=document.getElementById(id); if(!picker) return; picker.innerHTML='';
+        palette.forEach((item,index)=>{
+          const value=item.value||item;
+          const el=document.createElement('div');
+          el.className='w-8 h-8 rounded-md cursor-pointer border-2 border-gray-600';
+          el.style.background=value;
+          const dataAttr=prop==='value'?'gradient':'color';
+          el.dataset[dataAttr]=value;
+          // 預設只讓純色第一個選中；漸層不預設選中，避免誤判為 gradient 模式
+          if ((id==='text-color-picker' || id==='bg-color-picker' || id==='outline-color-picker') && index===0){
+            el.classList.add('control-btn-active');
+          }
           picker.appendChild(el);
         });
       };
@@ -544,36 +482,30 @@
       create('outline-color-picker', colorPalette);
     }
 
-    function updatePickerState(id, activeValue, prop) {
-      document.querySelectorAll(`#${id} > div`).forEach(div => {
-        div.classList.toggle('control-btn-active', div.dataset[prop] === activeValue);
+    function updatePickerState(id, activeValue, prop){
+      document.querySelectorAll(`#${id} > div`).forEach(div=>{
+        div.classList.toggle('control-btn-active', div.dataset[prop]===activeValue);
       });
     }
-    function updateButtonGroupState(selector, dataAttr, value) {
-      document.querySelectorAll(selector).forEach(btn => {
-        btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr] === value);
-        btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr] !== value);
+    function updateButtonGroupState(selector, dataAttr, value){
+      document.querySelectorAll(selector).forEach(btn=>{
+        btn.classList.toggle('bg-indigo-600', btn.dataset[dataAttr]===value);
+        btn.classList.toggle('bg-gray-700', btn.dataset[dataAttr]!==value);
       });
     }
-    function updateColorTab(activeTab) {
-      document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
-      document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab);
-        btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
-        btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab);
-        btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
+    function updateColorTab(activeTab){
+      document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab!=='solid');
+      document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab!=='gradient');
+      document.querySelectorAll('.tab-btn').forEach(btn=>{
+        btn.classList.toggle('border-indigo-500', btn.dataset.tab===activeTab);
+        btn.classList.toggle('text-white', btn.dataset.tab===activeTab);
+        btn.classList.toggle('border-transparent', btn.dataset.tab!==activeTab);
+        btn.classList.toggle('text-gray-400', btn.dataset.tab!==activeTab);
       });
     }
 
-    document.getElementById('create-display-btn').addEventListener('click', () => {
-      window.location.href = `${window.location.href.split('?')}?display=${generateId()}`;
-    });
-    document.getElementById('open-controller-btn').addEventListener('click', () => {
-      const id = document.getElementById('session-id-input').value.trim().toUpperCase();
-      if (id) window.location.href = `${window.location.href.split('?')}?controller=${id}`;
-      else alert('請輸入面板 ID');
-    });
+    document.getElementById('create-display-btn').addEventListener('click',()=>{ location.href=`${location.href.split('?')}?display=${generateId()}`; });
+    document.getElementById('open-controller-btn').addEventListener('click',()=>{ const id=document.getElementById('session-id-input').value.trim().toUpperCase(); if(id) location.href=`${location.href.split('?')}?controller=${id}`; else alert('請輸入面板 ID'); });
 
     createPickers();
   </script>
