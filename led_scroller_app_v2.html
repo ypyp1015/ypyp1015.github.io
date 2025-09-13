@@ -3,50 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>遠端遙控 LED 跑馬燈 v20.2（LED 混合開關版）</title>
-  <!-- TailwindCSS -->
+  <title>遠端遙控 LED 跑馬燈 v20.3（LED 混合＋分頁修復）</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Dot font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
-  <!-- QRCode -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    /* 基本 */
-    html, body { height: 100%; margin: 0; padding: 0; background-color: #0f172a; }
-    body { font-family: 'Inter','微軟正黑體',sans-serif; overscroll-behavior: none; }
-    .led-font { font-family: 'DotGothic16', sans-serif; }
+    html, body { height:100%; margin:0; padding:0; background-color:#0f172a; }
+    body { font-family:'Inter','微軟正黑體',sans-serif; overscroll-behavior:none; }
+    .led-font { font-family:'DotGothic16',sans-serif; }
 
-    /* 動畫 */
-    @keyframes marquee-left { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
-    @keyframes marquee-right { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
-    @keyframes blink-effect { 50% { opacity: 0; } }
+    @keyframes marquee-left { from{ transform:translateX(100vw);} to{ transform:translateX(-100%);} }
+    @keyframes marquee-right{ from{ transform:translateX(-100%);} to{ transform:translateX(100vw);} }
+    @keyframes blink-effect { 50%{ opacity:0; } }
     @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-    @keyframes eye-blink-anim { 0%,40%,100%{ transform: scaleY(1);} 42%{ transform: scaleY(0.1);} }
-    @keyframes eye-move-anim { 0%,20%{ transform: translateX(0);} 30%,50%{ transform: translateX(-10px);} 60%,80%{ transform: translateX(10px);} 90%,100%{ transform: translateX(0);} }
+    @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
+    @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
 
-    /* 文字 */
     .marquee-text{
-      font-size: var(--font-size, 80px);
-      color: var(--text-color, #FFFFFF);
-      white-space: nowrap;
-      display: inline-block;
-      text-shadow: none;
-      transition: text-shadow .2s, color .2s, background-color .2s;
-      position: relative; 
-      z-index: 1; /* 保證在網格上層 */
-      line-height: 1.1;
+      font-size:var(--font-size,80px);
+      color:var(--text-color,#FFFFFF);
+      white-space:nowrap;
+      display:inline-block;
+      text-shadow:none;
+      transition:text-shadow .2s, color .2s, background-color .2s;
+      position:relative;
+      z-index:1;
+      line-height:1.1;
     }
     .gradient-text{
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent !important;
-      -webkit-text-fill-color: transparent; /* 相容性關鍵，避免漸層時「字消失」 */
+      background-clip:text;
+      -webkit-background-clip:text;
+      color:transparent !important;
+      -webkit-text-fill-color:transparent;
     }
-    .text-style-glow { text-shadow: 0 0 8px var(--text-color,#FFFFFF), 0 0 12px var(--text-color,#FFFFFF); }
-    .text-style-outline {
+    .text-style-glow{ text-shadow:0 0 8px var(--text-color,#FFFFFF), 0 0 12px var(--text-color,#FFFFFF); }
+    .text-style-outline{
       text-shadow:
         -2px -2px 0 var(--outline-color),
          2px -2px 0 var(--outline-color),
@@ -58,62 +52,58 @@
          0    3px 0 var(--outline-color);
     }
 
-    /* LED 相乘混合（開關用） */
+    /* LED 相乘（可開關） */
     .text-multiply{
-      mix-blend-mode: multiply;             /* 與網格相乘混合 */
-      opacity: var(--text-blend-alpha, .9); /* 強度可調 */
+      mix-blend-mode:multiply;
+      opacity:var(--text-blend-alpha,.9);
     }
 
-    /* 容器 */
-    .marquee-container-wrapper { position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); overflow: hidden; z-index: 1; }
-    .display-screen { width: 100%; height: 100%; overflow: hidden; background: var(--bg-color, #000000); position: relative; box-sizing: border-box; }
+    .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:1; }
 
-    /* 背景網格：純裝飾層，不改動文字 */
+    .display-screen{
+      width:100%; height:100%; overflow:hidden; background:var(--bg-color,#000000);
+      position:relative; box-sizing:border-box;
+      isolation:isolate; /* 讓混合只在容器內部進行，提升 LED 相乘的穩定度 */
+    }
+
     .grid-bg{
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      background: var(--grid-color);
-      mask-image: var(--grid-mask-image);
-      -webkit-mask-image: var(--grid-mask-image);
-      mask-size: var(--grid-size) var(--grid-size);
-      -webkit-mask-size: var(--grid-size) var(--grid-size);
-      mask-repeat: repeat;
-      -webkit-mask-repeat: repeat;
-      pointer-events: none;
-      z-index: 0;
+      position:absolute; inset:0; width:100%; height:100%;
+      background:var(--grid-color);
+      mask-image:var(--grid-mask-image);
+      -webkit-mask-image:var(--grid-mask-image);
+      mask-size:var(--grid-size) var(--grid-size);
+      -webkit-mask-size:var(--grid-size) var(--grid-size);
+      mask-repeat:repeat;
+      -webkit-mask-repeat:repeat;
+      pointer-events:none;
+      z-index:0;
     }
-    .grid-bg.gradient-grid { background: var(--grid-gradient); }
+    .grid-bg.gradient-grid{ background:var(--grid-gradient); }
 
-    /* 邊框 */
-    .border-style-solid { border: 8px solid white; }
-    .border-style-rainbow {
-      padding: 8px; border: none; position: relative; box-shadow: 0 0 25px rgba(255, 100, 255, 0.7);
-    }
+    .border-style-solid{ border:8px solid white; }
+    .border-style-rainbow{ padding:8px; border:none; position:relative; box-shadow:0 0 25px rgba(255,100,255,.7); }
     .border-style-rainbow::before{
       content:''; position:absolute; inset:0; z-index:-1; margin:-8px;
-      background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);
-      background-size: 400% 400%; animation: rainbow-border-anim 2s linear infinite;
+      background:linear-gradient(45deg,red,orange,yellow,green,blue,indigo,violet,red);
+      background-size:400% 400%; animation:rainbow-border-anim 2s linear infinite;
     }
 
-    /* 其他裝飾/按鈕層 */
-    #background-effects-container { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
-    .eye { width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
-    .pupil { width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
+    #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
+    .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
+    .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation:eye-move-anim 10s infinite; }
 
-    /* 控制台預覽置頂 */
-    .sticky-preview{ position: sticky; top: 0; z-index: 10; background-color: #1e293b; padding: 1.5rem; margin-left: -1.5rem; margin-right: -1.5rem; }
+    .sticky-preview{ position:sticky; top:0; z-index:10; background-color:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
 
-    /* 控制台預覽 */
-    .controller-preview { height: 120px; border-radius: .5rem; position: relative; overflow: hidden; background: var(--bg-color, #000000); border: 1px solid #374151; box-sizing: border-box; }
-    .controller-preview .marquee-text { font-size: var(--font-size, 40px) !important; }
-    .controller-preview.border-style-solid { border-width: 4px; }
-    .controller-preview.border-style-rainbow { padding: 4px; box-shadow: 0 0 10px rgba(255, 100, 255, 0.7); }
-    .controller-preview.border-style-rainbow::before { margin: -4px; background-size: 400% 400%; animation-duration: 2s; }
+    .controller-preview{ height:120px; border-radius:.5rem; position:relative; overflow:hidden; background:var(--bg-color,#000000); border:1px solid #374151; box-sizing:border-box; }
+    .controller-preview .marquee-text{ font-size:var(--font-size,40px) !important; }
+    .controller-preview.border-style-solid{ border-width:4px; }
+    .controller-preview.border-style-rainbow{ padding:4px; box-shadow:0 0 10px rgba(255,100,255,.7); }
+    .controller-preview.border-style-rainbow::before{ margin:-4px; background-size:400% 400%; animation-duration:2s; }
 
-    /* 雜項 */
     .no-scrollbar::-webkit-scrollbar{ display:none; }
     .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-    .control-btn-active{ box-shadow: 0 0 0 3px #4f46e5; }
-    .control-disabled{ opacity: .4; pointer-events: none; cursor: not-allowed; }
+    .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
+    .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
   </style>
 </head>
 <body class="text-white">
@@ -247,7 +237,7 @@
           </div>
         </div>
 
-        <!-- 新增：LED混合開關 -->
+        <!-- LED 混合 -->
         <div class="mb-6">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED混合</label>
           <div class="flex flex-wrap gap-3">
@@ -255,11 +245,8 @@
             <button data-blend="multiply" class="blend-mode-btn p-3 bg-gray-700 rounded-lg text-sm">LED 相乘</button>
           </div>
           <div class="mt-3">
-            <label for="text-blend-alpha" class="block mb-2 text-sm font-medium text-gray-300">
-              強度: <span id="text-blend-alpha-value">0.90</span>
-            </label>
-            <input id="text-blend-alpha" type="range" min="0.50" max="1.00" step="0.05" value="0.90"
-                   class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            <label for="text-blend-alpha" class="block mb-2 text-sm font-medium text-gray-300">強度: <span id="text-blend-alpha-value">0.90</span></label>
+            <input id="text-blend-alpha" type="range" min="0.50" max="1.00" step="0.05" value="0.90" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
           </div>
         </div>
 
@@ -332,8 +319,7 @@
     };
 
     let db;
-    try { db = getFirestore(initializeApp(firebaseConfig)); }
-    catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
+    try { db = getFirestore(initializeApp(firebaseConfig)); } catch(e){ console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
 
     const homeView = document.getElementById('home-view'),
           displayView = document.getElementById('display-view'),
@@ -341,11 +327,10 @@
 
     let currentSessionId = null, unsubscribe = null;
 
-    const controllerState = {
-      textColorMode: 'solid',     // solid | gradient
-      bgColorMode: 'solid',       // solid | gradient
-      gridColorMode: 'solid'      // solid | gradient
-    };
+    // 模式狀態
+    const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid' };
+    // 分頁狀態（修復自動跳頁）
+    const uiState = { activeColorTab:'solid', activeGridTab:'solid' };
 
     const defaultSettings = {
       text: "Hello 👋",
@@ -364,16 +349,16 @@
       gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
       gradientGrid: "linear-gradient(90deg, #F37335, #FDC830)",
 
-      // LED混合（新增）
-      textBlendMode: 'normal',    // normal | multiply
-      textBlendAlpha: 0.90,       // 0.50 ~ 1.00
+      // LED 混合
+      textBlendMode: 'normal',  // normal | multiply
+      textBlendAlpha: 0.90,
 
       backgroundEffect: "none",
       textStyle: "normal",
       backgroundBorder: "none",
       outlineColor: "#FF3B30",
 
-      gridStyle: "none",          // none | dot | square | diamond
+      gridStyle: "none",
       gridSize: 20,
       gridColor: "#FFFFFF",
 
@@ -390,24 +375,22 @@
       { value: 'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)' }
     ];
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', ()=>{
       const params = new URLSearchParams(window.location.search);
       if (params.has('display')) startDisplayMode(params.get('display'));
       else if (params.has('controller')) startControllerMode(params.get('controller'));
       else showView('home');
     });
 
-    function showView(name){ [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
+    function showView(name){ [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
     function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
     async function startDisplayMode(sessionId){
       currentSessionId = sessionId; showView('display');
       document.getElementById('session-id-display').textContent = sessionId;
       const url = `${window.location.href.split('?')}?controller=${sessionId}`;
-      document.getElementById('qrcode-container').innerHTML = '';
-      new QRCode(document.getElementById("qrcode-container"), { text: url, width: 128, height: 128 });
-
-      const ref = doc(db, "sessions", sessionId);
+      document.getElementById('qrcode-container').innerHTML=''; new QRCode(document.getElementById("qrcode-container"), { text:url, width:128, height:128 });
+      const ref = doc(db,"sessions",sessionId);
       if (!(await getDoc(ref)).exists()) await setDoc(ref, defaultSettings);
       listenToChanges(sessionId);
       setupDisplayListeners();
@@ -415,24 +398,23 @@
 
     function listenToChanges(sessionId){
       if (unsubscribe) unsubscribe();
-      const ref = doc(db, "sessions", sessionId);
-      unsubscribe = onSnapshot(ref, (docSnap) => {
+      const ref = doc(db,"sessions",sessionId);
+      unsubscribe = onSnapshot(ref, (docSnap)=>{
         if (docSnap.exists()){
           const settings = { ...defaultSettings, ...docSnap.data() };
-          const els = {
+          applySettings({
             textEl: document.getElementById('marquee-text'),
             containerEl: document.getElementById('display-screen'),
             wrapperEl: document.getElementById('marquee-container-wrapper'),
             bgEffectEl: document.getElementById('background-effects-container')
-          };
-          applySettings(els, settings);
+          }, settings);
         } else {
           document.getElementById('marquee-text').textContent = "此面板ID已失效";
         }
       });
     }
 
-    function applySettings(els, settings, isPreview = false){
+    function applySettings(els, settings, isPreview=false){
       const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
       if (!textEl || !containerEl || !wrapperEl) return;
 
@@ -445,18 +427,16 @@
 
       const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
 
-      // 背景（底層）
+      // 背景
       containerEl.style.background = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
 
-      // 文字內容與尺寸
+      // 文字
       textEl.textContent = settings.text;
       const fontSize = isPreview ? Math.min(settings.fontSize, containerEl.clientHeight * 0.8) : settings.fontSize;
       textEl.style.fontSize = `${fontSize}px`;
 
-      // 重置文字類別
       textEl.className = 'marquee-text';
 
-      // 文字純色/漸層
       if (settings.textColorMode === 'gradient'){
         textEl.classList.add('gradient-text');
         textEl.style.backgroundImage = settings.gradientText;
@@ -464,11 +444,9 @@
         textEl.style.backgroundImage = '';
         textEl.style.color = settings.textColor;
       }
-
-      // 文字風格
       if (settings.textStyle !== 'normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-      // LED 混合（只要選了 multiply 且有網格就啟動）
+      // LED 混合
       if (settings.textBlendMode === 'multiply' && isGridEnabled){
         textEl.classList.add('text-multiply');
         textEl.style.setProperty('--text-blend-alpha', String(settings.textBlendAlpha || 0.9));
@@ -479,16 +457,16 @@
         textEl.style.opacity = '1';
       }
 
-      // 背景網格（純裝飾）
+      // 網格
       const gridBg = containerEl.querySelector('.grid-bg');
       if (gridBg){
         if (isGridEnabled){
           gridBg.style.display = 'block';
-          const gridSize = isPreview ? settings.gridSize / 2 : settings.gridSize;
+          const gridSize = isPreview ? settings.gridSize/2 : settings.gridSize;
           root.style.setProperty('--grid-size', `${gridSize}px`);
 
           let maskContent;
-          switch (settings.gridStyle){
+          switch(settings.gridStyle){
             case 'square':  maskContent = `<rect width='100' height='100' fill='black'/>`; break;
             case 'diamond': maskContent = `<rect width='70.7' height='70.7' x='14.65' y='14.65' transform='rotate(45 50 50)' fill='black'/>`; break;
             default:        maskContent = `<circle cx='50' cy='50' r='50' fill='black'/>`; break;
@@ -498,7 +476,6 @@
 
           if (settings.gridColorMode === 'gradient'){
             gridBg.classList.add('gradient-grid');
-            // 背景由 CSS 變數 --grid-gradient 供應
           } else {
             gridBg.classList.remove('gradient-grid');
             gridBg.style.background = settings.gridColor;
@@ -520,10 +497,10 @@
 
       // 邊框
       containerEl.className = isPreview ? 'display-screen controller-preview' : 'display-screen';
-      if (isGridEnabled) containerEl.classList.add('grid-enabled'); // 僅做狀態標記
+      if (isGridEnabled) containerEl.classList.add('grid-enabled');
       if (settings.backgroundBorder !== 'none') containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
 
-      // 背景效果
+      // 背景特效
       if (bgEffectEl){
         if (settings.backgroundEffect === 'eyes'){
           bgEffectEl.innerHTML = `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`;
@@ -535,7 +512,7 @@
 
     function setupDisplayListeners(){
       const info = document.getElementById('info-overlay');
-      document.getElementById('display-view').addEventListener('click', (e)=>{
+      document.getElementById('display-view').addEventListener('click',(e)=>{
         if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
       });
       setTimeout(()=>info.classList.add('opacity-0'), 5000);
@@ -550,7 +527,7 @@
       document.getElementById('controller-session-id').textContent = sessionId;
 
       createPickers();
-      const ref = doc(db, "sessions", sessionId);
+      const ref = doc(db,"sessions",sessionId);
       const snap = await getDoc(ref);
       if (snap.exists()){
         const raw = snap.data();
@@ -565,6 +542,7 @@
         controllerState.textColorMode = loaded.textColorMode;
         controllerState.bgColorMode = loaded.bgColorMode;
         controllerState.gridColorMode = loaded.gridColorMode;
+        // 分頁預設維持目前 UI 狀態（不被模式覆蓋）
         updateControllerUI(loaded);
       } else {
         alert("找不到此面板 ID");
@@ -584,13 +562,11 @@
       document.getElementById('grid-size-slider').value = settings.gridSize;
       document.getElementById('grid-size-value').textContent = settings.gridSize;
 
-      // 色彩面板
-      const tabToShow = (controllerState.textColorMode === 'gradient') ? 'gradient' : 'solid';
-      updateColorTab('color-tab', tabToShow);
-      const gridTabToShow = (controllerState.gridColorMode === 'gradient') ? 'gradient' : 'solid';
-      updateColorTab('grid-color-tab', gridTabToShow);
+      // 只用 uiState 決定分頁顯示，避免自動跳頁
+      updateColorTab('color-tab', uiState.activeColorTab);
+      updateColorTab('grid-color-tab', uiState.activeGridTab);
 
-      // 選色器 active 標記
+      // 選色器 active
       updatePickerState('text-color-picker', settings.textColor, 'color');
       updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
       updatePickerState('grid-color-picker', settings.gridColor, 'color');
@@ -617,10 +593,8 @@
       if (alphaEl) alphaEl.value = String(alpha.toFixed(2));
       if (alphaValEl) alphaValEl.textContent = alpha.toFixed(2);
 
-      // 邊框/風格顯示
       document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
 
-      // 網格選項顯示
       const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
       document.getElementById('grid-options-section').classList.toggle('hidden', !isGridEnabled);
 
@@ -664,7 +638,7 @@
         });
       }
 
-      // 選色器
+      // 純色/漸層選色
       document.getElementById('text-color-picker').addEventListener('click',(e)=>{
         if (e.target.dataset.color){ controllerState.textColorMode='solid'; updatePickerState('text-color-picker', e.target.dataset.color, 'color'); updateSession(); }
       });
@@ -688,9 +662,19 @@
         const el = e.target.closest('[data-gradient]'); if (el){ controllerState.gridColorMode='gradient'; updatePickerState('grid-gradient-picker', el.dataset.gradient, 'gradient'); updateSession(); }
       });
 
-      // Tab 切換（只控制顯示，不改模式）
-      document.querySelectorAll('#color-tab .tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ updateColorTab('color-tab', btn.dataset.tab); }));
-      document.querySelectorAll('#grid-color-tab .grid-tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ updateColorTab('grid-color-tab', btn.dataset.tab); }));
+      // 分頁：只更新 UI 狀態，不影響模式，避免自動跳頁
+      document.querySelectorAll('#color-tab .tab-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          uiState.activeColorTab = btn.dataset.tab;
+          updateColorTab('color-tab', uiState.activeColorTab);
+        });
+      });
+      document.querySelectorAll('#grid-color-tab .grid-tab-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          uiState.activeGridTab = btn.dataset.tab;
+          updateColorTab('grid-color-tab', uiState.activeGridTab);
+        });
+      });
     }
 
     function getSettings(){
@@ -720,7 +704,6 @@
         backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
         gridStyle: document.querySelector('.grid-style-btn.bg-indigo-600').dataset.grid,
 
-        // LED 混合
         textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
         textBlendAlpha: parseFloat(document.getElementById('text-blend-alpha')?.value || '0.90')
       };
@@ -728,14 +711,13 @@
 
     let lastSettings = {};
     function updateSession(){
-      if (!currentSessionId) return;
+      if (!currentSessionId) { updatePreview(); return; }
       const settings = getSettings();
-
       const diff = {};
       for (const k in settings){ if (settings[k] !== lastSettings[k]) diff[k] = settings[k]; }
       if (Object.keys(diff).length){
         diff.updatedAt = serverTimestamp();
-        setDoc(doc(db,"sessions",currentSessionId), diff, { merge: true });
+        setDoc(doc(db,"sessions",currentSessionId), diff, { merge:true });
       }
       lastSettings = settings;
       updateControllerUI(settings);
@@ -743,17 +725,16 @@
 
     function updatePreview(){
       const settings = getSettings();
-      const els = {
+      applySettings({
         textEl: document.getElementById('preview-marquee-text'),
         containerEl: document.getElementById('controller-preview'),
         wrapperEl: document.getElementById('preview-marquee-container-wrapper')
-      };
-      applySettings(els, settings, true);
+      }, settings, true);
     }
 
     function createPickers(){
       const create = (id, palette, prop)=>{
-        const picker = document.getElementById(id); picker.innerHTML = '';
+        const picker = document.getElementById(id); picker.innerHTML='';
         palette.forEach((item, index)=>{
           const value = item.value || item;
           const el = document.createElement('div');
@@ -765,13 +746,30 @@
           picker.appendChild(el);
         });
       };
-      create('text-color-picker', colorPalette);
-      create('bg-color-picker', colorPalette);
-      create('grid-color-picker', colorPalette);
-      create('text-gradient-picker', gradientPalette, 'value');
-      create('bg-gradient-picker', gradientPalette, 'value');
-      create('grid-gradient-picker', gradientPalette, 'value');
-      create('outline-color-picker', colorPalette);
+      create('text-color-picker', ['#FFFFFF','#000000','#FF3B30','#FF9500','#FFCC00','#4CD964','#007AFF','#5856D6','#FF2D55']);
+      create('bg-color-picker', ['#000000','#111827','#1f2937','#374151','#ef4444','#22c55e','#3b82f6','#f59e0b','#eab308']);
+      create('grid-color-picker', ['#FFFFFF','#FFD84A','#FFE08A','#FFB703','#F59E0B','#3b82f6','#22c55e','#9333ea','#ef4444']);
+      create('text-gradient-picker', [
+        { value:'linear-gradient(90deg, #F37335, #FDC830)' },
+        { value:'linear-gradient(90deg, #2193b0, #6dd5ed)' },
+        { value:'linear-gradient(90deg, #56ab2f, #a8e063)' },
+        { value:'linear-gradient(90deg, #e94057, #f27121)' },
+        { value:'linear-gradient(90deg, #4776E6, #8E54E9)' },
+        { value:'linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)' }
+      ], 'value');
+      create('bg-gradient-picker', [
+        { value:'linear-gradient(90deg, #374151, #111827)' },
+        { value:'linear-gradient(90deg, #0f2027, #203a43, #2c5364)' },
+        { value:'linear-gradient(90deg, #000000, #1f2937)' },
+        { value:'linear-gradient(90deg, #1e3c72, #2a5298)' },
+        { value:'linear-gradient(90deg, #2b5876, #4e4376)' }
+      ], 'value');
+      create('grid-gradient-picker', [
+        { value:'linear-gradient(90deg, #F37335, #FDC830)' },
+        { value:'linear-gradient(90deg, #ffd166, #fca311)' },
+        { value:'linear-gradient(90deg, #ffed4a, #f59e0b)' }
+      ], 'value');
+      create('outline-color-picker', ['#FF3B30','#FFFFFF','#000000','#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444']);
     }
 
     function updatePickerState(id, activeValue, prop){
@@ -800,7 +798,6 @@
       });
     }
 
-    // 導覽
     document.getElementById('create-display-btn').addEventListener('click', ()=>{
       window.location.href = `${window.location.href.split('?')}?display=${generateId()}`;
     });
