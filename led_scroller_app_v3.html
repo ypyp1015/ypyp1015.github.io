@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v17.0 (新增 LED 形狀)</title>
+    <title>遠端遙控 LED 跑馬燈 v18 (背景網格)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -51,12 +51,12 @@
             white-space: nowrap;
             display: inline-block;
             text-shadow: none;
-            transition: text-shadow 0.2s;
+            transition: text-shadow 0.2s, color 0.2s, background-color 0.2s;
         }
         .gradient-text {
             background-clip: text;
             -webkit-background-clip: text;
-            color: transparent;
+            color: transparent !important; /* 強制透明 */
         }
         
         /* 文字風格 */
@@ -84,6 +84,30 @@
             background: var(--bg-color, #000000);
             position: relative;
             box-sizing: border-box;
+        }
+        
+        /* 【全新】背景網格效果 */
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--text-color);
+            mask-image: var(--grid-mask-image);
+            -webkit-mask-image: var(--grid-mask-image);
+            mask-size: var(--grid-size) var(--grid-size);
+            -webkit-mask-size: var(--grid-size) var(--grid-size);
+            mask-repeat: repeat;
+            -webkit-mask-repeat: repeat;
+        }
+        .grid-bg.gradient-text {
+             background: var(--gradient-text);
+        }
+        .grid-enabled .marquee-text {
+             background: var(--bg-color); /* 文字顏色變成背景色 */
+             color: transparent; /* 文字變透明以挖空 */
+             -webkit-background-clip: text;
+             background-clip: text;
         }
         
         /* 背景邊框風格 */
@@ -122,6 +146,13 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .control-btn-active { box-shadow: 0 0 0 3px #4f46e5; }
+        
+        /* 禁用時的樣式 */
+        .control-disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="text-white">
@@ -134,36 +165,36 @@
         </div>
 
         <!-- 2. 顯示面板畫面 -->
-        <div id="display-view" class="hidden h-full w-full"><div class="display-screen" id="display-screen"><div id="background-effects-container"></div><div class="marquee-container-wrapper" id="marquee-container-wrapper"><div class="marquee-text" id="marquee-text"><span>請稍候...</span></div></div></div><div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500"><p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p><p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p><div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div></div><button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button></div>
+        <div id="display-view" class="hidden h-full w-full"><div class="display-screen" id="display-screen"><div class="grid-bg"></div><div id="background-effects-container"></div><div class="marquee-container-wrapper" id="marquee-container-wrapper"><div class="marquee-text" id="marquee-text"><span>請稍候...</span></div></div></div><div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500"><p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p><p class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded" id="session-id-display"></p><div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div></div><button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></button></div>
 
         <!-- 3. 控制台畫面 -->
         <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
              <div class="p-6 max-w-md mx-auto">
                 <div class="flex items-center justify-between mb-4"><h2 class="text-2xl font-bold led-font">控制台</h2><p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p></div>
-                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label><div class="controller-preview"><div class="marquee-container-wrapper" id="preview-marquee-container-wrapper"><div class="marquee-text" id="preview-marquee-text"></div></div></div></div>
+                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label><div class="controller-preview" id="controller-preview"><div class="grid-bg"></div><div class="marquee-container-wrapper" id="preview-marquee-container-wrapper"><div class="marquee-text" id="preview-marquee-text"></div></div></div></div>
                 <div class="mb-6"><label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label><textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea></div>
-                <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div></div></div>
+                <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字/網格 顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字/網格 漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div></div></div>
                 
-                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
+                <div id="text-style-wrapper" class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
                 <div id="outline-color-section" class="mb-6 hidden"><label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label><div class="flex flex-wrap gap-3" id="outline-color-picker"></div></div>
 
-                <!-- 【新增】LED 形狀 -->
                 <div class="mb-6">
-                    <label class="block mb-2 text-sm font-medium text-gray-300">LED 形狀</label>
+                    <label class="block mb-2 text-sm font-medium text-gray-300">背景網格</label>
                     <div class="flex flex-wrap gap-3">
-                        <button data-shape="dot" class="led-shape-btn p-3 bg-indigo-600 rounded-lg text-sm">⚫️ 點狀</button>
-                        <button data-shape="square" class="led-shape-btn p-3 bg-gray-700 rounded-lg text-sm">⬛️ 方形</button>
-                        <button data-shape="heart" class="led-shape-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 愛心</button>
-                        <button data-shape="star" class="led-shape-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 星形</button>
+                        <button data-grid="none" class="grid-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                        <button data-grid="dot" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
+                        <button data-grid="square" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬛️ 方形</button>
+                        <button data-grid="diamond" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">♦️ 菱形</button>
                     </div>
                 </div>
+                <div id="grid-size-section" class="mb-6 hidden"><label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label><input id="grid-size-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
 
                 <div class="mb-6"><label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label><input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
                 <div class="mb-6"><label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label><input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label><div class="grid grid-cols-3 gap-3"><button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button><button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button><button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button></div></div>
                 <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label><div class="flex flex-wrap gap-4"><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="blink-toggle" class="sr-only peer"><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div><span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span></label></div></div>
-                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label><div class="flex flex-wrap gap-3"><button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button><button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 漸變</button></div></div>
-                <div class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label><div class="flex flex-wrap gap-3"><button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button></div></div>
+                <div id="border-style-wrapper" class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label><div class="flex flex-wrap gap-3"><button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button><button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 漸變</button></div></div>
+                <div id="bg-effect-wrapper" class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label><div class="flex flex-wrap gap-3"><button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button><button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button></div></div>
                 <div class="mt-8 mb-4"><a href="./led_scroller_app_v3.html" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a></div>
             </div>
         </div>
@@ -196,10 +227,9 @@
 
         let currentSessionId = null, unsubscribe = null;
 
-        // 控制台本地狀態（解耦文字/背景色彩模式）
         const controllerState = {
-            textColorMode: 'solid', // 'solid' | 'gradient'
-            bgColorMode: 'solid'    // 'solid' | 'gradient'
+            textColorMode: 'solid',
+            bgColorMode: 'solid'
         };
 
         const defaultSettings = {
@@ -210,10 +240,8 @@
             scrollSpeed: 10,
             scrollDirection: "none",
             isBlinking: false,
-            // 獨立的色彩模式
             textColorMode: 'solid',
             bgColorMode: 'solid',
-            // 舊欄位保留向下相容
             colorMode: 'solid',
             gradientText: "linear-gradient(90deg, #e94057, #f27121)",
             gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
@@ -221,7 +249,8 @@
             textStyle: "normal",
             backgroundBorder: "none",
             outlineColor: "#FF3B30",
-            ledShape: "dot", // 新增欄位
+            gridStyle: "none",
+            gridSize: 20,
             updatedAt: serverTimestamp()
         };
 
@@ -266,13 +295,7 @@
             const ref = doc(db, "sessions", sessionId);
             unsubscribe = onSnapshot(ref, (docSnap) => {
                 if (docSnap.exists()) {
-                    const raw = docSnap.data();
-                    const settings = {
-                        ...defaultSettings,
-                        ...raw,
-                        textColorMode: raw.textColorMode || raw.colorMode || 'solid',
-                        bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
-                    };
+                    const settings = { ...defaultSettings, ...docSnap.data() };
                     const els = {
                         textEl: document.getElementById('marquee-text'),
                         containerEl: document.getElementById('display-screen'),
@@ -293,66 +316,47 @@
             const root = containerEl;
             root.style.setProperty('--text-color', settings.textColor);
             root.style.setProperty('--outline-color', settings.outlineColor);
+            root.style.setProperty('--bg-color', settings.backgroundColor);
+            root.style.setProperty('--gradient-text', settings.gradientText);
+            
+            const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
+            containerEl.classList.toggle('grid-enabled', isGridEnabled);
 
+            // 1. 設定背景
+            containerEl.style.background = settings.bgColorMode === 'gradient' ? settings.gradientBg : settings.backgroundColor;
+
+            // 2. 設定文字
             textEl.textContent = settings.text;
-
-            const bgMode = settings.bgColorMode || 'solid';
-            containerEl.style.background = (bgMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
-
-            // --- 全新的文字渲染邏輯 ---
-            textEl.style.color = 'transparent'; // 先讓文字透明
-            textEl.style.backgroundImage = 'none';
-            textEl.style.backgroundColor = 'transparent';
-            textEl.style.webkitMaskImage = 'none';
-            textEl.style.maskImage = 'none';
-            textEl.classList.remove('gradient-text');
-
-            if (settings.ledShape && settings.ledShape !== 'dot') {
-                const ledSize = isPreview ? '8px' : '12px';
-                let maskImage;
-                const maskColor = 'black'; 
-
-                switch (settings.ledShape) {
-                    case 'square':
-                        maskImage = `linear-gradient(${maskColor}, ${maskColor})`;
-                        break;
-                    case 'heart':
-                        const heartSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="${maskColor}" d="M12 4.248c-3.148-5.402-12-3.825-12 2.944 0 4.661 5.571 9.427 12 15.808 6.43-6.381 12-11.147 12-15.808 0-6.792-8.875-8.306-12-2.944z"/></svg>`;
-                        maskImage = `url("data:image/svg+xml;utf8,${encodeURIComponent(heartSvg)}")`;
-                        break;
-                    case 'star':
-                        const starSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="${maskColor}" d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>`;
-                        maskImage = `url("data:image/svg+xml;utf8,${encodeURIComponent(starSvg)}")`;
-                        break;
-                }
-                
-                const txtMode = settings.textColorMode || 'solid';
-                if (txtMode === 'gradient') {
-                    textEl.style.backgroundImage = settings.gradientText;
-                } else {
-                    textEl.style.backgroundColor = settings.textColor;
-                }
-
-                textEl.style.webkitMaskImage = maskImage;
-                textEl.style.maskImage = maskImage;
-                textEl.style.webkitMaskSize = `${ledSize} ${ledSize}`;
-                textEl.style.maskSize = `${ledSize} ${ledSize}`;
-                textEl.style.webkitMaskRepeat = 'repeat';
-                textEl.style.maskRepeat = 'repeat';
-                textEl.classList.add('gradient-text');
-            } else {
-                const txtMode = settings.textColorMode || 'solid';
-                if (txtMode === 'gradient') {
-                    textEl.classList.add('gradient-text');
-                    textEl.style.backgroundImage = settings.gradientText;
-                } else {
-                    textEl.style.color = settings.textColor;
-                }
-            }
-
             let fontSize = isPreview ? Math.min(settings.fontSize, containerEl.clientHeight * 0.8) : settings.fontSize;
             textEl.style.fontSize = `${fontSize}px`;
 
+            // 3. 處理網格效果
+            const gridBg = containerEl.querySelector('.grid-bg');
+            if (isGridEnabled) {
+                gridBg.style.display = 'block';
+                const gridSize = isPreview ? settings.gridSize / 2 : settings.gridSize;
+                root.style.setProperty('--grid-size', `${gridSize}px`);
+                
+                let maskImage;
+                switch(settings.gridStyle) {
+                    case 'square': maskImage = 'radial-gradient(circle 100px at 50% 50%, black 50%, transparent 51%)'; break;
+                    case 'diamond': maskImage = 'radial-gradient(circle 100px at 50% 50%, black 50%, transparent 51%)'; gridBg.style.transform = 'rotate(45deg) scale(1.414)'; break;
+                    default: maskImage = 'radial-gradient(circle at 50% 50%, black 50%, transparent 51%)'; gridBg.style.transform = 'none'; break;
+                }
+                 root.style.setProperty('--grid-mask-image', maskImage);
+                 
+                if (settings.textColorMode === 'gradient') {
+                    gridBg.classList.add('gradient-text');
+                } else {
+                    gridBg.classList.remove('gradient-text');
+                    gridBg.style.background = ''; // reset gradient
+                }
+
+            } else {
+                gridBg.style.display = 'none';
+            }
+
+            // 4. 動畫
             let anims = [];
             if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
             if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
@@ -361,19 +365,21 @@
             wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
             wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
             
-            const currentClasses = textEl.className.split(' ').filter(c => !c.startsWith('text-style-') && c !== 'gradient-text');
-            const txtModeCheck = settings.textColorMode || 'solid';
-            if (txtModeCheck === 'gradient' || (settings.ledShape && settings.ledShape !== 'dot') ) currentClasses.push('gradient-text');
-            if (settings.textStyle !== 'normal') currentClasses.push(`text-style-${settings.textStyle}`);
-            textEl.className = currentClasses.join(' ');
+            // 5. 其他樣式
+            textEl.className = 'marquee-text';
+            if (settings.textColorMode === 'gradient' && !isGridEnabled) textEl.classList.add('gradient-text');
+            if (settings.textStyle !== 'normal' && !isGridEnabled) textEl.classList.add(`text-style-${settings.textStyle}`);
             
             containerEl.className = isPreview ? 'display-screen controller-preview' : 'display-screen';
-            if (settings.backgroundBorder !== 'none') containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
+            if (settings.backgroundBorder !== 'none' && !isGridEnabled) containerEl.classList.add(`border-style-${settings.backgroundBorder}`);
 
             if (bgEffectEl) {
-                bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes' && !isPreview)
-                    ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`
-                    : '';
+                bgEffectEl.style.display = isGridEnabled ? 'none' : 'flex';
+                if(settings.backgroundEffect === 'eyes' && !isGridEnabled) {
+                     bgEffectEl.innerHTML = `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`;
+                } else {
+                     bgEffectEl.innerHTML = '';
+                }
             }
         }
 
@@ -400,8 +406,7 @@
             if (snap.exists()) {
                 const raw = snap.data();
                 const loadedSettings = {
-                    ...defaultSettings,
-                    ...raw,
+                    ...defaultSettings, ...raw,
                     textColorMode: raw.textColorMode || raw.colorMode || 'solid',
                     bgColorMode: raw.bgColorMode || raw.colorMode || 'solid'
                 };
@@ -423,9 +428,10 @@
             document.getElementById('speed-slider').value = settings.scrollSpeed;
             document.getElementById('speed-value').textContent = settings.scrollSpeed;
             document.getElementById('blink-toggle').checked = settings.isBlinking;
+            document.getElementById('grid-size-slider').value = settings.gridSize;
+            document.getElementById('grid-size-value').textContent = settings.gridSize;
 
-            const tabToShow = (controllerState.textColorMode === 'gradient' && controllerState.bgColorMode === 'solid') ? 'gradient' :
-                              (controllerState.textColorMode === 'solid' && controllerState.bgColorMode === 'gradient') ? 'gradient' : 'solid';
+            const tabToShow = (controllerState.textColorMode === 'gradient') ? 'gradient' : 'solid';
             updateColorTab(tabToShow);
 
             updatePickerState('text-color-picker', settings.textColor, 'color');
@@ -438,14 +444,24 @@
             updateButtonGroupState('.bg-effect-btn', 'effect', settings.backgroundEffect);
             updateButtonGroupState('.text-style-btn', 'style', settings.textStyle);
             updateButtonGroupState('.border-style-btn', 'border', settings.backgroundBorder);
-            updateButtonGroupState('.led-shape-btn', 'shape', settings.ledShape);
+            updateButtonGroupState('.grid-style-btn', 'grid', settings.gridStyle);
 
-            document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+            const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
+            document.getElementById('grid-size-section').classList.toggle('hidden', !isGridEnabled);
+            ['text-style-wrapper', 'outline-color-section', 'border-style-wrapper', 'bg-effect-wrapper'].forEach(id => {
+                document.getElementById(id).classList.toggle('control-disabled', isGridEnabled);
+            });
+             if(isGridEnabled){
+                 document.getElementById('outline-color-section').classList.add('hidden');
+             } else {
+                 document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+             }
+
             updatePreview();
         }
         
         function setupControllerListeners() {
-            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle'].forEach(id => { 
+            ['text-input', 'font-size-slider', 'speed-slider', 'blink-toggle', 'grid-size-slider'].forEach(id => { 
                 const el = document.getElementById(id); 
                 el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession); 
             });
@@ -464,7 +480,7 @@
             setupButtonGroupListener('.bg-effect-btn');
             setupButtonGroupListener('.text-style-btn');
             setupButtonGroupListener('.border-style-btn');
-            setupButtonGroupListener('.led-shape-btn');
+            setupButtonGroupListener('.grid-style-btn');
 
             document.getElementById('text-color-picker').addEventListener('click', (e) => {
                 if (e.target.dataset.color) {
@@ -510,14 +526,12 @@
         }
         
         function getSettings() {
-            const textStyle = document.querySelector('.text-style-btn.bg-indigo-600').dataset.style;
-            document.getElementById('outline-color-section').classList.toggle('hidden', textStyle !== 'outline');
-
-            return {
+            const settings = {
                 text: document.getElementById('text-input').value,
                 fontSize: document.getElementById('font-size-slider').value,
                 scrollSpeed: document.getElementById('speed-slider').value,
                 isBlinking: document.getElementById('blink-toggle').checked,
+                gridSize: document.getElementById('grid-size-slider').value,
                 textColorMode: controllerState.textColorMode,
                 bgColorMode: controllerState.bgColorMode,
                 colorMode: controllerState.textColorMode,
@@ -528,26 +542,40 @@
                 outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
                 scrollDirection: document.querySelector('.direction-btn.bg-indigo-600').dataset.direction,
                 backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600').dataset.effect,
-                textStyle: textStyle,
+                textStyle: document.querySelector('.text-style-btn.bg-indigo-600').dataset.style,
                 backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600').dataset.border,
-                ledShape: document.querySelector('.led-shape-btn.bg-indigo-600').dataset.shape,
+                gridStyle: document.querySelector('.grid-style-btn.bg-indigo-600').dataset.grid,
             };
+            return settings;
         }
         
+        let lastSettings = {};
         function updateSession() {
             if (!currentSessionId) return;
             const settings = getSettings();
-            document.getElementById('font-size-value').textContent = settings.fontSize;
-            document.getElementById('speed-value').textContent = settings.scrollSpeed;
-            setDoc(doc(db, "sessions", currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge: true });
-            updatePreview();
+            
+            // 找出變更的欄位
+            const changedSettings = {};
+            for(const key in settings){
+                if(settings[key] !== lastSettings[key]){
+                    changedSettings[key] = settings[key];
+                }
+            }
+
+            if(Object.keys(changedSettings).length > 0){
+                changedSettings.updatedAt = serverTimestamp();
+                setDoc(doc(db, "sessions", currentSessionId), changedSettings, { merge: true });
+            }
+            
+            lastSettings = settings; // 更新上次的設定
+            updateControllerUI(settings); // 用完整設定更新UI
         }
         
         function updatePreview() {
             const settings = getSettings();
             const els = {
                 textEl: document.getElementById('preview-marquee-text'),
-                containerEl: document.querySelector('.controller-preview'),
+                containerEl: document.getElementById('controller-preview'),
                 wrapperEl: document.getElementById('preview-marquee-container-wrapper')
             };
             applySettings(els, settings, true);
