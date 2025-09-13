@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>遠端遙控 LED 跑馬燈 v20.5（穿孔覆蓋＋完整控制）</title>
+  <title>遠端遙控 LED 跑馬燈 v20.6（穿孔覆蓋＋完整控制）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
       background-clip:text;
       -webkit-background-clip:text;
       color:transparent !important;
-      -webkit-text-fill-color:transparent; /* 保證漸層文字相容性 */
+      -webkit-text-fill-color:transparent; /* 漸層文字相容性 */
     }
     .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
     .text-style-outline{
@@ -65,13 +65,12 @@
     /* 底層：網格顏色層（僅在圖形本體可見） */
     .grid-bg{
       position:absolute; inset:0; z-index:0; pointer-events:none;
-      background: var(--grid-color,#FFD84A);
+      background: var(--grid-color) !important; /* 以變數為準，去除黃色 fallback */
       mask-image: var(--grid-mask-image);
       -webkit-mask-image: var(--grid-mask-image);
       mask-size: var(--grid-size) var(--grid-size);
       -webkit-mask-size: var(--grid-size) var(--grid-size);
-      mask-repeat: repeat;
-      -webkit-mask-repeat: repeat;
+      mask-repeat: repeat; -webkit-mask-repeat: repeat;
     }
     .grid-bg.gradient-grid{ background: var(--grid-gradient); }
 
@@ -79,13 +78,12 @@
     .gap-overlay{
       position:absolute; inset:0; z-index:2; pointer-events:none;
       background: var(--gap-color,#000);
-      opacity: var(--gap-alpha, 1);
+      opacity: var(--gap-alpha,1);
       mask-image: var(--gap-mask-image);
       -webkit-mask-image: var(--gap-mask-image);
       mask-size: var(--grid-size) var(--grid-size);
       -webkit-mask-size: var(--grid-size) var(--grid-size);
-      mask-repeat: repeat;
-      -webkit-mask-repeat: repeat;
+      mask-repeat: repeat; -webkit-mask-repeat: repeat;
       display:none; /* 由開關控制 */
     }
 
@@ -119,7 +117,7 @@
 </head>
 <body class="text-white">
   <div id="app-container" class="h-full w-full">
-    <!-- 首頁 -->
+    <!-- 1. 首頁 -->
     <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
       <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
       <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
@@ -134,7 +132,7 @@
       <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
     </div>
 
-    <!-- 顯示面板 -->
+    <!-- 2. 顯示面板 -->
     <div id="display-view" class="hidden h-full w-full">
       <div class="display-screen" id="display-screen">
         <div class="grid-bg"></div>
@@ -144,6 +142,7 @@
         </div>
         <div class="gap-overlay" id="gap-overlay"></div>
       </div>
+
       <div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500">
         <p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p>
         <p id="session-id-display" class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded"></p>
@@ -154,7 +153,7 @@
       </button>
     </div>
 
-    <!-- 控制台 -->
+    <!-- 3. 控制台 -->
     <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
       <div class="p-6 max-w-md mx-auto">
         <div class="flex items-center justify-between mb-4">
@@ -211,7 +210,7 @@
           </div>
         </div>
 
-        <div id="grid-options-section" class="mb-6 hidden space-y-6">
+        <div id="grid-options-section" class="mb-6 space-y-6">
           <div>
             <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
             <input id="grid-size-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
@@ -234,7 +233,7 @@
           </div>
         </div>
 
-        <!-- 穿孔覆蓋（縫隙）顏色與強度 -->
+        <!-- 穿孔覆蓋（縫隙） -->
         <div class="mb-6">
           <label class="block mb-2 text-sm font-medium text-gray-300">縫隙顏色</label>
           <div class="flex flex-wrap gap-3" id="gap-color-picker"></div>
@@ -275,7 +274,7 @@
           </div>
         </div>
 
-        <!-- 背景邊框與背景動畫 -->
+        <!-- 背景邊框與動畫 -->
         <div id="border-style-wrapper" class="mb-6">
           <label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label>
           <div class="flex flex-wrap gap-3">
@@ -361,7 +360,7 @@
       gradientBg: "linear-gradient(90deg, #111827, #000000)",
       gradientGrid: "linear-gradient(90deg, #F8D24E, #FFD84A)",
 
-      // 穿孔覆蓋開關＋顏色
+      // 穿孔覆蓋
       textBlendMode: 'multiply', // multiply=開、normal=關
       gapColor: "#000000",
       gapAlpha: 1.0,
@@ -485,9 +484,9 @@
         textEl.style.backgroundImage = '';
         textEl.style.color = settings.textColor;
       }
-      if (settings.textStyle && settings.textStyle!=='normal') textEl.classList.add(`text-style-${settings.textStyle}`);
+      if ((settings.textStyle||'normal')!=='normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-      // 閃爍
+      // 閃爍與滾動
       let anims = [];
       if (settings.scrollDirection!=='none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
       if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
@@ -497,29 +496,39 @@
       wrapperEl.style.display = settings.scrollDirection==='none' ? 'flex' : 'block';
       wrapperEl.style.justifyContent = settings.scrollDirection==='none' ? 'center' : '';
 
-      // 底層：網格
+      // 計算並即時指定兩層 mask-size（避免部分 WebView 延遲重繪）
+      const gridSizePx = (isPreview ? settings.gridSize/2 : settings.gridSize) + 'px';
+      root.style.setProperty('--grid-size', gridSizePx);
       const gridBg = containerEl.querySelector('.grid-bg');
+      const gap = containerEl.querySelector('.gap-overlay');
+      if (gridBg) { gridBg.style.maskSize = gridSizePx+' '+gridSizePx; gridBg.style.webkitMaskSize = gridSizePx+' '+gridSizePx; }
+      if (gap)    { gap.style.maskSize    = gridSizePx+' '+gridSizePx; gap.style.webkitMaskSize    = gridSizePx+' '+gridSizePx; }
+
+      // 底層：網格
       if (gridBg){
         if (isGridEnabled){
           gridBg.style.display = 'block';
-          const gridSize = isPreview ? settings.gridSize/2 : settings.gridSize;
-          root.style.setProperty('--grid-size', `${gridSize}px`);
           root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
-          if (settings.gridColorMode==='gradient') gridBg.classList.add('gradient-grid');
-          else { gridBg.classList.remove('gradient-grid'); gridBg.style.background = settings.gridColor; }
+          if (settings.gridColorMode==='gradient'){
+            gridBg.classList.add('gradient-grid');
+            // 顏色由 --grid-gradient 決定
+          } else {
+            gridBg.classList.remove('gradient-grid');
+            root.style.setProperty('--grid-color', settings.gridColor);
+            gridBg.style.background = settings.gridColor; // 保險一次
+          }
         } else {
           gridBg.style.display = 'none';
         }
       }
 
-      // 頂層：穿孔覆蓋（開關沿用 textBlendMode）
-      const gap = containerEl.querySelector('.gap-overlay');
+      // 頂層：穿孔覆蓋（textBlendMode 作為開關；非疊代不混合）
       if (gap){
         if (isGridEnabled && settings.textBlendMode==='multiply'){
           gap.style.display = 'block';
-          const gridSize = isPreview ? settings.gridSize/2 : settings.gridSize;
-          root.style.setProperty('--grid-size', `${gridSize}px`);
           root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
+          root.style.setProperty('--gap-color', settings.gapColor || '#000000');
+          root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
         } else {
           gap.style.display = 'none';
         }
@@ -532,7 +541,7 @@
 
       // 背景特效
       if (bgEffectEl){
-        if (settings.backgroundEffect==='eyes'){
+        if ((settings.backgroundEffect||'none')==='eyes'){
           bgEffectEl.innerHTML = `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`;
         } else {
           bgEffectEl.innerHTML = '';
@@ -617,10 +626,8 @@
         b.classList.toggle('bg-gray-700', b.dataset.blend !== (settings.textBlendMode || 'multiply'));
       });
 
-      // 邊框附屬控制
+      // 附屬顯示
       document.getElementById('outline-color-section').classList.toggle('hidden', (settings.textStyle||'normal')!=='outline');
-
-      // 縫隙不透明度顯示
       const gapAlphaEl = document.getElementById('gap-alpha-slider');
       document.getElementById('gap-alpha-value').textContent = (settings.gapAlpha ?? 1.0).toFixed(2);
       if (gapAlphaEl) gapAlphaEl.value = String((settings.gapAlpha ?? 1.0).toFixed(2));
@@ -648,8 +655,7 @@
         });
       });
       group('.direction-btn'); group('.grid-style-btn'); group('.blend-mode-btn');
-      group('.border-style-btn'); group('.bg-effect-btn');
-      group('.text-style-btn');
+      group('.border-style-btn'); group('.bg-effect-btn'); group('.text-style-btn');
 
       // 選色器
       document.getElementById('text-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset.color){ controllerState.textColorMode='solid'; updatePickerState('text-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
