@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.6.5（完整控制台＋穩定顯示）</title>
+<title>遠端遙控 LED 跑馬燈 v20.6.6（完整控制台＋穩定顯示）</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,6 +76,17 @@
   }
 
   .border-style-solid { border:8px solid white; }
+  .border-style-rainbow {
+    border: 8px solid transparent; border-radius:16px;
+    background:
+      linear-gradient(#111827, #111827) padding-box,
+      conic-gradient(
+        #ff004e, #ffe848, #00ffef, #0047ff, #ff004e
+      ) border-box;
+    animation: rainbow-border-anim 3s linear infinite;
+    background-size: 200% 200%;
+    background-position: 0% 50%;
+  }
 
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
@@ -282,8 +293,11 @@
         <div class="flex flex-wrap gap-3">
           <button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
           <button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button>
+          <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
         </div>
       </div>
+
+
       <div id="bg-effect-wrapper" class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label>
         <div class="flex flex-wrap gap-3">
@@ -437,7 +451,10 @@
 
     // 背景
     containerEl.classList.remove('effect-rainbow-frame');
-    if (settings.backgroundEffect==='rainbow-frame') containerEl.classList.add('effect-rainbow-frame');
+    containerEl.classList.remove('border-style-solid');
+    containerEl.classList.remove('border-style-rainbow');
+    if (settings.backgroundBorder === 'solid') containerEl.classList.add('border-style-solid');
+    if (settings.backgroundBorder === 'rainbow') containerEl.classList.add('border-style-rainbow');
     containerEl.style.background = (settings.bgColorMode==='gradient') ? settings.gradientBg : settings.backgroundColor;
 
     // 文字（漸層不被 color 覆蓋）
@@ -830,3 +847,4 @@
 </script>
 </body>
 </html>
+
