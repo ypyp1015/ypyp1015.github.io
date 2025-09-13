@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>遠端遙控 LED 跑馬燈 v19 (網格優化)</title>
+    <title>遠端遙控 LED 跑馬燈 v20 (重構優化版)</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Google Fonts 的點陣字體 -->
@@ -139,13 +139,17 @@
         
         /* 置頂預覽 */
         .sticky-preview {
-            position: -webkit-sticky; /* for Safari */
+            position: -webkit-sticky;
             position: sticky;
             top: 0;
             z-index: 10;
             background-color: #1e293b; /* bg-gray-800 */
             padding-top: 1.5rem;
             padding-bottom: 1.5rem;
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
         }
 
         .controller-preview { height: 120px; border-radius: 0.5rem; position: relative; overflow: hidden; background: var(--bg-color, #000000); border: 1px solid #374151; box-sizing: border-box; }
@@ -183,7 +187,7 @@
                 <div class="flex items-center justify-between mb-4"><h2 class="text-2xl font-bold led-font">控制台</h2><p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p></div>
                 <div class="sticky-preview"><label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label><div class="controller-preview" id="controller-preview"><div class="grid-bg"></div><div class="marquee-container-wrapper" id="preview-marquee-container-wrapper"><div class="marquee-text" id="preview-marquee-text"></div></div></div></div>
                 <div class="mb-6 mt-6"><label for="text-input" class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label><textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea></div>
-                <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3 mb-4" id="bg-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">網格顏色</label><div class="flex flex-wrap gap-3" id="grid-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2 mb-4" id="bg-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">網格漸層</label><div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div></div></div>
+                <div class="mb-6 p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="color-tab" class="flex -mb-px"><button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label><div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label><div class="flex flex-wrap gap-3" id="bg-color-picker"></div></div><div id="gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label><div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div><label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label><div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div></div></div>
                 
                 <div id="text-style-wrapper" class="mb-6"><label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label><div class="flex flex-wrap gap-3"><button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button><button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button><button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button></div></div>
                 <div id="outline-color-section" class="mb-6 hidden"><label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label><div class="flex flex-wrap gap-3" id="outline-color-picker"></div></div>
@@ -197,7 +201,11 @@
                         <button data-grid="diamond" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">♦️ 菱形</button>
                     </div>
                 </div>
-                <div id="grid-size-section" class="mb-6 hidden"><label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label><input id="grid-size-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
+                
+                <div id="grid-options-section" class="mb-6 hidden space-y-6">
+                    <div><label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label><input id="grid-size-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
+                    <div class="p-4 bg-gray-900 rounded-lg"><div class="flex border-b border-gray-700 mb-4"><div id="grid-color-tab" class="flex -mb-px"><button data-tab="solid" class="grid-tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button><button data-tab="gradient" class="grid-tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button></div></div><div id="grid-solid-color-panel"><label class="block mb-2 text-sm font-medium text-gray-300">網格顏色</label><div class="flex flex-wrap gap-3" id="grid-color-picker"></div></div><div id="grid-gradient-color-panel" class="hidden"><label class="block mb-2 text-sm font-medium text-gray-300">網格漸層</label><div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div></div></div>
+                </div>
 
                 <div class="mb-6"><label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label><input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
                 <div class="mb-6"><label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label><input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"></div>
@@ -444,8 +452,12 @@
             document.getElementById('grid-size-slider').value = settings.gridSize;
             document.getElementById('grid-size-value').textContent = settings.gridSize;
 
-            const tabToShow = (controllerState.textColorMode === 'gradient' || controllerState.gridColorMode === 'gradient') ? 'gradient' : 'solid';
-            updateColorTab(tabToShow);
+            const tabToShow = (controllerState.textColorMode === 'gradient') ? 'gradient' : 'solid';
+            updateColorTab('color-tab', tabToShow);
+
+            const gridTabToShow = (controllerState.gridColorMode === 'gradient') ? 'gradient' : 'solid';
+            updateColorTab('grid-color-tab', gridTabToShow);
+
 
             updatePickerState('text-color-picker', settings.textColor, 'color');
             updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
@@ -462,7 +474,7 @@
             updateButtonGroupState('.grid-style-btn', 'grid', settings.gridStyle);
 
             const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
-            document.getElementById('grid-size-section').classList.toggle('hidden', !isGridEnabled);
+            document.getElementById('grid-options-section').classList.toggle('hidden', !isGridEnabled);
             ['text-style-wrapper', 'outline-color-section', 'border-style-wrapper', 'bg-effect-wrapper'].forEach(id => {
                 document.getElementById(id).classList.toggle('control-disabled', isGridEnabled);
             });
@@ -549,9 +561,12 @@
                     updateSession();
                 }
             });
-
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { 
-                updateColorTab(btn.dataset.tab);
+            
+            document.querySelectorAll('#color-tab .tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+                updateColorTab('color-tab', btn.dataset.tab);
+            }));
+            document.querySelectorAll('#grid-color-tab .grid-tab-btn').forEach(btn => btn.addEventListener('click', () => { 
+                updateColorTab('grid-color-tab', btn.dataset.tab);
             }));
         }
         
@@ -648,16 +663,21 @@
             });
         }
 
-        function updateColorTab(activeTab) {
-            document.getElementById('solid-color-panel').classList.toggle('hidden', activeTab !== 'solid');
-            document.getElementById('gradient-color-panel').classList.toggle('hidden', activeTab !== 'gradient');
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+        function updateColorTab(tabGroupId, activeTab) {
+            const solidPanel = document.getElementById(tabGroupId === 'color-tab' ? 'solid-color-panel' : 'grid-solid-color-panel');
+            const gradientPanel = document.getElementById(tabGroupId === 'color-tab' ? 'gradient-color-panel' : 'grid-gradient-color-panel');
+            
+            solidPanel.classList.toggle('hidden', activeTab !== 'solid');
+            gradientPanel.classList.toggle('hidden', activeTab !== 'gradient');
+            
+            document.querySelectorAll(`#${tabGroupId} button`).forEach(btn => {
                 btn.classList.toggle('border-indigo-500', btn.dataset.tab === activeTab);
                 btn.classList.toggle('text-white', btn.dataset.tab === activeTab);
                 btn.classList.toggle('border-transparent', btn.dataset.tab !== activeTab);
                 btn.classList.toggle('text-gray-400', btn.dataset.tab !== activeTab);
             });
         }
+
 
         document.getElementById('create-display-btn').addEventListener('click', () => {
             window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`;
