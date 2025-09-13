@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>遠端遙控 LED 跑馬燈 v20.6.1（網格大小修復）</title>
+  <title>遠端遙控 LED 跑馬燈 v20.6.2（網格大小穩健修復）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
       background-clip:text;
       -webkit-background-clip:text;
       color:transparent !important;
-      -webkit-text-fill-color:transparent;
+      -webkit-text-fill-color:transparent; /* 漸層文字相容性 */
     }
     .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
     .text-style-outline{
@@ -58,20 +58,20 @@
       width:100%; height:100%; overflow:hidden; position:relative;
       background:var(--bg-color,#000);
       box-sizing:border-box;
-      isolation:isolate;
+      isolation:isolate; /* 合成域隔離，避免外層干擾 */
     }
     .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:1; }
 
     /* 底層：網格（圖形本體可見） */
     .grid-bg{
       position:absolute; inset:0; z-index:0; pointer-events:none;
-      background: var(--grid-color) !important;              /* 強制以變數為準 */
+      background: var(--grid-color) !important;              /* 以變數為準，避免 fallback 覆蓋 */
       mask-image: var(--grid-mask-image);
       -webkit-mask-image: var(--grid-mask-image);
       mask-size: var(--grid-size) var(--grid-size);
       -webkit-mask-size: var(--grid-size) var(--grid-size);
       mask-position: left top; -webkit-mask-position: left top;
-      mask-repeat: repeat; -webkit-mask-repeat: repeat;
+      mask-repeat: repeat; -webkit-mask-repeat: repeat;      /* 重複圖磚遮罩 */
     }
     .grid-bg.gradient-grid{ background: var(--grid-gradient); }
 
@@ -258,7 +258,7 @@
           <div class="flex flex-wrap gap-3">
             <button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button>
             <button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button>
-            <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button>
+            <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text.sm">✏️ 邊框</button>
           </div>
         </div>
         <div id="outline-color-section" class="mb-6 hidden">
@@ -266,7 +266,7 @@
           <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
         </div>
         <div class="mb-6">
-          <label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label>
+          <label class="block mb-2 text.sm font-medium text-gray-300">文字特效</label>
           <div class="flex flex-wrap gap-4">
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="blink-toggle" class="sr-only peer">
@@ -341,9 +341,12 @@
 
     let currentSessionId = null, unsubscribe = null;
 
-    // 狀態
+    // 模式/分頁狀態
     const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid' };
     const uiState = { activeColorTab:'solid', activeGridTab:'solid' };
+
+    // 穩健的網格大小狀態（避免 DOM 讀到空字串）
+    let gridSizeState = 20;
 
     const defaultSettings = {
       text: "Hello 👋",
@@ -443,13 +446,12 @@
       });
     }
 
-    // 底層網格遮罩（露出圖形本體）
+    // 遮罩圖磚
     function gridMaskSVG(shape){
       if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='12' y='12' width='76' height='76' rx='12' ry='12' fill='black'/></svg>`;
       if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='20' y='20' width='60' height='60' transform='rotate(45 50 50)' fill='black'/></svg>`;
       return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='44' fill='black'/></svg>`;
     }
-    // 頂層穿孔遮罩（孔內透明）
     function gapMaskSVG(shape){
       if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M12 12H88V88H12Z'/></svg>`;
       if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 10L90 50 50 90 10 50Z'/></svg>`;
@@ -471,12 +473,12 @@
 
       const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
 
-      // 背景（底色或漸層）
+      // 背景
       containerEl.style.background = (settings.bgColorMode==='gradient') ? settings.gradientBg : settings.backgroundColor;
 
       // 文字
       textEl.textContent = settings.text;
-      const fontPx = isPreview ? Math.min(settings.fontSize, containerEl.clientHeight*0.8) : settings.fontSize;
+      const fontPx = isPreview ? Math.min(Number(settings.fontSize)||80, containerEl.clientHeight*0.8) : (Number(settings.fontSize)||80);
       textEl.style.fontSize = `${fontPx}px`;
       textEl.className = 'marquee-text';
       if (settings.textColorMode==='gradient'){
@@ -488,9 +490,9 @@
       }
       if ((settings.textStyle||'normal')!=='normal') textEl.classList.add(`text-style-${settings.textStyle}`);
 
-      // 閃爍與滾動
+      // 閃爍/滾動
       let anims = [];
-      if (settings.scrollDirection!=='none') anims.push(`${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`);
+      if (settings.scrollDirection!=='none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed)||10}s linear infinite`);
       if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
       textEl.style.animation = anims.join(', ');
 
@@ -498,15 +500,20 @@
       wrapperEl.style.display = settings.scrollDirection==='none' ? 'flex' : 'block';
       wrapperEl.style.justifyContent = settings.scrollDirection==='none' ? 'center' : '';
 
-      // 計算並即時指定兩層 mask-size 與對齊（Hotfix）
-      const gridSizePx = (isPreview ? settings.gridSize/2 : settings.gridSize) + 'px';
+      // 網格大小（穩健寫入：變數 + 兩層行內樣式）
+      const sizeNum = Number(settings.gridSize);
+      const effSize = Number.isFinite(sizeNum) ? sizeNum : gridSizeState || 20;
+      const effPreview = isPreview ? Math.max(5, Math.min(100, Math.round(effSize/2))) : Math.max(5, Math.min(100, effSize));
+      const gridSizePx = effPreview + 'px';
       const pair = gridSizePx + ' ' + gridSizePx;
       root.style.setProperty('--grid-size', gridSizePx);
+
       const gridBg = containerEl.querySelector('.grid-bg');
       const gap = containerEl.querySelector('.gap-overlay');
+
       if (gridBg) {
         gridBg.style.maskSize = pair;
-        gridBg.style.WebkitMaskSize = pair;          // 注意大小寫
+        gridBg.style.WebkitMaskSize = pair;           /* 注意 WebKit 屬性大小寫 */
         gridBg.style.maskPosition = 'left top';
         gridBg.style.WebkitMaskPosition = 'left top';
       }
@@ -534,7 +541,7 @@
         }
       }
 
-      // 頂層：穿孔覆蓋（textBlendMode 作為開關）
+      // 頂層：穿孔覆蓋
       if (gap){
         if (isGridEnabled && settings.textBlendMode==='multiply'){
           gap.style.display = 'block';
@@ -594,6 +601,7 @@
         controllerState.textColorMode = loaded.textColorMode;
         controllerState.bgColorMode = loaded.bgColorMode;
         controllerState.gridColorMode = loaded.gridColorMode;
+        gridSizeState = Number(loaded.gridSize) || 20;   /* 初始化穩健尺寸狀態 */
         updateControllerUI(loaded);
       } else {
         alert("找不到此面板 ID");
@@ -609,8 +617,11 @@
       document.getElementById('font-size-value').textContent = settings.fontSize;
       document.getElementById('speed-slider').value = settings.scrollSpeed;
       document.getElementById('speed-value').textContent = settings.scrollSpeed;
-      document.getElementById('grid-size-slider').value = settings.gridSize;
-      document.getElementById('grid-size-value').textContent = settings.gridSize;
+
+      // 以狀態為主，避免 DOM 讀值空字串
+      const gsz = Math.max(5, Math.min(100, Number(gridSizeState)||20));
+      document.getElementById('grid-size-slider').value = String(gsz);
+      document.getElementById('grid-size-value').textContent = String(gsz);
       document.getElementById('blink-toggle').checked = !!settings.isBlinking;
 
       updateColorTab('color-tab', uiState.activeColorTab);
@@ -635,22 +646,29 @@
       });
 
       document.getElementById('outline-color-section').classList.toggle('hidden', (settings.textStyle||'normal')!=='outline');
-      const gapAlphaEl = document.getElementById('gap-alpha-slider');
-      document.getElementById('gap-alpha-value').textContent = (settings.gapAlpha ?? 1.0).toFixed(2);
-      if (gapAlphaEl) gapAlphaEl.value = String((settings.gapAlpha ?? 1.0).toFixed(2));
 
       updatePreview();
     }
 
     function setupControllerListeners(){
-      ['text-input','font-size-slider','speed-slider','grid-size-slider','gap-alpha-slider','blink-toggle'].forEach(id=>{
+      // 一般輸入（排除 grid-size，改用專屬穩健處理）
+      ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle'].forEach(id=>{
         const el = document.getElementById(id);
-        el.addEventListener(el.type==='checkbox' ? 'change':'input', ()=>{
-          if (id==='grid-size-slider') document.getElementById('grid-size-value').textContent = el.value;
-          if (id==='gap-alpha-slider') document.getElementById('gap-alpha-value').textContent = parseFloat(el.value).toFixed(2);
-          updateSession();
-        });
+        el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
       });
+
+      // 穩健網格大小處理：input/change/pointerup/touchend
+      const gridSlider = document.getElementById('grid-size-slider');
+      const syncGridSize = ()=>{
+        const raw = gridSlider.value || gridSlider.getAttribute('value');
+        let v = parseInt(raw,10);
+        if (!Number.isFinite(v)) v = gridSizeState || 20;
+        v = Math.max(5, Math.min(100, v));
+        gridSizeState = v;
+        document.getElementById('grid-size-value').textContent = String(v);
+        updateSession();
+      };
+      ['input','change','pointerup','touchend'].forEach(ev=>gridSlider.addEventListener(ev, syncGridSize));
 
       const group = (sel)=>document.querySelectorAll(sel).forEach(btn=>{
         btn.addEventListener('click',(e)=>{
@@ -707,6 +725,8 @@
         backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600')?.dataset.border || 'none',
         backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
         gridStyle: document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid || 'none',
+
+        gridSize: gridSizeState,   /* 用穩健狀態回寫 */
         scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none'
       };
     }
