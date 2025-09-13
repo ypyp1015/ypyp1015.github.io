@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>遠端遙控 LED 跑馬燈 v20.6（穿孔覆蓋＋完整控制）</title>
+  <title>遠端遙控 LED 跑馬燈 v20.6.1（網格大小修復）</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,14 +31,14 @@
       display:inline-block;
       line-height:1.1;
       position:relative;
-      z-index:1; /* 文字在網格上方、穿孔覆蓋下方 */
+      z-index:1;
       transition: color .2s, background-color .2s, text-shadow .2s;
     }
     .gradient-text{
       background-clip:text;
       -webkit-background-clip:text;
       color:transparent !important;
-      -webkit-text-fill-color:transparent; /* 漸層文字相容性 */
+      -webkit-text-fill-color:transparent;
     }
     .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
     .text-style-outline{
@@ -53,7 +53,7 @@
          0    3px 0 var(--outline-color);
     }
 
-    /* 容器與層級：isolation 隔離合成 */
+    /* 容器與層級 */
     .display-screen{
       width:100%; height:100%; overflow:hidden; position:relative;
       background:var(--bg-color,#000);
@@ -62,19 +62,20 @@
     }
     .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:1; }
 
-    /* 底層：網格顏色層（僅在圖形本體可見） */
+    /* 底層：網格（圖形本體可見） */
     .grid-bg{
       position:absolute; inset:0; z-index:0; pointer-events:none;
-      background: var(--grid-color) !important; /* 以變數為準，去除黃色 fallback */
+      background: var(--grid-color) !important;              /* 強制以變數為準 */
       mask-image: var(--grid-mask-image);
       -webkit-mask-image: var(--grid-mask-image);
       mask-size: var(--grid-size) var(--grid-size);
       -webkit-mask-size: var(--grid-size) var(--grid-size);
+      mask-position: left top; -webkit-mask-position: left top;
       mask-repeat: repeat; -webkit-mask-repeat: repeat;
     }
     .grid-bg.gradient-grid{ background: var(--grid-gradient); }
 
-    /* 頂層：穿孔覆蓋（孔內透明、孔外為 gapColor * gapAlpha） */
+    /* 頂層：穿孔覆蓋（孔外顯示 gapColor*gapAlpha） */
     .gap-overlay{
       position:absolute; inset:0; z-index:2; pointer-events:none;
       background: var(--gap-color,#000);
@@ -83,8 +84,9 @@
       -webkit-mask-image: var(--gap-mask-image);
       mask-size: var(--grid-size) var(--grid-size);
       -webkit-mask-size: var(--grid-size) var(--grid-size);
+      mask-position: left top; -webkit-mask-position: left top;
       mask-repeat: repeat; -webkit-mask-repeat: repeat;
-      display:none; /* 由開關控制 */
+      display:none;
     }
 
     /* 邊框樣式 */
@@ -496,13 +498,24 @@
       wrapperEl.style.display = settings.scrollDirection==='none' ? 'flex' : 'block';
       wrapperEl.style.justifyContent = settings.scrollDirection==='none' ? 'center' : '';
 
-      // 計算並即時指定兩層 mask-size（避免部分 WebView 延遲重繪）
+      // 計算並即時指定兩層 mask-size 與對齊（Hotfix）
       const gridSizePx = (isPreview ? settings.gridSize/2 : settings.gridSize) + 'px';
+      const pair = gridSizePx + ' ' + gridSizePx;
       root.style.setProperty('--grid-size', gridSizePx);
       const gridBg = containerEl.querySelector('.grid-bg');
       const gap = containerEl.querySelector('.gap-overlay');
-      if (gridBg) { gridBg.style.maskSize = gridSizePx+' '+gridSizePx; gridBg.style.webkitMaskSize = gridSizePx+' '+gridSizePx; }
-      if (gap)    { gap.style.maskSize    = gridSizePx+' '+gridSizePx; gap.style.webkitMaskSize    = gridSizePx+' '+gridSizePx; }
+      if (gridBg) {
+        gridBg.style.maskSize = pair;
+        gridBg.style.WebkitMaskSize = pair;          // 注意大小寫
+        gridBg.style.maskPosition = 'left top';
+        gridBg.style.WebkitMaskPosition = 'left top';
+      }
+      if (gap) {
+        gap.style.maskSize = pair;
+        gap.style.WebkitMaskSize = pair;
+        gap.style.maskPosition = 'left top';
+        gap.style.WebkitMaskPosition = 'left top';
+      }
 
       // 底層：網格
       if (gridBg){
@@ -511,18 +524,17 @@
           root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
           if (settings.gridColorMode==='gradient'){
             gridBg.classList.add('gradient-grid');
-            // 顏色由 --grid-gradient 決定
           } else {
             gridBg.classList.remove('gradient-grid');
             root.style.setProperty('--grid-color', settings.gridColor);
-            gridBg.style.background = settings.gridColor; // 保險一次
+            gridBg.style.background = settings.gridColor;
           }
         } else {
           gridBg.style.display = 'none';
         }
       }
 
-      // 頂層：穿孔覆蓋（textBlendMode 作為開關；非疊代不混合）
+      // 頂層：穿孔覆蓋（textBlendMode 作為開關）
       if (gap){
         if (isGridEnabled && settings.textBlendMode==='multiply'){
           gap.style.display = 'block';
@@ -592,7 +604,6 @@
     }
 
     function updateControllerUI(settings){
-      // 輸入值
       document.getElementById('text-input').value = settings.text;
       document.getElementById('font-size-slider').value = settings.fontSize;
       document.getElementById('font-size-value').textContent = settings.fontSize;
@@ -602,11 +613,9 @@
       document.getElementById('grid-size-value').textContent = settings.gridSize;
       document.getElementById('blink-toggle').checked = !!settings.isBlinking;
 
-      // 分頁顯示只受 uiState 控制
       updateColorTab('color-tab', uiState.activeColorTab);
       updateColorTab('grid-color-tab', uiState.activeGridTab);
 
-      // 選色 active
       updatePickerState('text-color-picker', settings.textColor, 'color');
       updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
       updatePickerState('grid-color-picker', settings.gridColor, 'color');
@@ -616,7 +625,6 @@
       updatePickerState('gap-color-picker', settings.gapColor, 'color');
       updatePickerState('outline-color-picker', settings.outlineColor || '#FF3B30', 'color');
 
-      // 群組按鈕
       updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
       updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
       updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder || 'none');
@@ -626,7 +634,6 @@
         b.classList.toggle('bg-gray-700', b.dataset.blend !== (settings.textBlendMode || 'multiply'));
       });
 
-      // 附屬顯示
       document.getElementById('outline-color-section').classList.toggle('hidden', (settings.textStyle||'normal')!=='outline');
       const gapAlphaEl = document.getElementById('gap-alpha-slider');
       document.getElementById('gap-alpha-value').textContent = (settings.gapAlpha ?? 1.0).toFixed(2);
@@ -636,7 +643,6 @@
     }
 
     function setupControllerListeners(){
-      // 即時輸入
       ['text-input','font-size-slider','speed-slider','grid-size-slider','gap-alpha-slider','blink-toggle'].forEach(id=>{
         const el = document.getElementById(id);
         el.addEventListener(el.type==='checkbox' ? 'change':'input', ()=>{
@@ -646,7 +652,6 @@
         });
       });
 
-      // 群組切換
       const group = (sel)=>document.querySelectorAll(sel).forEach(btn=>{
         btn.addEventListener('click',(e)=>{
           document.querySelectorAll(sel).forEach(b=>b.classList.replace('bg-indigo-600','bg-gray-700'));
@@ -657,7 +662,6 @@
       group('.direction-btn'); group('.grid-style-btn'); group('.blend-mode-btn');
       group('.border-style-btn'); group('.bg-effect-btn'); group('.text-style-btn');
 
-      // 選色器
       document.getElementById('text-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset.color){ controllerState.textColorMode='solid'; updatePickerState('text-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
       document.getElementById('bg-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset.color){ controllerState.bgColorMode='solid'; updatePickerState('bg-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
       document.getElementById('grid-color-picker').addEventListener('click',(e)=>{ if(e.target.dataset.color){ controllerState.gridColorMode='solid'; updatePickerState('grid-color-picker', e.target.dataset.color, 'color'); updateSession(); }});
@@ -668,7 +672,6 @@
       document.getElementById('bg-gradient-picker').addEventListener('click',(e)=>{ const el=e.target.closest('[data-gradient]'); if(el){ controllerState.bgColorMode='gradient'; updatePickerState('bg-gradient-picker', el.dataset.gradient, 'gradient'); updateSession(); }});
       document.getElementById('grid-gradient-picker').addEventListener('click',(e)=>{ const el=e.target.closest('[data-gradient]'); if(el){ controllerState.gridColorMode='gradient'; updatePickerState('grid-gradient-picker', el.dataset.gradient, 'gradient'); updateSession(); }});
 
-      // 分頁（只變更 UI 狀態）
       document.querySelectorAll('#color-tab .tab-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{ uiState.activeColorTab = btn.dataset.tab; updateColorTab('color-tab', uiState.activeColorTab); });
       });
@@ -684,12 +687,10 @@
         scrollSpeed: document.getElementById('speed-slider').value,
         isBlinking: document.getElementById('blink-toggle').checked,
 
-        // 模式
         textColorMode: controllerState.textColorMode,
         bgColorMode: controllerState.bgColorMode,
         gridColorMode: controllerState.gridColorMode,
 
-        // 顏色/漸層
         textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || defaultSettings.textColor,
         backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || defaultSettings.backgroundColor,
         gridColor: document.querySelector('#grid-color-picker .control-btn-active')?.dataset.color || defaultSettings.gridColor,
@@ -697,12 +698,10 @@
         gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientBg,
         gradientGrid: document.querySelector('#grid-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientGrid,
 
-        // 穿孔覆蓋
         textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'multiply',
         gapColor: document.querySelector('#gap-color-picker .control-btn-active')?.dataset.color || defaultSettings.gapColor,
         gapAlpha: parseFloat(document.getElementById('gap-alpha-slider')?.value || (defaultSettings.gapAlpha||1)),
 
-        // 其他
         outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || '#FF3B30',
         textStyle: document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style || 'normal',
         backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600')?.dataset.border || 'none',
@@ -783,7 +782,6 @@
       });
     }
 
-    // 導覽
     document.getElementById('create-display-btn').addEventListener('click', ()=>{
       window.location.href = `${window.location.href.split('?')}?display=${generateId()}`;
     });
