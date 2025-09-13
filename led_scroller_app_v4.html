@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>遠端遙控 LED 跑馬燈 v12（修復版）</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet" />
+  <!-- QRCode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --font-size: 80px;
+      --text-color: #FFFFFF;
+      --bg-color: #000000;
+      --outline-color: #FF3B30;
+      --scroll-duration: 10s;
+    }
+
+    body { background:#0b0b0b; color:#e5e7eb; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "DotGothic16", "Apple Color Emoji", "Segoe UI Emoji"; }
+
+    .hidden{ display:none; }
+
+    /* 顯示畫面 */
+    #display-screen{
+      position: relative;
+      width: 100%;
+      height: 100svh;
+      overflow: hidden;
+      background: var(--bg-color, #000000);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 背景漸層時套用 */
+    .bg-gradient-active{
+      background: none !important; /* 由 inline style 設定 gradient */
+    }
+
+    .marquee-wrapper{
+      width: 100%;
+      overflow: hidden;
+      padding: 8px;
+    }
+
+    .marquee-text{
+      font-size: var(--font-size, 80px);
+      color: var(--text-color, #FFFFFF);
+      white-space: nowrap;
+      display: inline-block;
+      text-shadow: none;
+      transition: text-shadow 0.2s ease;
+      will-change: transform;
+    }
+
+    /* 漸層文字：必須 color/填色透明 + 背景裁切到文字 */
+    .gradient-text{
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+
+    /* 文字風格 */
+    .text-style-glow{
+      text-shadow: 0 0 8px var(--text-color, #FFFFFF), 0 0 12px var(--text-color, #FFFFFF);
+    }
+    .text-style-outline{
+      /* 用 text-shadow 模擬外框，不覆蓋文字本體的填色模式 */
+      text-shadow:
+        -2px -2px 0 var(--outline-color),
+         2px -2px 0 var(--outline-color),
+        -2px  2px 0 var(--outline-color),
+         2px  2px 0 var(--outline-color),
+        -3px  0   0 var(--outline-color),
+         3px  0   0 var(--outline-color),
+         0   -3px 0 var(--outline-color),
+         0    3px 0 var(--outline-color);
+    }
+
+    /* 跑馬動畫 */
+    @keyframes marquee-left { 0%{ transform: translateX(100%);} 100%{ transform: translateX(-100%);} }
+    @keyframes marquee-right{ 0%{ transform: translateX(-100%);} 100%{ transform: translateX(100%);} }
+    .scroll-left { animation: marquee-left var(--scroll-duration, 10s) linear infinite; }
+    .scroll-right{ animation: marquee-right var(--scroll-duration, 10s) linear infinite; }
+    .no-scroll { animation: none !important; }
+
+    /* 閃爍 */
+    @keyframes blink-kf { 0%,49%{ opacity:1;} 50%,100%{ opacity:0;} }
+    .blink { animation: blink-kf 1s step-start infinite; }
+
+    /* 背景邊框樣式（容器外框） */
+    .border-style-solid { border: 8px solid #ffffff; }
+    .border-style-rainbow{
+      padding: 8px;
+      border: none;
+      position: relative;
+      box-shadow: 0 0 20px rgba(255,100,255,0.7);
+    }
+    .border-style-rainbow::before{
+      content:'';
+      position:absolute;
+      inset: 0;
+      z-index:-1;
+      margin:-8px;
+      background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet, red);
+      background-size: 400% 400%;
+      animation: rainbow-border-anim 2.5s linear infinite;
+    }
+    @keyframes rainbow-border-anim{
+      0%{ background-position:0% 50%;}
+      50%{ background-position:100% 50%;}
+      100%{ background-position:0% 50%;}
+    }
+
+    /* 控制台小方塊 */
+    .swatch{
+      width: 28px; height: 28px; border-radius: 9999px; border: 2px solid #4b5563; cursor: pointer;
+    }
+    .swatch.active{ outline: 3px solid #6366f1; outline-offset: 2px; }
+
+    /* 頁面結構 */
+    .section{
+      background: #0f0f13; border: 1px solid #27272a; border-radius: 12px; padding: 12px;
+    }
+    .section h3{ font-weight: 600; margin-bottom: 10px; }
+
+    .tab-btn{ border:1px solid transparent; padding: 6px 10px; border-radius: 9999px; cursor:pointer;}
+    .tab-btn.active{ border-color:#6366f1; color:#fff; }
+    .tab-btn.inactive{ color:#9ca3af; }
+
+    input[type="range"]{ width: 100%; }
+    .kbd{ background:#111827; border:1px solid #374151; border-bottom-width:3px; padding:4px 8px; border-radius:6px; }
+
+    /* 背景特效：眼睛（示範用） */
+    .eyes-layer{
+      position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center;
+    }
+    .eye{ width: 24px; height: 24px; background:#fff; border-radius:9999px; margin: 0 6px; animation: eye-blink 2.8s infinite; }
+    @keyframes eye-blink{ 0%,92%{ transform: scaleY(1);} 96%{ transform: scaleY(0.1);} 100%{ transform: scaleY(1);} }
+  </style>
+</head>
+<body>
+
+  <!-- 首頁 -->
+  <div id="home-view" class="p-4">
+    <div class="max-w-xl mx-auto space-y-4">
+      <h1 class="text-2xl font-bold">LED Scroller｜數位跑馬燈・遠端遙控（v12 修復版）</h1>
+      <p class="text-gray-400">提示：在裝置 A 建立顯示面板，然後在裝置 B 輸入面板 ID 進行遙控 [修復、穩定切換顏色/漸層/邊框].</p>
+
+      <div class="section space-y-3">
+        <button id="create-session-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg">建立新的顯示面板</button>
+        <div class="flex items-center gap-2">
+          <input id="join-id-input" class="flex-1 bg-zinc-900 border border-zinc-700 rounded px-3 py-2" placeholder="輸入面板 ID" />
+          <button id="join-display-btn" class="bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-2 rounded">進入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顯示畫面 -->
+  <div id="display-view" class="hidden">
+    <div id="display-screen" class="w-full h-svh">
+      <div id="background-effects-container" class="eyes-layer hidden">
+        <div class="eye"></div><div class="eye"></div><div class="eye"></div>
+      </div>
+      <div id="marquee-container-wrapper" class="marquee-wrapper">
+        <div id="marquee-text" class="marquee-text">Hello 👋</div>
+      </div>
+    </div>
+
+    <div class="absolute top-3 left-3 bg-black/50 text-sm p-2 rounded">
+      <div>ID：<span id="session-id-display" class="font-mono"></span></div>
+      <div id="qrcode-container" class="mt-2"></div>
+      <div class="mt-2 text-gray-400">用控制器裝置掃描 QR 即可遙控</div>
+    </div>
+  </div>
+
+  <!-- 控制器 -->
+  <div id="controller-view" class="hidden p-4">
+    <div class="max-w-4xl mx-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <div>控制台（ID：<span id="controller-session-id" class="font-mono"></span>）</div>
+        <button id="back-home-btn" class="text-indigo-400">返回首頁</button>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4">
+        <!-- 左：預覽 -->
+        <div class="section md:col-span-2">
+          <h3>效果預覽</h3>
+          <div class="border border-zinc-700 rounded-lg overflow-hidden">
+            <div id="preview-screen" class="p-3 bg-black">
+              <div id="preview-wrapper" class="marquee-wrapper">
+                <div id="preview-text" class="marquee-text">Hello 👋</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：設定 -->
+        <div class="space-y-4">
+          <div class="section">
+            <h3>顯示文字</h3>
+            <textarea id="text-input" rows="2" class="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2"></textarea>
+          </div>
+
+          <div class="section">
+            <h3>文字填色</h3>
+            <div class="flex gap-2 mb-2">
+              <button class="tab-btn active" data-textmode="solid" id="tab-text-solid">純色</button>
+              <button class="tab-btn inactive" data-textmode="gradient" id="tab-text-gradient">漸層</button>
+            </div>
+            <div id="text-solid-panel" class="space-y-2">
+              <div class="flex gap-2 flex-wrap" id="text-color-picker"></div>
+            </div>
+            <div id="text-gradient-panel" class="space-y-2 hidden">
+              <div class="grid grid-cols-3 gap-2" id="text-gradient-picker"></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>背景</h3>
+            <div class="flex gap-2 mb-2">
+              <button class="tab-btn active" data-bgmode="solid" id="tab-bg-solid">純色</button>
+              <button class="tab-btn inactive" data-bgmode="gradient" id="tab-bg-gradient">漸層</button>
+            </div>
+            <div id="bg-solid-panel" class="space-y-2">
+              <div class="flex gap-2 flex-wrap" id="bg-color-picker"></div>
+            </div>
+            <div id="bg-gradient-panel" class="space-y-2 hidden">
+              <div class="grid grid-cols-3 gap-2" id="bg-gradient-picker"></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>文字風格</h3>
+            <div class="flex gap-2">
+              <button class="tab-btn active" data-textstyle="normal">標準</button>
+              <button class="tab-btn inactive" data-textstyle="glow">發光</button>
+              <button class="tab-btn inactive" data-textstyle="outline">邊框</button>
+            </div>
+            <div id="outline-color-section" class="mt-2 hidden">
+              <div class="text-xs text-gray-400 mb-1">邊框顏色</div>
+              <div class="flex gap-2 flex-wrap" id="outline-color-picker"></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>背景邊框</h3>
+            <div class="flex gap-2">
+              <button class="tab-btn active" data-border="none">無</button>
+              <button class="tab-btn inactive" data-border="solid">實線</button>
+              <button class="tab-btn inactive" data-border="rainbow">漸變</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>尺寸/速度/方向</h3>
+            <div class="space-y-2">
+              <label class="text-sm">字體大小：<span id="font-size-label" class="kbd">80</span> px</label>
+              <input id="font-size-range" type="range" min="20" max="240" step="1" value="80" />
+              <label class="text-sm">滾動速度（秒/輪）：<span id="speed-label" class="kbd">10</span> s</label>
+              <input id="speed-range" type="range" min="2" max="60" step="1" value="10" />
+              <label class="text-sm">方向</label>
+              <select id="direction-select" class="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1">
+                <option value="none">❚❚ 靜止</option>
+                <option value="left">← 向左</option>
+                <option value="right">向右 →</option>
+              </select>
+              <label class="inline-flex items-center gap-2 mt-2">
+                <input id="blink-checkbox" type="checkbox" />
+                <span>文字閃爍</span>
+              </label>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Firebase（沿用原檔設定）
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
+      authDomain: "led-run-c168b.firebaseapp.com",
+      projectId: "led-run-c168b",
+      storageBucket: "led-run-c168b.appspot.com",
+      messagingSenderId: "5.55557259748e+11",
+      appId: "1:5.55557259748e+11:web:7a79d35743bcbadbf11ff1",
+      measurementId: "G-7JH5TLX99R"
+    };
+    let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch (e) { console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
+
+    // 視圖
+    const homeView = document.getElementById('home-view');
+    const displayView = document.getElementById('display-view');
+    const controllerView = document.getElementById('controller-view');
+
+    // 控制面板元素
+    const elsCtl = {
+      textInput: document.getElementById('text-input'),
+      fontSizeRange: document.getElementById('font-size-range'),
+      fontSizeLabel: document.getElementById('font-size-label'),
+      speedRange: document.getElementById('speed-range'),
+      speedLabel: document.getElementById('speed-label'),
+      directionSelect: document.getElementById('direction-select'),
+      blinkCheckbox: document.getElementById('blink-checkbox'),
+      outlineColorSection: document.getElementById('outline-color-section'),
+
+      textColorPicker: document.getElementById('text-color-picker'),
+      textGradientPicker: document.getElementById('text-gradient-picker'),
+      bgColorPicker: document.getElementById('bg-color-picker'),
+      bgGradientPicker: document.getElementById('bg-gradient-picker'),
+
+      tabTextSolid: document.getElementById('tab-text-solid'),
+      tabTextGradient: document.getElementById('tab-text-gradient'),
+      tabBgSolid: document.getElementById('tab-bg-solid'),
+      tabBgGradient: document.getElementById('tab-bg-gradient'),
+
+      textSolidPanel: document.getElementById('text-solid-panel'),
+      textGradientPanel: document.getElementById('text-gradient-panel'),
+      bgSolidPanel: document.getElementById('bg-solid-panel'),
+      bgGradientPanel: document.getElementById('bg-gradient-panel'),
+
+      controllerSessionId: document.getElementById('controller-session-id'),
+      backHomeBtn: document.getElementById('back-home-btn'),
+    };
+
+    // 預覽元素
+    const elsPrev = {
+      textEl: document.getElementById('preview-text'),
+      wrapperEl: document.getElementById('preview-wrapper'),
+      screenEl: document.getElementById('preview-screen'),
+    };
+
+    // 顯示元素
+    const elsDisp = {
+      textEl: document.getElementById('marquee-text'),
+      wrapperEl: document.getElementById('marquee-container-wrapper'),
+      screenEl: document.getElementById('display-screen'),
+      bgEffectEl: document.getElementById('background-effects-container'),
+      qrcodeEl: document.getElementById('qrcode-container'),
+      sessionIdLabel: document.getElementById('session-id-display'),
+    };
+
+    // 調色盤
+    const colorPalette = ['#FFFFFF','#000000','#FF3B30','#FF9500','#FFCC00','#4CD964','#007AFF','#5856D6','#FF2D55'];
+    const gradientPalette = [
+      'linear-gradient(90deg,#F37335,#FDC830)',
+      'linear-gradient(90deg,#2193b0,#6dd5ed)',
+      'linear-gradient(90deg,#56ab2f,#a8e063)',
+      'linear-gradient(90deg,#e94057,#f27121)',
+      'linear-gradient(90deg,#4776E6,#8E54E9)',
+      'linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)'
+    ];
+
+    // 設定（新增 bgMode，沿用 colorMode）
+    const defaultSettings = {
+      text: "Hello 👋",
+      textColor: "#FFFFFF",
+      backgroundColor: "#000000",
+      fontSize: 80,
+      scrollSpeed: 10,
+      scrollDirection: "none",
+      isBlinking: false,
+
+      colorMode: "solid",        // text: solid | gradient
+      gradientText: "linear-gradient(90deg, #e94057, #f27121)",
+
+      bgMode: "solid",           // background: solid | gradient
+      gradientBg: "linear-gradient(90deg, #2193b0, #6dd5ed)",
+
+      backgroundEffect: "none",  // none | eyes
+      textStyle: "normal",       // normal | glow | outline
+      outlineColor: "#FF3B30",
+
+      backgroundBorder: "none",  // none | solid | rainbow
+
+      updatedAt: serverTimestamp()
+    };
+
+    let currentSessionId = null;
+    let unsubscribe = null;
+
+    // 路由
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('display')) startDisplayMode(params.get('display'));
+      else if (params.has('controller')) startControllerMode(params.get('controller'));
+      else showView('home');
+    });
+
+    function showView(name){
+      [homeView, displayView, controllerView].forEach(v => v.classList.add('hidden'));
+      document.getElementById(name+'-view').classList.remove('hidden');
+    }
+
+    function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
+
+    // 首頁
+    document.getElementById('create-session-btn').addEventListener('click', async () => {
+      const id = generateId();
+      const ref = doc(db, "sessions", id);
+      await setDoc(ref, defaultSettings, { merge: true });
+      window.location.href = `${window.location.href.split('?')}?display=${id}`;
+    });
+    document.getElementById('join-display-btn').addEventListener('click', () => {
+      const id = (document.getElementById('join-id-input').value||'').trim().toUpperCase();
+      if(!id) return alert('請輸入面板 ID');
+      window.location.href = `${window.location.href.split('?')}?display=${id}`;
+    });
+
+    // 顯示模式
+    async function startDisplayMode(sessionId){
+      currentSessionId = sessionId;
+      showView('display');
+      elsDisp.sessionIdLabel.textContent = sessionId;
+
+      // QR 控制連結
+      const url = `${window.location.href.split('?')}?controller=${sessionId}`;
+      elsDisp.qrcodeEl.innerHTML = '';
+      new QRCode(elsDisp.qrcodeEl, { text: url, width: 128, height: 128 });
+
+      const ref = doc(db, "sessions", sessionId);
+      if(!(await getDoc(ref)).exists()) await setDoc(ref, defaultSettings);
+
+      if (unsubscribe) unsubscribe();
+      unsubscribe = onSnapshot(ref, (docSnap) => {
+        if(!docSnap.exists()) return;
+        const settings = { ...defaultSettings, ...docSnap.data() };
+        applySettingsToDisplay(settings);
+      });
+    }
+
+    // 套用到顯示畫面（FIX：模式切換時清除衝突樣式）
+    function applySettingsToDisplay(settings){
+      // 背景
+      const scr = elsDisp.screenEl;
+      scr.classList.toggle('bg-gradient-active', settings.bgMode === 'gradient');
+      // 先清空 inline 背景（避免殘留）
+      scr.style.background = '';
+      scr.style.backgroundImage = '';
+      scr.style.backgroundColor = '';
+
+      if(settings.bgMode === 'gradient'){
+        scr.style.backgroundImage = settings.gradientBg;
+      }else{
+        scr.style.backgroundColor = settings.backgroundColor;
+      }
+
+      // 背景特效
+      elsDisp.bgEffectEl.classList.toggle('hidden', settings.backgroundEffect !== 'eyes');
+
+      // 背景邊框（容器外框）— 先移除所有 border-style-*（防止殘留）
+      ['none','solid','rainbow'].forEach(k=>{
+        if(k==='none'){
+          scr.classList.remove('border-style-solid','border-style-rainbow');
+        }else{
+          scr.classList.remove('border-style-'+k);
+        }
+      });
+      if(settings.backgroundBorder === 'solid') scr.classList.add('border-style-solid');
+      if(settings.backgroundBorder === 'rainbow') scr.classList.add('border-style-rainbow');
+
+      // 文字
+      const t = elsDisp.textEl;
+      t.textContent = settings.text || '';
+      t.style.setProperty('--text-color', settings.textColor);
+      t.style.setProperty('--outline-color', settings.outlineColor);
+      t.style.fontSize = (settings.fontSize||80) + 'px';
+      t.classList.remove('text-style-glow','text-style-outline','gradient-text');
+
+      // FIX: 強制清除互斥屬性，避免回不去漸層
+      t.style.backgroundImage = '';
+      t.style.backgroundClip = '';
+      t.style.webkitBackgroundClip = '';
+      t.style.color = '';
+      t.style.webkitTextFillColor = '';
+
+      if(settings.colorMode === 'gradient'){
+        t.classList.add('gradient-text');
+        t.style.backgroundImage = settings.gradientText;
+        t.style.backgroundClip = 'text';
+        t.style.webkitBackgroundClip = 'text';
+        t.style.color = 'transparent';
+        t.style.webkitTextFillColor = 'transparent';
+      }else{
+        // 純色模式
+        t.classList.remove('gradient-text');
+        t.style.backgroundImage = '';
+        t.style.backgroundClip = '';
+        t.style.webkitBackgroundClip = '';
+        t.style.color = settings.textColor;
+        t.style.webkitTextFillColor = settings.textColor;
+      }
+
+      // 文字風格
+      if(settings.textStyle === 'glow') t.classList.add('text-style-glow');
+      if(settings.textStyle === 'outline') t.classList.add('text-style-outline');
+
+      // 閃爍
+      t.classList.toggle('blink', !!settings.isBlinking);
+
+      // 滾動
+      const w = elsDisp.wrapperEl;
+      t.classList.remove('scroll-left','scroll-right','no-scroll');
+      w.style.setProperty('--scroll-duration', (settings.scrollSpeed||10)+'s');
+      if(settings.scrollDirection === 'left') t.classList.add('scroll-left');
+      else if(settings.scrollDirection === 'right') t.classList.add('scroll-right');
+      else t.classList.add('no-scroll');
+    }
+
+    // 控制器模式
+    async function startControllerMode(sessionId){
+      currentSessionId = sessionId;
+      showView('controller');
+      elsCtl.controllerSessionId.textContent = sessionId;
+
+      const ref = doc(db, "sessions", sessionId);
+      if(!(await getDoc(ref)).exists()) await setDoc(ref, defaultSettings);
+
+      // 註冊監聽，讓右側預覽即時反映（不影響顯示頁）
+      if (unsubscribe) unsubscribe();
+      unsubscribe = onSnapshot(ref, (docSnap) => {
+        if(!docSnap.exists()) return;
+        const settings = { ...defaultSettings, ...docSnap.data() };
+        renderControllerFromSettings(settings);
+        applySettingsToPreview(settings);
+      });
+
+      // 返回
+      elsCtl.backHomeBtn.addEventListener('click', () => window.location.href = window.location.href.split('?'));
+
+      // 建立調色盤與綁定
+      buildColorSwatches(elsCtl.textColorPicker, colorPalette, (val)=> save({ colorMode:'solid', textColor: val }));
+      buildGradientSwatches(elsCtl.textGradientPicker, gradientPalette, (val)=> save({ colorMode:'gradient', gradientText: val }));
+
+      buildColorSwatches(elsCtl.bgColorPicker, colorPalette, (val)=> save({ bgMode:'solid', backgroundColor: val }));
+      buildGradientSwatches(elsCtl.bgGradientPicker, gradientPalette, (val)=> save({ bgMode:'gradient', gradientBg: val }));
+
+      buildColorSwatches(elsCtl.outlineColorPicker, colorPalette, (val)=> save({ outlineColor: val }));
+
+      // 文字
+      elsCtl.textInput.addEventListener('input', e => save({ text: e.target.value }));
+
+      // 尺寸/速度/方向/閃爍
+      elsCtl.fontSizeRange.addEventListener('input', e => {
+        elsCtl.fontSizeLabel.textContent = e.target.value;
+        save({ fontSize: Number(e.target.value) });
+      });
+      elsCtl.speedRange.addEventListener('input', e => {
+        elsCtl.speedLabel.textContent = e.target.value;
+        save({ scrollSpeed: Number(e.target.value) });
+      });
+      elsCtl.directionSelect.addEventListener('change', e => save({ scrollDirection: e.target.value }));
+      elsCtl.blinkCheckbox.addEventListener('change', e => save({ isBlinking: e.target.checked }));
+
+      // Tab 切換（文字）
+      elsCtl.tabTextSolid.addEventListener('click', () => toggleTextMode('solid'));
+      elsCtl.tabTextGradient.addEventListener('click', () => toggleTextMode('gradient'));
+
+      // Tab 切換（背景）
+      elsCtl.tabBgSolid.addEventListener('click', () => toggleBgMode('solid'));
+      elsCtl.tabBgGradient.addEventListener('click', () => toggleBgMode('gradient'));
+
+      // 文字風格
+      document.querySelectorAll('[data-textstyle]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          document.querySelectorAll('[data-textstyle]').forEach(b=>b.classList.toggle('active', false));
+          btn.classList.add('active');
+          const v = btn.dataset.textstyle;
+          elsCtl.outlineColorSection.classList.toggle('hidden', v!=='outline');
+          save({ textStyle: v });
+        });
+      });
+
+      // 背景邊框
+      document.querySelectorAll('[data-border]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          document.querySelectorAll('[data-border]').forEach(b=>{
+            b.classList.remove('active'); b.classList.add('inactive');
+          });
+          btn.classList.remove('inactive'); btn.classList.add('active');
+          save({ backgroundBorder: btn.dataset.border });
+        });
+      });
+    }
+
+    function toggleTextMode(mode){
+      // 切換 UI 標籤與面板
+      if(mode==='solid'){
+        elsCtl.tabTextSolid.classList.add('active'); elsCtl.tabTextSolid.classList.remove('inactive');
+        elsCtl.tabTextGradient.classList.remove('active'); elsCtl.tabTextGradient.classList.add('inactive');
+        elsCtl.textSolidPanel.classList.remove('hidden');
+        elsCtl.textGradientPanel.classList.add('hidden');
+      }else{
+        elsCtl.tabTextGradient.classList.add('active'); elsCtl.tabTextGradient.classList.remove('inactive');
+        elsCtl.tabTextSolid.classList.remove('active'); elsCtl.tabTextSolid.classList.add('inactive');
+        elsCtl.textGradientPanel.classList.remove('hidden');
+        elsCtl.textSolidPanel.classList.add('hidden');
+      }
+      // 寫入模式（不改顏色值，避免覆蓋使用者已選）
+      save({ colorMode: mode });
+    }
+
+    function toggleBgMode(mode){
+      if(mode==='solid'){
+        elsCtl.tabBgSolid.classList.add('active'); elsCtl.tabBgSolid.classList.remove('inactive');
+        elsCtl.tabBgGradient.classList.remove('active'); elsCtl.tabBgGradient.classList.add('inactive');
+        elsCtl.bgSolidPanel.classList.remove('hidden');
+        elsCtl.bgGradientPanel.classList.add('hidden');
+      }else{
+        elsCtl.tabBgGradient.classList.add('active'); elsCtl.tabBgGradient.classList.remove('inactive');
+        elsCtl.tabBgSolid.classList.remove('active'); elsCtl.tabBgSolid.classList.add('inactive');
+        elsCtl.bgGradientPanel.classList.remove('hidden');
+        elsCtl.bgSolidPanel.classList.add('hidden');
+      }
+      save({ bgMode: mode });
+    }
+
+    function buildColorSwatches(container, list, onPick){
+      container.innerHTML = '';
+      list.forEach(c=>{
+        const el = document.createElement('div');
+        el.className = 'swatch';
+        el.style.background = c;
+        el.title = c;
+        el.addEventListener('click', ()=> onPick(c));
+        container.appendChild(el);
+      });
+    }
+    function buildGradientSwatches(container, list, onPick){
+      container.innerHTML = '';
+      list.forEach(g=>{
+        const el = document.createElement('div');
+        el.className = 'swatch';
+        el.style.backgroundImage = g;
+        el.title = g;
+        el.addEventListener('click', ()=> onPick(g));
+        container.appendChild(el);
+      });
+    }
+
+    // 套用到右側預覽（與顯示相同邏輯）
+    function applySettingsToPreview(settings){
+      const scr = elsPrev.screenEl;
+      scr.classList.toggle('bg-gradient-active', settings.bgMode === 'gradient');
+      scr.style.background = '';
+      scr.style.backgroundImage = '';
+      scr.style.backgroundColor = '';
+      if(settings.bgMode === 'gradient'){
+        scr.style.backgroundImage = settings.gradientBg;
+      }else{
+        scr.style.backgroundColor = settings.backgroundColor;
+      }
+
+      const t = elsPrev.textEl;
+      t.textContent = settings.text || '';
+      t.style.setProperty('--text-color', settings.textColor);
+      t.style.setProperty('--outline-color', settings.outlineColor);
+      t.style.fontSize = (settings.fontSize||80) + 'px';
+      t.classList.remove('text-style-glow','text-style-outline','gradient-text');
+
+      // FIX：清除互斥屬性
+      t.style.backgroundImage = '';
+      t.style.backgroundClip = '';
+      t.style.webkitBackgroundClip = '';
+      t.style.color = '';
+      t.style.webkitTextFillColor = '';
+
+      if(settings.colorMode === 'gradient'){
+        t.classList.add('gradient-text');
+        t.style.backgroundImage = settings.gradientText;
+        t.style.backgroundClip = 'text';
+        t.style.webkitBackgroundClip = 'text';
+        t.style.color = 'transparent';
+        t.style.webkitTextFillColor = 'transparent';
+      }else{
+        t.classList.remove('gradient-text');
+        t.style.backgroundImage = '';
+        t.style.backgroundClip = '';
+        t.style.webkitBackgroundClip = '';
+        t.style.color = settings.textColor;
+        t.style.webkitTextFillColor = settings.textColor;
+      }
+
+      if(settings.textStyle === 'glow') t.classList.add('text-style-glow');
+      if(settings.textStyle === 'outline') t.classList.add('text-style-outline');
+
+      t.classList.toggle('blink', !!settings.isBlinking);
+
+      t.classList.remove('scroll-left','scroll-right','no-scroll');
+      elsPrev.wrapperEl.style.setProperty('--scroll-duration', (settings.scrollSpeed||10)+'s');
+      if(settings.scrollDirection === 'left') t.classList.add('scroll-left');
+      else if(settings.scrollDirection === 'right') t.classList.add('scroll-right');
+      else t.classList.add('no-scroll');
+    }
+
+    function renderControllerFromSettings(s){
+      // 文本/基本
+      elsCtl.textInput.value = s.text || '';
+      elsCtl.fontSizeRange.value = s.fontSize||80; elsCtl.fontSizeLabel.textContent = s.fontSize||80;
+      elsCtl.speedRange.value = s.scrollSpeed||10; elsCtl.speedLabel.textContent = s.scrollSpeed||10;
+      elsCtl.directionSelect.value = s.scrollDirection||'none';
+      elsCtl.blinkCheckbox.checked = !!s.isBlinking;
+
+      // 文字模式 Tab
+      toggleTextMode(s.colorMode||'solid');
+      // 背景模式 Tab
+      toggleBgMode(s.bgMode||'solid');
+
+      // 文字風格
+      document.querySelectorAll('[data-textstyle]').forEach(b=>{
+        b.classList.toggle('active', b.dataset.textstyle === (s.textStyle||'normal'));
+        b.classList.toggle('inactive', b.dataset.textstyle !== (s.textStyle||'normal'));
+      });
+      elsCtl.outlineColorSection.classList.toggle('hidden', (s.textStyle||'normal')!=='outline');
+
+      // 背景邊框
+      document.querySelectorAll('[data-border]').forEach(b=>{
+        b.classList.toggle('active', b.dataset.border === (s.backgroundBorder||'none'));
+        b.classList.toggle('inactive', b.dataset.border !== (s.backgroundBorder||'none'));
+      });
+
+      // 高亮目前選色（簡化：不追蹤 active 樣式，避免冗長 DOM 比對）
+    }
+
+    // 寫入（含節流）
+    let saveTimer = null;
+    function save(patch){
+      const ref = doc(db, "sessions", currentSessionId);
+      const data = { ...patch, updatedAt: serverTimestamp() };
+      // 節流 80ms
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(()=> setDoc(ref, data, { merge: true }), 80);
+    }
+
+    // Controller 入口
+    window.startControllerMode = startControllerMode;
+  </script>
+
+  <script>
+    // URL 入口：display / controller / home
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('controller')) return; // 已由 module 腳本處理
+      if (params.has('display')) return;    // 已由 module 腳本處理
+      // 保持首頁
+    });
+  </script>
+</body>
+</html>
