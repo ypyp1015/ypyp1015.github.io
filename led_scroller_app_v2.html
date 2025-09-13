@@ -92,13 +92,6 @@
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
   .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
 
-  .effect-rainbow-frame{ padding:8px; position:relative; box-shadow:0 0 25px rgba(255,100,255,.7); }
-  .effect-rainbow-frame::before{
-    content:''; position:absolute; inset:0; z-index:-1; margin:-8px;
-    background:linear-gradient(45deg,red,orange,yellow,green,blue,indigo,violet,red);
-    background-size:400% 400%; animation: rainbow-border-anim 2s linear infinite;
-  }
-
   .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
   .controller-preview{ height:120px; border-radius:.5rem; position:relative; overflow:hidden; background:var(--bg-color,#000); border:1px solid #374151; box-sizing:border-box; }
   .controller-preview .marquee-text{ font-size:var(--font-size,40px) !important; }
@@ -225,7 +218,7 @@
       <div id="grid-advanced-section" class="mb-6 space-y-6 hidden">
         <div>
           <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
-          <input id="grid-size-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+          <input id="grid-size-slider" type="range" min="4" max="120" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
         </div>
 
         <div class="p-4 bg-gray-900 rounded-lg">
@@ -847,4 +840,5 @@
 </script>
 </body>
 </html>
+
 
