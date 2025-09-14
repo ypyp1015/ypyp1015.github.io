@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.9 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.6 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,15 +19,7 @@
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
-  
-  @keyframes rainbow-orb-anim {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  @keyframes rainbow-border-rotate {
-    to { transform: rotate(1turn); }
-  }
+  @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
 
   .marquee-text{
     font-size:var(--font-size,80px);
@@ -41,7 +33,7 @@
   }
   .gradient-text{
     background-clip:text; -webkit-background-clip:text;
-    color:transparent !important; -webkit-text-fill-color:transparent;
+    color:transparent !important; -webkit-text-fill-color:transparent; /* 漸層不被 color 覆蓋 */
   }
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
@@ -60,53 +52,43 @@
 
   .grid-bg{
     position:absolute; inset:0; z-index:0; pointer-events:none;
+    /* 【修正】移除 !important 避免覆蓋漸層樣式 */
     background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
-    mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top;
-    mask-repeat: repeat;
+    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top; -webkit-mask-position: left top;
+    mask-repeat: repeat; -webkit-mask-repeat: repeat;
   }
 
   .gap-overlay{
     position:absolute; inset:0; z-index:2; pointer-events:none;
     background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
     mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
-    mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top;
-    mask-repeat: repeat;
+    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top; -webkit-mask-position: left top;
+    mask-repeat: repeat; -webkit-mask-repeat: repeat;
     display:none;
   }
 
   .border-style-solid { border:8px solid white; }
-  
-  /* 【更新】新的、正確的彩虹邊框效果 v4 */
   .border-style-rainbow {
     position: relative;
     border: 8px solid transparent;
-    border-radius: 16px;
-    background: var(--bg-color); /* 內部背景顏色 */
-    background-clip: padding-box; /* 確保背景只在 padding 區域內 */
+    border-radius:16px;
+    /* 【修正】增加 background-clip 以讓 ::before 偽元素的漸層能夠在透明邊框區域顯示出來 */
+    background-clip: padding-box;
+    -webkit-background-clip: padding-box;
   }
   .border-style-rainbow::before {
     content: '';
     position: absolute;
-    inset: -8px; /* 擴展到邊框區域 */
+    inset: -8px;
     border-radius: 16px;
-    background: conic-gradient(from 180deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
-    animation: rainbow-border-rotate 4s linear infinite;
-    z-index: -1; /* 放在主要內容之後 */
-  }
-  
-  /* 【更新】恢復並優化彩虹光暈效果 */
-  .effect-rainbow-orb::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
-    animation: rainbow-orb-anim 3s ease-in-out infinite;
+    background: conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e );
+    animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
-    opacity: 0.5;
-    z-index: 0;
+    background-position: 0% 50%;
+    z-index: -1;
   }
 
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
@@ -309,7 +291,6 @@
         <div class="flex flex-wrap gap-3">
           <button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
           <button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button>
-          <button data-effect="rainbow-orb" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹光暈</button>
         </div>
       </div>
 
@@ -372,21 +353,15 @@
   function applySettings(els, settings, isPreview = false) {
     const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
     if (!textEl || !containerEl || !wrapperEl) return;
-
-    containerEl.classList.remove('effect-rainbow-orb');
-
     const root = containerEl;
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
-    root.style.setProperty('--bg-color', (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor);
+    root.style.setProperty('--bg-color', settings.backgroundColor);
     root.style.setProperty('--grid-color', settings.gridColor);
     root.style.setProperty('--grid-gradient', settings.gradientGrid);
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-    
-    // 背景顏色直接由 --bg-color 控制
-    containerEl.style.background = 'var(--bg-color)';
-
+    containerEl.style.background = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
     textEl.textContent = settings.text;
     const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
     textEl.style.fontSize = `${fontPx}px`;
@@ -435,9 +410,9 @@
     if (gridBg) {
         if (isGridEnabled) {
             gridBg.style.display = 'block';
-            gridBg.style.maskSize = pair;
-            gridBg.style.webkitMaskSize = pair;
+            gridBg.style.maskSize = pair; gridBg.style.WebkitMaskSize = pair;
             root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
+            // 【修正】直接設定網格背景，不再依賴 class
             if (settings.gridColorMode === 'gradient') {
                 gridBg.style.background = settings.gradientGrid;
             } else {
@@ -448,17 +423,11 @@
     if (gap) {
         if (isGridEnabled && perforateOn) {
             gap.style.display = 'block';
-            gap.style.maskSize = pair;
-            gap.style.webkitMaskSize = pair;
+            gap.style.maskSize = pair; gap.style.WebkitMaskSize = pair;
             root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
         } else { gap.style.display = 'none'; }
     }
-    if (bgEffectEl) {
-      bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : '';
-      if (settings.backgroundEffect === 'rainbow-orb') {
-        containerEl.classList.add('effect-rainbow-orb');
-      }
-    }
+    if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
   function setupDisplayListeners(){
@@ -705,4 +674,3 @@
 </script>
 </body>
 </html>
-
