@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v23.4.1</title>
+<title>遠端遙控 LED 跑馬燈 v23.4.2 (修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   
-  /* 【新增】文字動畫 Keyframes */
+  /* 文字動畫 Keyframes */
   @keyframes rainbow-text-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes wave-anim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
@@ -58,14 +58,10 @@
     text-shadow: none !important;
     -webkit-text-stroke: 0;
   }
-  /* 【新增】文字動畫 Class */
+
   .text-anim-rainbow { background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e); background-size: 200% 200%; animation: rainbow-text-anim 3s linear infinite; }
   .text-anim-blink { animation: blink-effect 1s step-end infinite; }
-  .text-anim-heartbeat { animation: heartbeat-anim 1.2s ease-in-out infinite; }
-  .text-anim-shake { animation: shake-anim 0.4s linear infinite; }
-  .text-anim-wave-char { animation: wave-anim 1.5s ease-in-out infinite; }
-  .text-anim-jump-char { animation: jump-anim 0.8s ease-in-out infinite; }
-
+  
   .display-screen{
     width:100%; height:100%; position:relative;
     background:var(--bg-color,#000); box-sizing:border-box;
@@ -353,7 +349,6 @@
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
       
-      <!-- 【更新】新增文字動畫區塊 -->
       <div id="text-animation-wrapper" class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字動畫</label>
         <div class="grid grid-cols-3 gap-3">
@@ -479,39 +474,40 @@
     
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     
-    // --- 【更新】重構文字渲染與動畫邏輯 ---
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
-    textEl.style.animation = ''; // 清除舊動畫
-
-    // A. 處理滾動
-    if (settings.scrollDirection !== 'none') {
-      textEl.style.animation = `${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`;
-    }
-
-    // B. 處理全域文字動畫 (心跳、搖晃、閃爍)
-    if (['heartbeat', 'shake', 'blink'].includes(settings.textAnimation)) {
-        textEl.classList.add(`text-anim-${settings.textAnimation}`);
-    }
-
-    // C. 產生文字內容 (永遠使用 span 以簡化邏輯)
-    const chars = Array.from(settings.text);
-    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
-    const usePerCharAnim = ['wave', 'jump'].includes(settings.textAnimation);
     
+    let globalAnims = [];
+    if (settings.scrollDirection !== 'none') {
+        globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
+    }
+    if (settings.textAnimation === 'blink') {
+        textEl.classList.add('text-anim-blink');
+    }
+    textEl.style.animation = globalAnims.join(', ');
+
+    const chars = Array.from(settings.text);
+    const useCharColors = settings.isCharColoring && settings.charColors && Array.isArray(settings.charColors) && settings.charColors.length === chars.length;
+    const perCharAnimations = ['wave', 'jump', 'heartbeat', 'shake'];
+    const isPerCharAnim = perCharAnimations.includes(settings.textAnimation);
+
     const textContentFragment = document.createDocumentFragment();
     chars.forEach((char, index) => {
         const span = document.createElement('span');
         span.textContent = char;
         
-        // 個別文字動畫
-        if (usePerCharAnim) {
+        if (isPerCharAnim) {
             span.style.display = 'inline-block';
-            span.classList.add(`text-anim-${settings.textAnimation}-char`);
+            let animName = `${settings.textAnimation}-anim`; 
+            let duration = '1.5s'; 
+            if (settings.textAnimation === 'jump') duration = '0.8s';
+            if (settings.textAnimation === 'heartbeat') duration = '1.2s';
+            if (settings.textAnimation === 'shake') duration = '0.4s';
+            
+            span.style.animation = `${animName} ${duration} ease-in-out infinite`;
             span.style.animationDelay = `${index * 0.08}s`;
         }
 
-        // 個別文字上色
         if (useCharColors) {
             const color = settings.charColors[index];
             span.style.color = color ? color : settings.textColor;
@@ -520,7 +516,6 @@
     });
     textEl.appendChild(textContentFragment);
 
-    // D. 處理全域文字樣式 (若未啟用個別上色)
     if (!useCharColors) {
         if (settings.textAnimation === 'rainbow') {
             textEl.classList.add('gradient-text', 'text-anim-rainbow');
@@ -541,8 +536,7 @@
             }
         }
     }
-    // --- 結束更新 ---
-
+    
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -690,7 +684,7 @@
     updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
     updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
     updateButtonGroupState('.text-style-btn','style', settings.textStyle);
-    updateButtonGroupState('.text-animation-btn', 'animation', settings.textAnimation); //【更新】
+    updateButtonGroupState('.text-animation-btn', 'animation', settings.textAnimation);
     updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
     updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
@@ -728,7 +722,7 @@
       selector.innerHTML = '';
       selectedCharIndices.clear();
       const chars = Array.from(text);
-      if (controllerState.charColors.length !== chars.length) {
+      if (!Array.isArray(controllerState.charColors) || controllerState.charColors.length !== chars.length) {
           controllerState.charColors = new Array(chars.length).fill(null);
       }
       chars.forEach((char, index) => {
@@ -867,7 +861,7 @@
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
-        updatePreview();
+        updateControllerUI(settings); 
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
         }
