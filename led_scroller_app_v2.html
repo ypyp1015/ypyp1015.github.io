@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.4 (錯誤修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.5 (預覽修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,7 +50,6 @@
     paint-order: stroke fill;
     text-shadow: none !important;
   }
-  /* 移除舊的點狀 CSS，改用 Canvas */
 
   .text-anim-rainbow { background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e); background-size: 200% 200%; animation: rainbow-text-anim 3s linear infinite; }
   .text-anim-blink { animation: blink-effect 1s step-end infinite; }
@@ -59,9 +58,8 @@
     width:100%; height:100%; position:relative;
     background:var(--bg-color,#000); box-sizing:border-box;
     isolation: isolate;
-    overflow: hidden; /* 確保 canvas 內容不超出 */
+    overflow: hidden;
   }
-  /* 新增 Dot Matrix Canvas 樣式 */
   .dot-matrix-canvas {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -464,11 +462,9 @@
     const { textEl, containerEl, wrapperEl, bgEffectEl, canvasEl } = els;
     if (!containerEl) return;
     
-    // 清理舊狀態
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
     
-    // 基本樣式設定
     const root = containerEl;
     const borderWidth = parseInt(settings.borderWidth, 10) || 0;
     const borderRadius = parseInt(settings.borderRadius, 10) || 0;
@@ -480,12 +476,10 @@
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
     root.style.setProperty('--bg-color', (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor);
     
-    // 邊框與背景
     containerEl.className = containerEl.id.includes('display') ? 'display-screen' : 'controller-preview';
     if (settings.backgroundBorder === 'solid') { containerEl.classList.add('border-style-solid'); } 
     else if (settings.backgroundBorder === 'rainbow') { containerEl.classList.add('border-style-rainbow'); }
     
-    // 網格與效果
     const gridBg = containerEl.querySelector('.grid-bg');
     const gap = containerEl.querySelector('.gap-overlay');
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
@@ -503,12 +497,11 @@
     if (gap) {
         if (isGridEnabled && settings.textBlendMode === 'multiply') { 
             gap.style.display = 'block';
-            root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`); // 【修正】恢復此行
+            root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
         } else { gap.style.display = 'none'; }
     }
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
 
-    // 根據文字風格選擇渲染方式
     if (settings.textStyle === 'dot-matrix') {
         textEl.style.display = 'none';
         canvasEl.style.display = 'block';
@@ -526,7 +519,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
-    textEl.style.backgroundImage = ''; // 【修正】重置背景圖片
+    textEl.style.backgroundImage = '';
     
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
@@ -576,7 +569,6 @@
     }
     
     let finalFontSize = 100;
-    // ... (字體大小計算邏輯，與之前相同)
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
       case 'fitWidth': {
@@ -608,10 +600,8 @@
     ctx.scale(dpr, dpr);
 
     let finalFontSize = 100;
-    // ... (與上面類似的字體大小計算邏輯)
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
-      // ... 簡化 fitWidth 和 multiline for canvas
       default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
     }
     
@@ -646,7 +636,7 @@
         for (let y = 0; y < offscreenCanvas.height; y += gap) {
             for (let x = 0; x < offscreenCanvas.width; x += gap) {
                 const i = (Math.floor(y) * offscreenCanvas.width + Math.floor(x)) * 4;
-                if (data[i + 3] > 128) { // if alpha > 50%
+                if (data[i + 3] > 128) {
                     ctx.beginPath();
                     ctx.arc(x / dpr, y / dpr, dotSize / 2, 0, 2 * Math.PI);
                     ctx.fill();
@@ -783,7 +773,7 @@
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     
     toggleAdvancedModeUI(settings.isAdvancedText, settings.text);
-    // updatePreview(); // updateSession already calls this via updateControllerUI
+    updatePreview(); // 【修正】恢復預覽更新，解決黑畫面問題
   }
   
   function toggleAdvancedModeUI(isActive, text) {
@@ -792,18 +782,19 @@
       document.getElementById('text-style-wrapper').classList.toggle('control-disabled', isActive);
       document.getElementById('text-animation-wrapper').classList.toggle('control-disabled', isActive);
       
-      if (!isActive) {
+      if (isActive) {
+          renderCharSelector(text);
+      } else {
           selectedCharIndices.clear();
       }
-      // 【修正】移除 renderCharSelector
   }
 
   function renderCharSelector(text) {
       const selector = document.getElementById('char-selector');
       selector.innerHTML = '';
-      selectedCharIndices.clear();
-      const chars = Array.from(text);
+      //【修正】不清空 selectedCharIndices，以便連續操作
       
+      const chars = Array.from(text);
       const ensureArray = (arr, len, fillVal) => (!Array.isArray(arr) || arr.length !== len) ? new Array(len).fill(fillVal) : arr;
       controllerState.charColors = ensureArray(controllerState.charColors, chars.length, null);
       controllerState.charAnimations = ensureArray(controllerState.charAnimations, chars.length, null);
@@ -814,6 +805,7 @@
           btn.textContent = char;
           btn.dataset.index = index;
           if (controllerState.charColors[index]) btn.style.backgroundColor = controllerState.charColors[index];
+          if (selectedCharIndices.has(index)) btn.classList.add('char-btn-active'); // 【修正】恢復選中狀態
           btn.addEventListener('click', (e) => {
             const idx = parseInt(e.currentTarget.dataset.index, 10);
             if (selectedCharIndices.has(idx)) {
@@ -844,9 +836,7 @@
     document.getElementById('advanced-text-toggle').addEventListener('change', (e) => {
         const text = document.getElementById('text-input').value;
         toggleAdvancedModeUI(e.target.checked, text);
-        if (e.target.checked) { // 【修正】當開啟時，才渲染
-            renderCharSelector(text);
-        } else {
+        if (!e.target.checked) {
             controllerState.charColors = [];
             controllerState.charAnimations = [];
         }
