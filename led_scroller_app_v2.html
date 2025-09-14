@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.13 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.14 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,8 +57,7 @@
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
     mask-position: left top; -webkit-mask-position: left top;
     mask-repeat: repeat; -webkit-mask-repeat: repeat;
-    /* 【修正】讓網格也能吃到內圓角變數 */
-    border-radius: var(--inner-border-radius, 8px);
+    border-radius: var(--inner-border-radius, 0px);
   }
 
   .gap-overlay{
@@ -69,6 +68,8 @@
     mask-position: left top; -webkit-mask-position: left top;
     mask-repeat: repeat; -webkit-mask-repeat: repeat;
     display:none;
+    /* 【修正】讓穿孔效果也能吃到內圓角變數 */
+    border-radius: var(--inner-border-radius, 0px);
   }
 
   .border-style-solid {
@@ -86,9 +87,8 @@
   .border-style-rainbow::after {
     content: '';
     position: absolute;
-    inset: var(--border-width, 8px); /* 內縮邊框寬度 */
-    background: var(--bg-color); /* 顯示原本的背景色 */
-    /* 【修正】使用內圓角變數 */
+    inset: var(--border-width, 8px);
+    background: var(--bg-color);
     border-radius: var(--inner-border-radius, 8px);
     z-index: 0;
   }
@@ -376,8 +376,9 @@
     const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
     if (!textEl || !containerEl || !wrapperEl) return;
     const root = containerEl;
+    const gridBg = containerEl.querySelector('.grid-bg');
+    const gap = containerEl.querySelector('.gap-overlay');
 
-    // 【新增】計算內圓角
     const borderWidth = parseInt(settings.borderWidth, 10) || 0;
     const borderRadius = parseInt(settings.borderRadius, 10) || 0;
     const innerRadius = Math.max(0, borderRadius - borderWidth);
@@ -428,14 +429,16 @@
     
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
-    const gridBg = containerEl.querySelector('.grid-bg');
 
     // Reset styles before applying new ones
-    containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview'; // Reset to base class
+    containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = '';
     containerEl.style.backgroundSize = '';
-    containerEl.style.border = ''; // Use border property for solid border via class
-    if (gridBg) gridBg.style.inset = '0px'; 
+    containerEl.style.border = '';
+    
+    const borderWidthPx = `${borderWidth}px`;
+    if (gridBg) gridBg.style.inset = '0px';
+    if (gap) gap.style.inset = '0px';
 
     // Apply border and background
     if (settings.backgroundBorder === 'solid') {
@@ -444,9 +447,8 @@
     } else if (settings.backgroundBorder === 'rainbow') {
       containerEl.classList.add('border-style-rainbow');
       containerEl.style.background = 'conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e )';
-      if (gridBg) {
-        gridBg.style.inset = `${settings.borderWidth}px`;
-      }
+      if (gridBg) gridBg.style.inset = borderWidthPx;
+      if (gap) gap.style.inset = borderWidthPx;
     } else {
       containerEl.style.background = backgroundValue;
     }
@@ -457,7 +459,7 @@
     const gridSizePx = effPreview + 'px';
     const pair = gridSizePx + ' ' + gridSizePx;
     root.style.setProperty('--grid-size', gridSizePx);
-    const gap = containerEl.querySelector('.gap-overlay');
+    
     if (gridBg) {
         if (isGridEnabled) {
             gridBg.style.display = 'block';
