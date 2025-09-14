@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.10 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.11 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,10 +48,10 @@
     background:var(--bg-color,#000); box-sizing:border-box;
     isolation: isolate;
   }
-  .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:1; }
+  .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:2; }
 
   .grid-bg{
-    position:absolute; inset:0; z-index:0; pointer-events:none;
+    position:absolute; inset:0; z-index:1; pointer-events:none;
     background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
@@ -60,7 +60,7 @@
   }
 
   .gap-overlay{
-    position:absolute; inset:0; z-index:2; pointer-events:none;
+    position:absolute; inset:0; z-index:3; pointer-events:none;
     background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
     mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
@@ -70,7 +70,6 @@
   }
 
   .border-style-solid { border:8px solid white; }
-  /* 【修正】採用新的 ::after 偽元素方法實作彩虹邊框 */
   .border-style-rainbow {
     position: relative;
     border-radius:16px;
@@ -87,7 +86,7 @@
   }
 
 
-  #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
+  #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:1; }
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
   .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
 
@@ -404,12 +403,14 @@
     
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
+    const gridBg = containerEl.querySelector('.grid-bg');
 
-    // 【修正】重置邊框相關樣式，改由 JS 控制背景
+    // Reset border styles first
     containerEl.classList.remove('border-style-solid', 'border-style-rainbow');
     containerEl.style.animation = '';
     containerEl.style.backgroundSize = '';
     containerEl.style.border = '';
+    if (gridBg) gridBg.style.inset = '0px'; 
     
     if (settings.backgroundBorder === 'solid') {
       containerEl.classList.add('border-style-solid');
@@ -417,6 +418,9 @@
     } else if (settings.backgroundBorder === 'rainbow') {
       containerEl.classList.add('border-style-rainbow');
       containerEl.style.background = 'conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e )';
+      if (gridBg) {
+        gridBg.style.inset = '8px';
+      }
     } else {
       containerEl.style.background = backgroundValue;
     }
@@ -427,7 +431,6 @@
     const gridSizePx = effPreview + 'px';
     const pair = gridSizePx + ' ' + gridSizePx;
     root.style.setProperty('--grid-size', gridSizePx);
-    const gridBg = containerEl.querySelector('.grid-bg');
     const gap = containerEl.querySelector('.gap-overlay');
     if (gridBg) {
         if (isGridEnabled) {
