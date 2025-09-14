@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.1 (進階版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.2 (修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -659,37 +659,123 @@
     draw();
   }
   
-  // ... 其他 setup, startDisplayMode, listenToChanges 函數不變 ...
-  async function setupDisplayListeners() { /* ... no changes ... */ }
-  async function startDisplayMode(sessionId) {
-      currentSessionId = sessionId; showView('display');
-      const displayEls = {
-          textEl: document.getElementById('marquee-text'),
-          containerEl: document.getElementById('display-screen'),
-          wrapperEl: document.getElementById('marquee-container-wrapper'),
-          bgEffectEl: document.getElementById('background-effects-container'),
-          canvasEl: document.getElementById('display-canvas')
-      };
-      // ... a
-  }
-  
-  async function startControllerMode(sessionId) {
-      // ...
-      Object.assign(controllerState, {
-          // ...
-          charAnimations: settings.charAnimations || []
-      });
-      // ...
+  function setupDisplayListeners(){
+    const info = document.getElementById('info-overlay');
+    document.getElementById('display-view').addEventListener('click',(e)=>{ if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
+    setTimeout(()=>info.classList.add('opacity-0'), 5000);
+    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{ if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
   }
 
-  function updateControllerUI(settings) {
-    // ...
+  async function startDisplayMode(sessionId){
+    currentSessionId = sessionId; showView('display');
+    const displayEls = {
+        textEl: document.getElementById('marquee-text'),
+        containerEl: document.getElementById('display-screen'),
+        wrapperEl: document.getElementById('marquee-container-wrapper'),
+        bgEffectEl: document.getElementById('background-effects-container'),
+        canvasEl: document.getElementById('display-canvas')
+    };
+    applySettings(displayEls, defaultSettings); // 【修正】恢復此行以立即顯示預設文字
+
+    document.getElementById('session-id-display').textContent = sessionId;
+    const url = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
+    document.getElementById('qrcode-container').innerHTML = '';
+    new QRCode(document.getElementById("qrcode-container"), { text:url, width:128, height:128 });
+    const ref = doc(db,"sessions",sessionId);
+    try{
+      const snap = await getDoc(ref);
+      if (!snap.exists()) await setDoc(ref, defaultSettings);
+      listenToChanges(sessionId, displayEls);
+    }catch(e){ console.error('Firestore 讀寫失敗', e); }
+    setupDisplayListeners();
+  }
+
+  function listenToChanges(sessionId, displayEls){
+    if (unsubscribe) unsubscribe();
+    const ref = doc(db,"sessions",sessionId);
+    unsubscribe = onSnapshot(ref, (docSnap)=>{
+      const settings = docSnap.exists() ? { ...defaultSettings, ...docSnap.data() } : defaultSettings;
+      applySettings(displayEls, settings);
+    }, (error)=>{ console.error('onSnapshot 監聽錯誤', error); });
+  }
+
+  async function startControllerMode(sessionId){
+    currentSessionId = sessionId; showView('controller');
+    document.getElementById('controller-session-id').textContent = sessionId;
+    createPickers();
+    const ref = doc(db,"sessions",sessionId);
+    let settings;
+    try {
+        const snap = await getDoc(ref);
+        settings = snap.exists() ? { ...defaultSettings, ...snap.data() } : defaultSettings;
+        if (!snap.exists()) await setDoc(ref, defaultSettings);
+    } catch(e) {
+        console.error('Firestore 讀取/設定失敗，將使用預設值', e);
+        settings = defaultSettings;
+    }
+    
+    Object.assign(controllerState, { 
+      textColorMode: settings.textColorMode, 
+      bgColorMode: settings.bgColorMode, 
+      gridColorMode: settings.gridColorMode,
+      charColors: settings.charColors || [],
+      charAnimations: settings.charAnimations || []
+    });
+    gridSizeState = Number(settings.gridSize) || 20;
+    updateControllerUI(settings);
+    setupControllerListeners();
+  }
+
+  function updateControllerUI(settings){
+    document.getElementById('text-input').value = settings.text;
+    document.getElementById('font-size-slider').value = settings.fontSize;
+    document.getElementById('font-size-value').textContent = settings.fontSize;
+    document.getElementById('speed-slider').value = settings.scrollSpeed;
+    document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('advanced-text-toggle').checked = !!settings.isAdvancedText;
-    // ...
+    
+    const fontSizeControls = document.getElementById('font-size-controls');
+    switch(settings.fontSizeMode){
+      case 'fitHeight': fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 100; break;
+      case 'fitWidth': case 'multiline': fontSizeControls.style.display = 'none'; break;
+      default: fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 500; break;
+    }
+    
+    document.getElementById('border-width-slider').value = settings.borderWidth;
+    document.getElementById('border-width-value').textContent = settings.borderWidth;
+    document.getElementById('border-radius-slider').value = settings.borderRadius;
+    document.getElementById('border-radius-value').textContent = settings.borderRadius;
+    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
+    
+    const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
+    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
+    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
+    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || settings.isAdvancedText);
+    
+    document.getElementById('grid-size-slider').value = gridSizeState;
+    document.getElementById('grid-size-value').textContent = gridSizeState;
+    updateColorTab('color-tab', settings.textColorMode);
+    updateColorTab('grid-color-tab', settings.gridColorMode);
+    updatePickerState('text-color-picker', settings.textColor, 'color');
+    updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
+    updatePickerState('grid-color-picker', settings.gridColor, 'color');
+    updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
+    updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
+    updatePickerState('grid-gradient-picker', settings.gradientGrid, 'gradient');
+    updatePickerState('gap-color-picker', settings.gapColor, 'color');
+    updatePickerState('outline-color-picker', settings.outlineColor, 'color');
+    updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
+    updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
+    updateButtonGroupState('.text-style-btn','style', settings.textStyle);
     updateButtonGroupState('.text-animation-btn', 'animation', settings.textAnimation);
-    // ...
+    updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
+    updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
+    updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
+    updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
+    updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
+    
     toggleAdvancedModeUI(settings.isAdvancedText, settings.text);
-    // ...
+    updatePreview();
   }
   
   function toggleAdvancedModeUI(isActive, text) {
@@ -711,9 +797,9 @@
       selectedCharIndices.clear();
       const chars = Array.from(text);
       
-      const ensureArray = (arr, len) => (!Array.isArray(arr) || arr.length !== len) ? new Array(len).fill(null) : arr;
-      controllerState.charColors = ensureArray(controllerState.charColors, chars.length);
-      controllerState.charAnimations = ensureArray(controllerState.charAnimations, chars.length);
+      const ensureArray = (arr, len, fillVal) => (!Array.isArray(arr) || arr.length !== len) ? new Array(len).fill(fillVal) : arr;
+      controllerState.charColors = ensureArray(controllerState.charColors, chars.length, null);
+      controllerState.charAnimations = ensureArray(controllerState.charAnimations, chars.length, null);
 
       chars.forEach((char, index) => {
           const btn = document.createElement('button');
@@ -721,49 +807,154 @@
           btn.textContent = char;
           btn.dataset.index = index;
           if (controllerState.charColors[index]) btn.style.backgroundColor = controllerState.charColors[index];
-          btn.addEventListener('click', () => { /* ... no changes ... */ });
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.dataset.index, 10);
+            if (selectedCharIndices.has(idx)) {
+                selectedCharIndices.delete(idx);
+                e.currentTarget.classList.remove('char-btn-active');
+            } else {
+                selectedCharIndices.add(idx);
+                e.currentTarget.classList.add('char-btn-active');
+            }
+          });
           selector.appendChild(btn);
       });
   }
   
-  function setupControllerListeners() {
-      // ...
-      document.getElementById('advanced-text-toggle').addEventListener('change', (e) => {
-          toggleAdvancedModeUI(e.target.checked, document.getElementById('text-input').value);
-          if (!e.target.checked) {
-              controllerState.charColors = [];
-              controllerState.charAnimations = [];
-          }
-          updateSession();
-      });
+  function setupControllerListeners(){
+    ['text-input','font-size-slider','speed-slider','gap-alpha-slider', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
+      const el = document.getElementById(id);
+      el && el.addEventListener('input', updateSession);
+    });
+    
+    document.getElementById('text-input').addEventListener('input', (e) => {
+        if (document.getElementById('advanced-text-toggle').checked) {
+            renderCharSelector(e.target.value);
+        }
+        updateSession();
+    });
 
-      // ...
-      // For individual animation buttons
-      document.getElementById('char-animation-picker').addEventListener('click', (e) => {
-          const el = e.target.closest('[data-char-animation]');
+    document.getElementById('advanced-text-toggle').addEventListener('change', (e) => {
+        toggleAdvancedModeUI(e.target.checked, document.getElementById('text-input').value);
+        if (!e.target.checked) {
+            controllerState.charColors = [];
+            controllerState.charAnimations = [];
+        }
+        updateSession();
+    });
+
+    document.getElementById('grid-size-slider').addEventListener('input', ()=>{
+      gridSizeState = parseInt(document.getElementById('grid-size-slider').value,10);
+      document.getElementById('grid-size-value').textContent = String(gridSizeState);
+      updateSession();
+    });
+
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-animation-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.currentTarget.classList.contains('control-disabled')) return;
+            const group = e.currentTarget.classList[0];
+            document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+            updateSession();
+        });
+    });
+
+    const setupPicker = (pickerId, mode, stateKey, stateValue) => {
+      document.getElementById(pickerId).addEventListener('click', (e) => {
+          const el = e.target.closest(`[data-${mode}]`);
           if (el) {
-              const anim = el.dataset.charAnimation;
-              selectedCharIndices.forEach(index => {
-                  controllerState.charAnimations[index] = anim === 'none' ? null : anim;
-              });
-              // No visual update needed on char buttons, just save state
+              if (pickerId === 'char-color-picker') {
+                  const color = el.dataset[mode];
+                  selectedCharIndices.forEach(index => {
+                      controllerState.charColors[index] = color;
+                  });
+                  renderCharSelector(document.getElementById('text-input').value);
+              } else {
+                  if (stateKey) controllerState[stateKey] = stateValue;
+                  updatePickerState(pickerId, el.dataset[mode], mode);
+              }
               updateSession();
           }
       });
+    };
+    setupPicker('text-color-picker', 'color', 'textColorMode', 'solid');
+    setupPicker('bg-color-picker', 'color', 'bgColorMode', 'solid');
+    setupPicker('grid-color-picker', 'color', 'gridColorMode', 'solid');
+    setupPicker('gap-color-picker', 'color');
+    setupPicker('outline-color-picker', 'color');
+    setupPicker('text-gradient-picker', 'gradient', 'textColorMode', 'gradient');
+    setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode', 'gradient');
+    setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode', 'gradient');
+    setupPicker('char-color-picker', 'color');
+
+    document.getElementById('char-animation-picker').addEventListener('click', (e) => {
+        const el = e.target.closest('[data-char-animation]');
+        if (el) {
+            const anim = el.dataset.charAnimation;
+            selectedCharIndices.forEach(index => {
+                controllerState.charAnimations[index] = anim === 'none' ? null : anim;
+            });
+            updateSession();
+        }
+    });
+
+    document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabGroup = btn.closest('#color-tab, #grid-color-tab');
+            const targetMode = btn.dataset.tab;
+            const stateKey = tabGroup.id === 'color-tab' ? 'textColorMode' : 'gridColorMode';
+            controllerState[stateKey] = targetMode;
+            updateColorTab(tabGroup.id, targetMode);
+            updateSession();
+        });
+    });
   }
   
   function getSettings() {
       return {
-          // ...
+          text: document.getElementById('text-input').value,
+          fontSize: document.getElementById('font-size-slider').value,
+          fontSizeMode: document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight',
+          scrollSpeed: document.getElementById('speed-slider').value,
           isAdvancedText: document.getElementById('advanced-text-toggle').checked,
+          charColors: controllerState.charColors,
           charAnimations: controllerState.charAnimations,
-          // ...
+          textAnimation: document.querySelector('.text-animation-btn.bg-indigo-600')?.dataset.animation || 'none',
+          borderWidth: document.getElementById('border-width-slider').value,
+          borderRadius: document.getElementById('border-radius-slider').value,
+          textColorMode: controllerState.textColorMode,
+          bgColorMode: controllerState.bgColorMode,
+          gridColorMode: controllerState.gridColorMode,
+          textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || defaultSettings.textColor,
+          backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || defaultSettings.backgroundColor,
+          gridColor: document.querySelector('#grid-color-picker .control-btn-active')?.dataset.color || defaultSettings.gridColor,
+          gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientText,
+          gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientBg,
+          gradientGrid: document.querySelector('#grid-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientGrid,
+          gapColor: document.querySelector('#gap-color-picker .control-btn-active')?.dataset.color || defaultSettings.gapColor,
+          gapAlpha: document.getElementById('gap-alpha-slider') ? parseFloat(document.getElementById('gap-alpha-slider').value) : 1,
+          outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || defaultSettings.outlineColor,
+          textStyle: document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style || 'normal',
+          backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600')?.dataset.border || 'none',
+          backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
+          gridStyle: document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid || 'none',
+          gridSize: gridSizeState,
+          scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
+          textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
+          fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
       };
   }
   
   let updateTimeout;
   function updateSession() {
-      // ...
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+          const settings = getSettings();
+          updateControllerUI(settings); 
+          if (currentSessionId) { 
+              setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
+          }
+      }, 200);
   }
   
   function updatePreview() {
@@ -778,6 +969,74 @@
       applySettings(previewEls, settings, true);
   }
 
+  function createPickers(){
+    const create = (id, palette, isGradient=false)=>{
+      const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
+      palette.forEach((value)=>{
+        const el = document.createElement('div');
+        el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
+        el.style.background = value;
+        if (isGradient) el.dataset.gradient = value; else el.dataset.color = value;
+        picker.appendChild(el);
+      });
+    };
+    create('text-color-picker', solid16);
+    const textPicker = document.getElementById('text-color-picker');
+    const inputWrap = document.createElement('div');
+    inputWrap.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-600 overflow-hidden";
+    const colorInput = document.createElement('input');
+    colorInput.type = "color";
+    colorInput.className = "w-12 h-12 cursor-pointer border-none -translate-x-2 -translate-y-2";
+    colorInput.value = "#5588dd";
+    colorInput.title = "自選色碼";
+    colorInput.addEventListener('input', e=>{
+      inputWrap.dataset.color = e.target.value;
+      textPicker.querySelectorAll('div').forEach(div=>div.classList.remove('control-btn-active'));
+      inputWrap.classList.add('control-btn-active');
+      controllerState.textColorMode='solid';
+      updateSession();
+    });
+    inputWrap.appendChild(colorInput);
+    textPicker.appendChild(inputWrap);
+
+    create('bg-color-picker', bgSolid16);
+    create('grid-color-picker', gridSolid16);
+    create('gap-color-picker', gapSolid16);
+    create('outline-color-picker', ['#FF3B30','#FFFFFF','#000000','#22C55E','#3B82F6','#F59E0B','#A855F7','#EF4444']);
+    create('text-gradient-picker', gradients16, true);
+    create('bg-gradient-picker', bgGradients16, true);
+    create('grid-gradient-picker', gridGradients16, true);
+    create('char-color-picker', solid16);
+  }
+
+  function updatePickerState(id, activeValue, prop){
+    document.querySelectorAll(`#${id} > div`).forEach(div=>{
+      div.classList.toggle('control-btn-active', div.dataset[(prop||'color')]===activeValue);
+    });
+  }
+  function updateButtonGroupState(selector, dataAttr, value){
+    document.querySelectorAll(selector).forEach(btn=>{
+      const isActive = btn.dataset[dataAttr] === String(value);
+      btn.classList.toggle('bg-indigo-600', isActive);
+      btn.classList.toggle('bg-gray-700', !isActive);
+    });
+  }
+  function updateColorTab(tabGroupId, activeTab){
+    const isMainColorTab = tabGroupId === 'color-tab';
+    const solidPanel = document.getElementById(isMainColorTab ? 'solid-color-panel' : 'grid-solid-color-panel');
+    const gradientPanel = document.getElementById(isMainColorTab ? 'gradient-color-panel' : 'grid-gradient-color-panel');
+    if(solidPanel) solidPanel.style.display = activeTab!=='solid' ? 'none' : 'block';
+    if(gradientPanel) gradientPanel.style.display = activeTab!=='gradient' ? 'none' : 'block';
+    document.querySelectorAll(`#${tabGroupId} button`).forEach(btn=>{
+      btn.classList.toggle('border-indigo-500', btn.dataset.tab===activeTab);
+      btn.classList.toggle('text-white', btn.dataset.tab===activeTab);
+      btn.classList.toggle('border-transparent', btn.dataset.tab!==activeTab);
+      btn.classList.toggle('text-gray-400', btn.dataset.tab!==activeTab);
+    });
+  }
+
+  document.getElementById('create-display-btn').addEventListener('click', ()=>{ window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
+  document.getElementById('open-controller-btn').addEventListener('click', ()=>{ const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
 </script>
 </body>
 </html>
