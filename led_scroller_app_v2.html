@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.19 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v21.3.14</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<!-- 引入所有需要的字體 -->
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   html, body { height:100%; margin:0; padding:0; background:#0f172a; }
@@ -41,6 +42,15 @@
     -webkit-text-fill-color: transparent;
     paint-order: stroke fill;
     text-shadow: none !important;
+  }
+  /* 【新增】點狀文字風格 */
+  .text-style-dotted {
+    background-clip: text; -webkit-background-clip: text;
+    color: transparent !important; -webkit-text-fill-color: transparent;
+    background-image: radial-gradient(var(--text-color) 35%, transparent 40%);
+    background-size: 3px 3px;
+    text-shadow: none !important;
+    -webkit-text-stroke: 0;
   }
 
   .display-screen{
@@ -175,6 +185,18 @@
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
       
+      <!-- 【新增】字體選擇 -->
+      <div class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
+        <div class="grid grid-cols-3 gap-3">
+            <button data-font="'Inter','微軟正黑體',sans-serif" class="font-btn p-3 bg-indigo-600 rounded-lg text-sm">標準體</button>
+            <button data-font="'DotGothic16', sans-serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">點陣體</button>
+            <button data-font="'Noto Serif TC', serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">宋體</button>
+            <button data-font="'ZCOOL KuaiLe', cursive" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">快樂體</button>
+            <button data-font="'Cutive Mono', monospace" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">等寬體</button>
+        </div>
+      </div>
+
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體模式</label>
         <div class="grid grid-cols-2 gap-3">
@@ -280,6 +302,8 @@
           <button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button>
           <button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button>
           <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button>
+          <!-- 【新增】點狀風格按鈕 -->
+          <button data-style="dotted" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
         </div>
       </div>
       <div id="outline-color-section" class="mb-6 hidden">
@@ -366,7 +390,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -452,21 +476,27 @@
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
+    // 【更新】套用字體與文字風格
     textEl.className = 'marquee-text';
     textEl.style.backgroundImage = '';
     textEl.style.color = '';
-    const isOutline = settings.textStyle === 'outline';
-    if (isOutline) {
-        textEl.classList.add('gradient-text','text-style-outline');
+    textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
+
+    if (settings.textStyle === 'dotted') {
+        textEl.classList.add('text-style-dotted');
+    } else if (settings.textStyle === 'outline') {
+        textEl.classList.add('gradient-text', 'text-style-outline');
         textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-    } else {
+    } else { // For 'normal' and 'glow'
         if (settings.textColorMode === 'gradient') {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
             textEl.style.color = settings.textColor;
         }
-        if (settings.textStyle === 'glow') textEl.classList.add('text-style-glow');
+        if (settings.textStyle === 'glow') {
+            textEl.classList.add('text-style-glow');
+        }
     }
     
     let anims = [];
@@ -474,7 +504,6 @@
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
     textEl.style.animation = anims.join(', ');
 
-    // 【修正】在「填滿高度」且靜止時，文字靠左對齊
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') {
         if (settings.fontSizeMode === 'fitHeight') {
@@ -641,6 +670,7 @@
     updateButtonGroupState('.text-style-btn','style', settings.textStyle);
     updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
     updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
+    updateButtonGroupState('.font-btn', 'font', settings.fontFamily); //【更新】
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     updatePreview();
@@ -656,7 +686,8 @@
       document.getElementById('grid-size-value').textContent = String(gridSizeState);
       updateSession();
     });
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn').forEach(btn => {
+    // 【更新】將 .font-btn 加入監聽列表
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const group = e.currentTarget.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
@@ -724,6 +755,7 @@
       gridSize: gridSizeState,
       scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
       textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
+      fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily, //【更新】
     };
   }
 
@@ -736,7 +768,7 @@
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
         }
-    }, 150); // a bit longer timeout for potentially slower calculations
+    }, 150);
   }
 
   function updatePreview(){
@@ -814,4 +846,3 @@
 </script>
 </body>
 </html>
-
