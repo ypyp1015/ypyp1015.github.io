@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.18 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.19 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -473,8 +473,18 @@
     if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
     textEl.style.animation = anims.join(', ');
+
+    // 【修正】在「填滿高度」且靜止時，文字靠左對齊
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
+    if (settings.scrollDirection === 'none') {
+        if (settings.fontSizeMode === 'fitHeight') {
+            wrapperEl.style.justifyContent = 'flex-start';
+        } else {
+            wrapperEl.style.justifyContent = 'center';
+        }
+    } else {
+        wrapperEl.style.justifyContent = '';
+    }
     
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
