@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.16 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.19 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,7 @@
   }
   .gradient-text{
     background-clip:text; -webkit-background-clip:text;
-    color:transparent !important; -webkit-text-fill-color:transparent; /* 漸層不被 color 覆蓋 */
+    color:transparent !important; -webkit-text-fill-color:transparent;
   }
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
@@ -174,11 +174,22 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
-
+      
       <div class="mb-6">
-        <label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label>
-        <input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+        <label class="block mb-2 text-sm font-medium text-gray-300">字體模式</label>
+        <div class="grid grid-cols-2 gap-3">
+          <button data-mode="fixed" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">固定大小</button>
+          <button data-mode="fitHeight" class="font-mode-btn p-3 bg-indigo-600 rounded-lg text-sm">填滿高度</button>
+          <button data-mode="fitWidth" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">填滿寬度</button>
+          <button data-mode="multiline" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">自動換行</button>
+        </div>
       </div>
+
+      <div id="font-size-controls" class="mb-6">
+        <label id="font-size-label" for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">高度佔比: <span id="font-size-value">95</span>%</label>
+        <input id="font-size-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+      </div>
+
       <div class="mb-6">
         <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label>
         <input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
@@ -355,7 +366,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -380,13 +391,11 @@
     const borderWidth = parseInt(settings.borderWidth, 10) || 0;
     const borderRadius = parseInt(settings.borderRadius, 10) || 0;
     
-    // 【修正】只有在啟用邊框時才計算內圓角，否則為 0
     let innerRadius = 0;
-    if (settings.backgroundBorder !== 'none') {
+    if (settings.backgroundBorder !== 'none' && settings.backgroundBorder !== undefined) {
         innerRadius = Math.max(0, borderRadius - borderWidth);
     }
 
-    // Set CSS custom properties
     root.style.setProperty('--border-width', `${borderWidth}px`);
     root.style.setProperty('--border-radius', `${borderRadius}px`);
     root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
@@ -401,10 +410,48 @@
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
     
-    // Apply text settings
     textEl.textContent = settings.text;
-    const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
-    textEl.style.fontSize = `${fontPx}px`;
+    
+    // Apply Font Size based on mode
+    textEl.style.whiteSpace = 'nowrap'; // Default
+    let finalFontSize = 100;
+
+    switch(settings.fontSizeMode){
+      case 'fitHeight':
+        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
+        break;
+      case 'fitWidth': {
+        let low = 1, high = 2000;
+        let bestSize = 10;
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; }
+          else { high = mid - 1; }
+        }
+        finalFontSize = bestSize;
+        break;
+      }
+      case 'multiline': {
+        textEl.style.whiteSpace = 'pre-wrap';
+        let low = 1, high = 2000;
+        let bestSize = 10;
+         for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;}
+          else { high = mid - 1; }
+        }
+        finalFontSize = bestSize;
+        break;
+      }
+      case 'fixed':
+      default:
+        finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
+        break;
+    }
+    textEl.style.fontSize = `${finalFontSize}px`;
+
     textEl.className = 'marquee-text';
     textEl.style.backgroundImage = '';
     textEl.style.color = '';
@@ -422,18 +469,26 @@
         if (settings.textStyle === 'glow') textEl.classList.add('text-style-glow');
     }
     
-    // Apply animation settings
     let anims = [];
     if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
     textEl.style.animation = anims.join(', ');
+
+    // 【修正】在「填滿高度」且靜止時，文字靠左對齊
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
+    if (settings.scrollDirection === 'none') {
+        if (settings.fontSizeMode === 'fitHeight') {
+            wrapperEl.style.justifyContent = 'flex-start';
+        } else {
+            wrapperEl.style.justifyContent = 'center';
+        }
+    } else {
+        wrapperEl.style.justifyContent = '';
+    }
     
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
 
-    // Reset styles before applying new ones
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = '';
     containerEl.style.backgroundSize = '';
@@ -443,7 +498,6 @@
     if (gridBg) gridBg.style.inset = '0px';
     if (gap) gap.style.inset = '0px';
 
-    // Apply border and background
     if (settings.backgroundBorder === 'solid') {
       containerEl.classList.add('border-style-solid');
       containerEl.style.background = backgroundValue; 
@@ -536,6 +590,28 @@
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     
+    const fontSizeControls = document.getElementById('font-size-controls');
+    const fontSizeLabel = document.getElementById('font-size-label');
+    const fontSizeSlider = document.getElementById('font-size-slider');
+
+    switch(settings.fontSizeMode){
+      case 'fitHeight':
+        fontSizeControls.style.display = 'block';
+        fontSizeLabel.innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
+        fontSizeSlider.min = 10; fontSizeSlider.max = 100;
+        break;
+      case 'fitWidth':
+      case 'multiline':
+        fontSizeControls.style.display = 'none';
+        break;
+      case 'fixed':
+      default:
+        fontSizeControls.style.display = 'block';
+        fontSizeLabel.innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`;
+        fontSizeSlider.min = 10; fontSizeSlider.max = 500;
+        break;
+    }
+    
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
@@ -564,6 +640,7 @@
     updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
     updateButtonGroupState('.text-style-btn','style', settings.textStyle);
     updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
+    updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     updatePreview();
@@ -579,7 +656,7 @@
       document.getElementById('grid-size-value').textContent = String(gridSizeState);
       updateSession();
     });
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn').forEach(btn => {
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const group = e.currentTarget.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
@@ -623,6 +700,7 @@
     return {
       text: document.getElementById('text-input').value,
       fontSize: document.getElementById('font-size-slider').value,
+      fontSizeMode: document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight',
       scrollSpeed: document.getElementById('speed-slider').value,
       isBlinking: document.getElementById('blink-toggle').checked,
       borderWidth: document.getElementById('border-width-slider').value,
@@ -658,7 +736,7 @@
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
         }
-    }, 100);
+    }, 150); // a bit longer timeout for potentially slower calculations
   }
 
   function updatePreview(){
