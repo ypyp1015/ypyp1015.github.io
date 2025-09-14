@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.6 (功能更新版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.7 (功能更新版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,13 +20,11 @@
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   
-  /* 【新增】彩虹光暈動畫 */
   @keyframes rainbow-orb-anim {
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-  /* 【新增】彩虹邊框旋轉動畫 */
   @keyframes rainbow-border-rotate {
     to { transform: rotate(1turn); }
   }
@@ -80,35 +78,38 @@
   }
 
   .border-style-solid { border:8px solid white; }
-  /* 【更新】新的彩虹邊框效果 */
+  /* 【更新】新的彩虹邊框效果 v3 */
   .border-style-rainbow {
     position: relative;
     border: 8px solid transparent;
-    border-radius:16px;
+    border-radius: 16px;
+    overflow: hidden; /* Important: clips the pseudo-element */
   }
   .border-style-rainbow::before {
     content: '';
     position: absolute;
-    inset: -8px;
-    border-radius: 16px;
-    background: conic-gradient(from 90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 180deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
     animation: rainbow-border-rotate 4s linear infinite;
     z-index: -1;
   }
   
-  /* 【新增】新的彩虹光暈背景動畫效果 */
+  /* 【更新】恢復並優化彩虹光暈效果 */
   .effect-rainbow-orb::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at center,
-        rgba(255,0,110,0.5) 0%,
-        rgba(255,232,72,0.4) 35%,
-        rgba(0,255,239,0.3) 60%,
-        rgba(0,0,0,0) 75%
+    background: radial-gradient(circle at center,
+        rgba(255,0,110,0.6) 0%,
+        rgba(255,232,72,0.5) 15%,
+        rgba(0,255,239,0.4) 30%,
+        rgba(0,0,0,0) 50%
     );
-    background-size: 200% 200%;
-    animation: rainbow-orb-anim 8s ease-in-out infinite;
+    background-size: 200% 100%;
+    animation: rainbow-orb-anim 6s ease-in-out infinite;
     z-index: 0;
   }
 
@@ -312,7 +313,6 @@
         <div class="flex flex-wrap gap-3">
           <button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
           <button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button>
-          <!-- 【新增】彩虹光暈按鈕 -->
           <button data-effect="rainbow-orb" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹光暈</button>
         </div>
       </div>
@@ -377,7 +377,6 @@
     const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
     if (!textEl || !containerEl || !wrapperEl) return;
 
-    // Clear all potential effect classes first
     containerEl.classList.remove('effect-rainbow-orb');
 
     const root = containerEl;
