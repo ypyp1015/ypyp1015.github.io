@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.12 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.13 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +57,8 @@
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
     mask-position: left top; -webkit-mask-position: left top;
     mask-repeat: repeat; -webkit-mask-repeat: repeat;
+    /* 【修正】讓網格也能吃到內圓角變數 */
+    border-radius: var(--inner-border-radius, 8px);
   }
 
   .gap-overlay{
@@ -69,7 +71,6 @@
     display:none;
   }
 
-  /* 【修正】邊框樣式改由 CSS 變數控制 */
   .border-style-solid {
     border-style: solid;
     border-color: white;
@@ -87,7 +88,8 @@
     position: absolute;
     inset: var(--border-width, 8px); /* 內縮邊框寬度 */
     background: var(--bg-color); /* 顯示原本的背景色 */
-    border-radius: calc(var(--border-radius, 16px) - var(--border-width, 8px)); /* 計算內圓角 */
+    /* 【修正】使用內圓角變數 */
+    border-radius: var(--inner-border-radius, 8px);
     z-index: 0;
   }
 
@@ -295,7 +297,6 @@
         </div>
       </div>
       
-      <!-- 【新增】邊框調整區塊 -->
       <div id="border-controls-section" class="mb-6 space-y-6 hidden">
         <div>
             <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
@@ -376,9 +377,15 @@
     if (!textEl || !containerEl || !wrapperEl) return;
     const root = containerEl;
 
+    // 【新增】計算內圓角
+    const borderWidth = parseInt(settings.borderWidth, 10) || 0;
+    const borderRadius = parseInt(settings.borderRadius, 10) || 0;
+    const innerRadius = Math.max(0, borderRadius - borderWidth);
+
     // Set CSS custom properties
-    root.style.setProperty('--border-width', `${settings.borderWidth}px`);
-    root.style.setProperty('--border-radius', `${settings.borderRadius}px`);
+    root.style.setProperty('--border-width', `${borderWidth}px`);
+    root.style.setProperty('--border-radius', `${borderRadius}px`);
+    root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
     
