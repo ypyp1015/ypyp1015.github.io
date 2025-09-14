@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.6 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.7 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,6 +98,7 @@
   .border-style-rainbow {
     position: relative;
     border-radius: var(--border-radius, 16px);
+    background: conic-gradient(from 180deg at 50% 50%, #FF004E 0deg, #FFE848 90deg, #00FFEF 180deg, #0047FF 270deg, #FF004E 360deg);
     animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
   }
@@ -642,7 +643,7 @@
         offscreenCtx.fillStyle = 'white';
         offscreenCtx.font = font;
         offscreenCtx.textBaseline = 'middle';
-        offscreenCtx.fillText(settings.text, x, containerEl.clientHeight / 2);
+        offscreenCtx.fillText(settings.text, x, containerEl.clientHeight / 2 + finalFontSize * 0.05);
 
         const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
         const data = imageData.data;
@@ -790,6 +791,10 @@
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     
+    const isDotMatrix = settings.textStyle === 'dot-matrix';
+    document.getElementById('text-animation-wrapper').classList.toggle('control-disabled', isDotMatrix);
+    document.getElementById('char-animation-picker').classList.toggle('control-disabled', isDotMatrix);
+
     toggleAdvancedModeUI(settings.isAdvancedText, settings.text);
     updatePreview(); 
   }
@@ -907,7 +912,7 @@
 
     document.getElementById('char-animation-picker').addEventListener('click', (e) => {
         const el = e.target.closest('[data-char-animation]');
-        if (el) {
+        if (el && !el.closest('#char-animation-picker.control-disabled')) {
             const anim = el.dataset.charAnimation;
             selectedCharIndices.forEach(index => {
                 controllerState.charAnimations[index] = anim === 'none' ? null : anim;
@@ -1059,5 +1064,16 @@
 </script>
 </body>
 </html>
+" code between  and  in the most up-to-date Canvas "LED Scroller v24.1.6 (穩定版)" document above and am asking a query about/based on this code below.
+Instructions to follow:
+  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
+  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
+    * Don't output the same document/empty document and say that you have edited it.
+    * Don't change unrelated code in the document.
+  * Don't output  and  in your final response.
+  * Any references like "this" or "selected code" refers to the code between  and  tags.
+  * Just acknowledge my request in the introduction.
+  * Make sure to refer to the document as "Canvas" in your response.
 
+1.文字漸層失效了2.文字風格>點陣圖的效果不支援文字動畫(整體)嗎?且切換成點陣圖時字體很像往上移動了些.跟一般字體定位不一樣?4.彩虹邊框失效了
 
