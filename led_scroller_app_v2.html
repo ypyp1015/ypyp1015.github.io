@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.16 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.17 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,7 @@
   }
   .gradient-text{
     background-clip:text; -webkit-background-clip:text;
-    color:transparent !important; -webkit-text-fill-color:transparent; /* 漸層不被 color 覆蓋 */
+    color:transparent !important; -webkit-text-fill-color:transparent;
   }
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
@@ -176,8 +176,13 @@
       </div>
 
       <div class="mb-6">
-        <label for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label>
+        <label id="font-size-label" for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">字體大小: <span id="font-size-value">80</span>px</label>
         <input id="font-size-slider" type="range" min="10" max="300" value="80" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+        <label class="relative inline-flex items-center cursor-pointer mt-3">
+            <input type="checkbox" id="auto-font-size-toggle" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            <span class="ml-3 text-sm font-medium text-gray-300">自動調整字體大小</span>
+        </label>
       </div>
       <div class="mb-6">
         <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label>
@@ -355,7 +360,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false, isAutoSize: true, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -380,13 +385,11 @@
     const borderWidth = parseInt(settings.borderWidth, 10) || 0;
     const borderRadius = parseInt(settings.borderRadius, 10) || 0;
     
-    // 【修正】只有在啟用邊框時才計算內圓角，否則為 0
     let innerRadius = 0;
-    if (settings.backgroundBorder !== 'none') {
+    if (settings.backgroundBorder !== 'none' && settings.backgroundBorder !== undefined) {
         innerRadius = Math.max(0, borderRadius - borderWidth);
     }
 
-    // Set CSS custom properties
     root.style.setProperty('--border-width', `${borderWidth}px`);
     root.style.setProperty('--border-radius', `${borderRadius}px`);
     root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
@@ -401,10 +404,15 @@
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
     
-    // Apply text settings
+    // Apply text and font size settings
     textEl.textContent = settings.text;
-    const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
-    textEl.style.fontSize = `${fontPx}px`;
+    if (settings.isAutoSize && !isPreview) {
+        textEl.style.fontSize = `clamp(16px, ${settings.fontSize / 10}vw, 300px)`;
+    } else {
+        const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
+        textEl.style.fontSize = `${fontPx}px`;
+    }
+
     textEl.className = 'marquee-text';
     textEl.style.backgroundImage = '';
     textEl.style.color = '';
@@ -422,7 +430,6 @@
         if (settings.textStyle === 'glow') textEl.classList.add('text-style-glow');
     }
     
-    // Apply animation settings
     let anims = [];
     if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
@@ -433,7 +440,6 @@
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
 
-    // Reset styles before applying new ones
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = '';
     containerEl.style.backgroundSize = '';
@@ -443,7 +449,6 @@
     if (gridBg) gridBg.style.inset = '0px';
     if (gap) gap.style.inset = '0px';
 
-    // Apply border and background
     if (settings.backgroundBorder === 'solid') {
       containerEl.classList.add('border-style-solid');
       containerEl.style.background = backgroundValue; 
@@ -535,6 +540,14 @@
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
+    document.getElementById('auto-font-size-toggle').checked = !!settings.isAutoSize;
+    
+    const fontSizeLabel = document.getElementById('font-size-label');
+    if (settings.isAutoSize) {
+        fontSizeLabel.innerHTML = `相對大小: <span id="font-size-value">${settings.fontSize}</span>`;
+    } else {
+        fontSizeLabel.innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`;
+    }
     
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
@@ -570,7 +583,7 @@
   }
 
   function setupControllerListeners(){
-    ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
+    ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle', 'auto-font-size-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
       const el = document.getElementById(id);
       el && el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
     });
@@ -625,6 +638,7 @@
       fontSize: document.getElementById('font-size-slider').value,
       scrollSpeed: document.getElementById('speed-slider').value,
       isBlinking: document.getElementById('blink-toggle').checked,
+      isAutoSize: document.getElementById('auto-font-size-toggle').checked,
       borderWidth: document.getElementById('border-width-slider').value,
       borderRadius: document.getElementById('border-radius-slider').value,
       textColorMode: controllerState.textColorMode,
