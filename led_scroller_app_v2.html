@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.9 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.2 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -551,37 +551,41 @@
                 span.style.animationDelay = `${index * 0.1}s`;
             }
         } else if (isPerCharGlobalAnim) {
-             span.style.display = 'inline-block';
-             span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
-             span.style.animationDelay = `${index * 0.1}s`;
+            span.style.display = 'inline-block';
+            span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
+            span.style.animationDelay = `${index * 0.1}s`;
+             // 【修正】如果使用了漸層色和逐字動畫，則將漸層應用於每個字元
+            if (settings.textColorMode === 'gradient') {
+                span.classList.add('gradient-text');
+                span.style.backgroundImage = settings.gradientText;
+            }
         }
         fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
 
-    // 【修正】重構樣式邏輯
+    // 重設樣式
     textEl.classList.remove('gradient-text', 'text-style-glow', 'text-style-outline', 'text-anim-rainbow');
     textEl.style.backgroundImage = '';
     textEl.style.color = '';
     textEl.style.webkitTextStroke = '';
 
     if (!useAdvanced) {
-        // Step 1: Base color
-        if (settings.textColorMode === 'gradient') {
+        // 只有在非逐字動畫時，才將漸層應用於父容器
+        if (settings.textColorMode === 'gradient' && !isPerCharGlobalAnim) {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
-        } else {
+        } else if (settings.textColorMode !== 'gradient') {
             textEl.style.color = settings.textColor;
         }
 
-        // Step 2: Overlapping styles
         if (settings.textAnimation === 'rainbow') {
             textEl.classList.add('gradient-text', 'text-anim-rainbow');
         }
         if (settings.textStyle === 'outline') {
             textEl.classList.add('gradient-text', 'text-style-outline');
-            if (settings.textColorMode !== 'gradient') {
-                textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                 textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
             }
         }
         if (settings.textStyle === 'glow') {
@@ -1075,5 +1079,3 @@
 </script>
 </body>
 </html>
-
-
