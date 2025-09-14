@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.4 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.5 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,7 +40,6 @@
     -webkit-text-stroke: 1.5px var(--outline-color);
     -webkit-text-fill-color: transparent;
     paint-order: stroke fill;
-    /* 移除 text-shadow 以免造成渲染混亂 */
     text-shadow: none !important;
   }
 
@@ -53,13 +52,13 @@
 
   .grid-bg{
     position:absolute; inset:0; z-index:0; pointer-events:none;
-    background: var(--grid-color) !important;
+    /* 【修正】移除 !important 避免覆蓋漸層樣式 */
+    background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
     mask-position: left top; -webkit-mask-position: left top;
     mask-repeat: repeat; -webkit-mask-repeat: repeat;
   }
-  .grid-bg.gradient-grid{ background: var(--grid-gradient); }
 
   .gap-overlay{
     position:absolute; inset:0; z-index:2; pointer-events:none;
@@ -72,24 +71,21 @@
   }
 
   .border-style-solid { border:8px solid white; }
-  /* 【修正】彩虹邊框 CSS 邏輯 */
   .border-style-rainbow {
-    position: relative; /* For pseudo-element positioning */
+    position: relative;
     border: 8px solid transparent;
     border-radius:16px;
   }
   .border-style-rainbow::before {
     content: '';
     position: absolute;
-    inset: -8px; /* Expands to cover the border area */
-    border-radius: 16px; /* Match parent's radius */
-    background: conic-gradient(
-        #ff004e, #ffe848, #00ffef, #0047ff, #ff004e
-      );
+    inset: -8px;
+    border-radius: 16px;
+    background: conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e );
     animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
     background-position: 0% 50%;
-    z-index: -1; /* Sits behind the element's content */
+    z-index: -1;
   }
 
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
@@ -329,7 +325,6 @@
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
-  // 【UI 修改】更換網格顏色
   const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
   const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
 
@@ -337,7 +332,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#FFD84A", textStyle: "normal", outlineColor: "#FF3B30", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 80, scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -414,10 +409,10 @@
             gridBg.style.display = 'block';
             gridBg.style.maskSize = pair; gridBg.style.WebkitMaskSize = pair;
             root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
+            // 【修正】直接設定網格背景，不再依賴 class
             if (settings.gridColorMode === 'gradient') {
-                gridBg.classList.add('gradient-grid');
+                gridBg.style.background = settings.gradientGrid;
             } else {
-                gridBg.classList.remove('gradient-grid');
                 gridBg.style.background = settings.gridColor;
             }
         } else { gridBg.style.display = 'none'; }
@@ -530,7 +525,6 @@
         });
     });
 
-    // 【修正】選色器事件綁定邏輯
     const setupPicker = (pickerId, mode, stateKey, stateValue) => {
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
@@ -557,7 +551,7 @@
             const stateKey = tabGroup.id === 'color-tab' ? 'textColorMode' : 'gridColorMode';
             controllerState[stateKey] = targetMode;
             updateColorTab(tabGroup.id, targetMode);
-            // 不需要呼叫 updateSession() 因為 updateColorTab 已經處理了顯示/隱藏
+            updateSession();
         });
     });
   }
@@ -595,7 +589,6 @@
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
-        // 【修正】永遠先更新本地 UI，確保次級選單正常顯示，再發送數據
         updateControllerUI(settings);
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
