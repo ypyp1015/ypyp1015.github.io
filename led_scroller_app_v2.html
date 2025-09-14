@@ -559,28 +559,31 @@
     });
     textEl.appendChild(fragment);
 
-    if (!useAdvanced) {
-        // 【修正】重構樣式邏輯
-        textEl.classList.remove('gradient-text', 'text-style-glow', 'text-style-outline', 'text-anim-rainbow');
-        textEl.style.backgroundImage = '';
-        textEl.style.color = '';
+    // 【修正】重構樣式邏輯
+    textEl.classList.remove('gradient-text', 'text-style-glow', 'text-style-outline', 'text-anim-rainbow');
+    textEl.style.backgroundImage = '';
+    textEl.style.color = '';
+    textEl.style.webkitTextStroke = '';
 
-        if (settings.textAnimation === 'rainbow') {
-            textEl.classList.add('gradient-text', 'text-anim-rainbow');
-        } else if (settings.textStyle === 'outline') {
-            textEl.classList.add('gradient-text', 'text-style-outline');
-            textEl.style.backgroundImage = (settings.textColorMode === 'gradient') 
-                ? settings.gradientText 
-                : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+    if (!useAdvanced) {
+        // Step 1: Base color
+        if (settings.textColorMode === 'gradient') {
+            textEl.classList.add('gradient-text');
+            textEl.style.backgroundImage = settings.gradientText;
         } else {
-            if (settings.textColorMode === 'gradient') {
-                textEl.classList.add('gradient-text');
-                textEl.style.backgroundImage = settings.gradientText;
-            } else {
-                textEl.style.color = settings.textColor;
-            }
+            textEl.style.color = settings.textColor;
         }
 
+        // Step 2: Overlapping styles
+        if (settings.textAnimation === 'rainbow') {
+            textEl.classList.add('gradient-text', 'text-anim-rainbow');
+        }
+        if (settings.textStyle === 'outline') {
+            textEl.classList.add('gradient-text', 'text-style-outline');
+            if (settings.textColorMode !== 'gradient') {
+                textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+            }
+        }
         if (settings.textStyle === 'glow') {
             textEl.classList.add('text-style-glow');
         }
