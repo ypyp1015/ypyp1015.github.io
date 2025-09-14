@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.7 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.8 (效能優化版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,6 +89,18 @@
     border-radius: var(--inner-border-radius, 0px);
   }
 
+  .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
+  .controller-preview{ 
+    height:120px; 
+    position:relative; 
+    background:var(--bg-color,#000); 
+    outline:1px solid #374151; 
+    box-sizing:border-box; 
+    isolation: isolate;
+    overflow: hidden;
+  }
+  .controller-preview .marquee-text{ font-size:var(--font-size,40px) !important; }
+
   .border-style-solid {
     border-style: solid;
     border-color: white;
@@ -111,22 +123,9 @@
     z-index: 0;
   }
 
-
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:1; }
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
   .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
-
-  .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
-  .controller-preview{ 
-    height:120px; 
-    position:relative; 
-    background:var(--bg-color,#000); 
-    outline:1px solid #374151; 
-    box-sizing:border-box; 
-    isolation: isolate;
-    overflow: hidden;
-  }
-  .controller-preview .marquee-text{ font-size:var(--font-size,40px) !important; }
 
   .no-scrollbar::-webkit-scrollbar{ display:none; }
   .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
@@ -624,51 +623,61 @@
       default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
     }
     
-    const offscreenCanvas = document.createElement('canvas');
-    const offscreenCtx = offscreenCanvas.getContext('2d');
-    offscreenCanvas.width = canvasEl.width;
-    offscreenCanvas.height = canvasEl.height;
-    
     const font = `${finalFontSize}px ${settings.fontFamily}`;
-    offscreenCtx.font = font;
-    const textWidth = offscreenCtx.measureText(settings.text).width;
     
-    let x = (settings.scrollDirection === 'none') ? (containerEl.clientWidth - textWidth) / 2 : (settings.scrollDirection === 'marquee-left' ? containerEl.clientWidth : -textWidth);
-    const speed = (containerEl.clientWidth + textWidth) / (settings.scrollSpeed * 60);
+    // Pre-render logic
+    const tempCtx = document.createElement('canvas').getContext('2d');
+    tempCtx.font = font;
+    const metrics = tempCtx.measureText(settings.text);
+    const textWidth = Math.ceil(metrics.width);
+    const textHeight = Math.ceil(finalFontSize);
+
+    const dotPatternCanvas = document.createElement('canvas');
+    const dotPatternCtx = dotPatternCanvas.getContext('2d');
+    dotPatternCanvas.width = textWidth;
+    dotPatternCanvas.height = textHeight;
+
+    dotPatternCtx.font = font;
+    dotPatternCtx.fillStyle = 'white';
+    dotPatternCtx.textBaseline = 'middle';
+    dotPatternCtx.fillText(settings.text, 0, textHeight / 2);
+
+    const imageData = dotPatternCtx.getImageData(0, 0, textWidth, textHeight);
+    const data = imageData.data;
+    
+    const dotSize = Math.max(1.5, finalFontSize / 35);
+    const gap = Math.max(2, Math.floor(dotSize * 1.5));
+    
+    const dotCoordinates = [];
+    for (let y = 0; y < textHeight; y += gap) {
+        for (let x = 0; x < textWidth; x += gap) {
+            const i = (y * textWidth + x) * 4;
+            if (data[i + 3] > 128) {
+                dotCoordinates.push({x: x, y: y});
+            }
+        }
+    }
+    
+    let xOffset = (settings.scrollDirection === 'none') ? (containerEl.clientWidth - textWidth) / 2 : (settings.scrollDirection === 'marquee-left' ? containerEl.clientWidth : -textWidth);
+    const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);
 
     function draw() {
         ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-        offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-
-        offscreenCtx.fillStyle = 'white';
-        offscreenCtx.font = font;
-        offscreenCtx.textBaseline = 'middle';
-        offscreenCtx.fillText(settings.text, x, containerEl.clientHeight / 2 + finalFontSize * 0.05);
-
-        const imageData = offscreenCtx.getImageData(0, 0, offscreenCanvas.width, offscreenCanvas.height);
-        const data = imageData.data;
-        
-        const dotSize = Math.max(1.5, finalFontSize / 35);
-        const gap = Math.max(3, dotSize * 2);
-
         ctx.fillStyle = settings.textColor;
-        for (let y = 0; y < offscreenCanvas.height; y += gap) {
-            for (let x = 0; x < offscreenCanvas.width; x += gap) {
-                const i = (Math.floor(y) * offscreenCanvas.width + Math.floor(x)) * 4;
-                if (data[i + 3] > 128) {
-                    ctx.beginPath();
-                    ctx.arc(x / dpr, y / dpr, dotSize / 2, 0, 2 * Math.PI);
-                    ctx.fill();
-                }
-            }
+        const yOffset = (containerEl.clientHeight - textHeight) / 2;
+
+        for (const dot of dotCoordinates) {
+            ctx.beginPath();
+            ctx.arc(dot.x + xOffset, dot.y + yOffset, dotSize / 2, 0, 2 * Math.PI);
+            ctx.fill();
         }
 
         if (settings.scrollDirection === 'marquee-left') {
-            x -= speed;
-            if (x < -textWidth) x = containerEl.clientWidth;
+            xOffset -= speed;
+            if (xOffset < -textWidth) xOffset = containerEl.clientWidth;
         } else if (settings.scrollDirection === 'marquee-right') {
-            x += speed;
-            if (x > containerEl.clientWidth) x = -textWidth;
+            xOffset += speed;
+            if (xOffset > containerEl.clientWidth) xOffset = -textWidth;
         }
         
         animationFrameId = requestAnimationFrame(draw);
@@ -1064,16 +1073,5 @@
 </script>
 </body>
 </html>
-" code between  and  in the most up-to-date Canvas "LED Scroller v24.1.6 (穩定版)" document above and am asking a query about/based on this code below.
-Instructions to follow:
-  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
-  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
-    * Don't output the same document/empty document and say that you have edited it.
-    * Don't change unrelated code in the document.
-  * Don't output  and  in your final response.
-  * Any references like "this" or "selected code" refers to the code between  and  tags.
-  * Just acknowledge my request in the introduction.
-  * Make sure to refer to the document as "Canvas" in your response.
 
-1.文字漸層失效了2.文字風格>點陣圖的效果不支援文字動畫(整體)嗎?且切換成點陣圖時字體很像往上移動了些.跟一般字體定位不一樣?4.彩虹邊框失效了
 
