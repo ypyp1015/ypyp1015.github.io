@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.5 (預覽修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.6 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -475,6 +475,8 @@
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
     root.style.setProperty('--bg-color', (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor);
+    root.style.setProperty('--gap-color', settings.gapColor);
+    root.style.setProperty('--gap-alpha', settings.gapAlpha);
     
     containerEl.className = containerEl.id.includes('display') ? 'display-screen' : 'controller-preview';
     if (settings.backgroundBorder === 'solid') { containerEl.classList.add('border-style-solid'); } 
@@ -559,12 +561,28 @@
     textEl.appendChild(fragment);
 
     if (!useAdvanced) {
-        if (settings.textAnimation === 'rainbow') { textEl.classList.add('gradient-text', 'text-anim-rainbow'); }
-        else if (settings.textStyle === 'outline') { textEl.classList.add('gradient-text', 'text-style-outline'); textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`; }
-        else {
-            if (settings.textColorMode === 'gradient') { textEl.classList.add('gradient-text'); textEl.style.backgroundImage = settings.gradientText; }
-            else { textEl.style.color = settings.textColor; }
-            if (settings.textStyle === 'glow') { textEl.classList.add('text-style-glow'); }
+        if (isPerCharGlobalAnim) {
+            textEl.style.color = settings.textColor;
+            if (settings.textStyle === 'glow') {
+                textEl.classList.add('text-style-glow');
+            }
+        } else {
+            if (settings.textAnimation === 'rainbow') { 
+                textEl.classList.add('gradient-text', 'text-anim-rainbow'); 
+            } else if (settings.textStyle === 'outline') { 
+                textEl.classList.add('gradient-text', 'text-style-outline'); 
+                textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`; 
+            } else {
+                if (settings.textColorMode === 'gradient') { 
+                    textEl.classList.add('gradient-text'); 
+                    textEl.style.backgroundImage = settings.gradientText; 
+                } else { 
+                    textEl.style.color = settings.textColor; 
+                }
+                if (settings.textStyle === 'glow') { 
+                    textEl.classList.add('text-style-glow'); 
+                }
+            }
         }
     }
     
@@ -773,7 +791,7 @@
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     
     toggleAdvancedModeUI(settings.isAdvancedText, settings.text);
-    updatePreview(); // 【修正】恢復預覽更新，解決黑畫面問題
+    updatePreview(); 
   }
   
   function toggleAdvancedModeUI(isActive, text) {
@@ -792,7 +810,6 @@
   function renderCharSelector(text) {
       const selector = document.getElementById('char-selector');
       selector.innerHTML = '';
-      //【修正】不清空 selectedCharIndices，以便連續操作
       
       const chars = Array.from(text);
       const ensureArray = (arr, len, fillVal) => (!Array.isArray(arr) || arr.length !== len) ? new Array(len).fill(fillVal) : arr;
@@ -805,7 +822,7 @@
           btn.textContent = char;
           btn.dataset.index = index;
           if (controllerState.charColors[index]) btn.style.backgroundColor = controllerState.charColors[index];
-          if (selectedCharIndices.has(index)) btn.classList.add('char-btn-active'); // 【修正】恢復選中狀態
+          if (selectedCharIndices.has(index)) btn.classList.add('char-btn-active');
           btn.addEventListener('click', (e) => {
             const idx = parseInt(e.currentTarget.dataset.index, 10);
             if (selectedCharIndices.has(idx)) {
@@ -868,12 +885,13 @@
                   selectedCharIndices.forEach(index => {
                       controllerState.charColors[index] = color;
                   });
-                  renderCharSelector(document.getElementById('text-input').value);
+                  selectedCharIndices.clear();
+                  updateSession();
               } else {
                   if (stateKey) controllerState[stateKey] = stateValue;
                   updatePickerState(pickerId, el.dataset[mode], mode);
+                  updateSession();
               }
-              updateSession();
           }
       });
     };
@@ -894,6 +912,7 @@
             selectedCharIndices.forEach(index => {
                 controllerState.charAnimations[index] = anim === 'none' ? null : anim;
             });
+            selectedCharIndices.clear();
             updateSession();
         }
     });
@@ -964,7 +983,7 @@
           containerEl: document.getElementById('controller-preview'),
           wrapperEl: document.getElementById('preview-marquee-container-wrapper'),
           canvasEl: document.getElementById('preview-canvas'),
-          bgEffectEl: null // No bg effects in preview
+          bgEffectEl: null
       };
       applySettings(previewEls, settings, true);
   }
@@ -1040,4 +1059,5 @@
 </script>
 </body>
 </html>
+
 
