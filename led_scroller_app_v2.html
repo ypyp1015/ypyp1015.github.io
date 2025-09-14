@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.8 (效能優化版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.9 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -521,7 +521,6 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
-    textEl.style.backgroundImage = '';
     
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
@@ -561,28 +560,29 @@
     textEl.appendChild(fragment);
 
     if (!useAdvanced) {
-        if (isPerCharGlobalAnim) {
-            textEl.style.color = settings.textColor;
-            if (settings.textStyle === 'glow') {
-                textEl.classList.add('text-style-glow');
-            }
+        // 【修正】重構樣式邏輯
+        textEl.classList.remove('gradient-text', 'text-style-glow', 'text-style-outline', 'text-anim-rainbow');
+        textEl.style.backgroundImage = '';
+        textEl.style.color = '';
+
+        if (settings.textAnimation === 'rainbow') {
+            textEl.classList.add('gradient-text', 'text-anim-rainbow');
+        } else if (settings.textStyle === 'outline') {
+            textEl.classList.add('gradient-text', 'text-style-outline');
+            textEl.style.backgroundImage = (settings.textColorMode === 'gradient') 
+                ? settings.gradientText 
+                : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
         } else {
-            if (settings.textAnimation === 'rainbow') { 
-                textEl.classList.add('gradient-text', 'text-anim-rainbow'); 
-            } else if (settings.textStyle === 'outline') { 
-                textEl.classList.add('gradient-text', 'text-style-outline'); 
-                textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`; 
+            if (settings.textColorMode === 'gradient') {
+                textEl.classList.add('gradient-text');
+                textEl.style.backgroundImage = settings.gradientText;
             } else {
-                if (settings.textColorMode === 'gradient') { 
-                    textEl.classList.add('gradient-text'); 
-                    textEl.style.backgroundImage = settings.gradientText; 
-                } else { 
-                    textEl.style.color = settings.textColor; 
-                }
-                if (settings.textStyle === 'glow') { 
-                    textEl.classList.add('text-style-glow'); 
-                }
+                textEl.style.color = settings.textColor;
             }
+        }
+
+        if (settings.textStyle === 'glow') {
+            textEl.classList.add('text-style-glow');
         }
     }
     
@@ -625,7 +625,6 @@
     
     const font = `${finalFontSize}px ${settings.fontFamily}`;
     
-    // Pre-render logic
     const tempCtx = document.createElement('canvas').getContext('2d');
     tempCtx.font = font;
     const metrics = tempCtx.measureText(settings.text);
@@ -662,7 +661,7 @@
     const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);
 
     function draw() {
-        ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+        ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
         ctx.fillStyle = settings.textColor;
         const yOffset = (containerEl.clientHeight - textHeight) / 2;
 
