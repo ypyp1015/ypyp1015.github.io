@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.14 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.16 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,7 +68,6 @@
     mask-position: left top; -webkit-mask-position: left top;
     mask-repeat: repeat; -webkit-mask-repeat: repeat;
     display:none;
-    /* 【修正】讓穿孔效果也能吃到內圓角變數 */
     border-radius: var(--inner-border-radius, 0px);
   }
 
@@ -101,7 +100,6 @@
   .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
   .controller-preview{ 
     height:120px; 
-    border-radius:.5rem; 
     position:relative; 
     background:var(--bg-color,#000); 
     outline:1px solid #374151; 
@@ -381,7 +379,12 @@
 
     const borderWidth = parseInt(settings.borderWidth, 10) || 0;
     const borderRadius = parseInt(settings.borderRadius, 10) || 0;
-    const innerRadius = Math.max(0, borderRadius - borderWidth);
+    
+    // 【修正】只有在啟用邊框時才計算內圓角，否則為 0
+    let innerRadius = 0;
+    if (settings.backgroundBorder !== 'none') {
+        innerRadius = Math.max(0, borderRadius - borderWidth);
+    }
 
     // Set CSS custom properties
     root.style.setProperty('--border-width', `${borderWidth}px`);
