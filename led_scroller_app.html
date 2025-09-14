@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.5 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.11 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,15 +44,14 @@
   }
 
   .display-screen{
-    width:100%; height:100%; overflow:hidden; position:relative;
+    width:100%; height:100%; position:relative;
     background:var(--bg-color,#000); box-sizing:border-box;
-    isolation:isolate;
+    isolation: isolate;
   }
-  .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:1; }
+  .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:2; }
 
   .grid-bg{
-    position:absolute; inset:0; z-index:0; pointer-events:none;
-    /* 【修正】移除 !important 避免覆蓋漸層樣式 */
+    position:absolute; inset:0; z-index:1; pointer-events:none;
     background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
@@ -61,7 +60,7 @@
   }
 
   .gap-overlay{
-    position:absolute; inset:0; z-index:2; pointer-events:none;
+    position:absolute; inset:0; z-index:3; pointer-events:none;
     background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
     mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
     mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
@@ -73,27 +72,34 @@
   .border-style-solid { border:8px solid white; }
   .border-style-rainbow {
     position: relative;
-    border: 8px solid transparent;
     border-radius:16px;
-  }
-  .border-style-rainbow::before {
-    content: '';
-    position: absolute;
-    inset: -8px;
-    border-radius: 16px;
-    background: conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e );
     animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
-    background-position: 0% 50%;
-    z-index: -1;
+  }
+  .border-style-rainbow::after {
+    content: '';
+    position: absolute;
+    inset: 8px; /* 內縮邊框寬度 */
+    background: var(--bg-color); /* 顯示原本的背景色 */
+    border-radius: 8px; /* 內圓角 */
+    z-index: 0;
   }
 
-  #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
+
+  #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:1; }
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
   .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
 
   .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
-  .controller-preview{ height:120px; border-radius:.5rem; position:relative; overflow:hidden; background:var(--bg-color,#000); border:1px solid #374151; box-sizing:border-box; }
+  .controller-preview{ 
+    height:120px; 
+    border-radius:.5rem; 
+    position:relative; 
+    background:var(--bg-color,#000); 
+    outline:1px solid #374151; 
+    box-sizing:border-box; 
+    isolation: isolate;
+  }
   .controller-preview .marquee-text{ font-size:var(--font-size,40px) !important; }
 
   .no-scrollbar::-webkit-scrollbar{ display:none; }
@@ -353,12 +359,15 @@
     const root = containerEl;
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
-    root.style.setProperty('--bg-color', settings.backgroundColor);
+    
+    const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
+    root.style.setProperty('--bg-color', backgroundValue);
+    
     root.style.setProperty('--grid-color', settings.gridColor);
     root.style.setProperty('--grid-gradient', settings.gradientGrid);
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-    containerEl.style.background = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
+    
     textEl.textContent = settings.text;
     const fontPx = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
     textEl.style.fontSize = `${fontPx}px`;
@@ -391,25 +400,43 @@
     textEl.style.animation = anims.join(', ');
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     wrapperEl.style.justifyContent = settings.scrollDirection === 'none' ? 'center' : '';
+    
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     const perforateOn = (settings.textBlendMode === 'multiply');
+    const gridBg = containerEl.querySelector('.grid-bg');
+
+    // Reset border styles first
     containerEl.classList.remove('border-style-solid', 'border-style-rainbow');
-    if (settings.backgroundBorder === 'solid') containerEl.classList.add('border-style-solid');
-    if (settings.backgroundBorder === 'rainbow') containerEl.classList.add('border-style-rainbow');
+    containerEl.style.animation = '';
+    containerEl.style.backgroundSize = '';
+    containerEl.style.border = '';
+    if (gridBg) gridBg.style.inset = '0px'; 
+    
+    if (settings.backgroundBorder === 'solid') {
+      containerEl.classList.add('border-style-solid');
+      containerEl.style.background = backgroundValue; 
+    } else if (settings.backgroundBorder === 'rainbow') {
+      containerEl.classList.add('border-style-rainbow');
+      containerEl.style.background = 'conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e )';
+      if (gridBg) {
+        gridBg.style.inset = '8px';
+      }
+    } else {
+      containerEl.style.background = backgroundValue;
+    }
+
     const sizeNum = Number(settings.gridSize);
     const effSize = Number.isFinite(sizeNum) ? sizeNum : gridSizeState || 20;
     const effPreview = isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize));
     const gridSizePx = effPreview + 'px';
     const pair = gridSizePx + ' ' + gridSizePx;
     root.style.setProperty('--grid-size', gridSizePx);
-    const gridBg = containerEl.querySelector('.grid-bg');
     const gap = containerEl.querySelector('.gap-overlay');
     if (gridBg) {
         if (isGridEnabled) {
             gridBg.style.display = 'block';
             gridBg.style.maskSize = pair; gridBg.style.WebkitMaskSize = pair;
             root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
-            // 【修正】直接設定網格背景，不再依賴 class
             if (settings.gridColorMode === 'gradient') {
                 gridBg.style.background = settings.gradientGrid;
             } else {
