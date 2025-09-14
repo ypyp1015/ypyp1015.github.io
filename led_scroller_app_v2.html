@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.3 (最終修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.4 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,16 +72,24 @@
   }
 
   .border-style-solid { border:8px solid white; }
+  /* 【修正】彩虹邊框 CSS 邏輯 */
   .border-style-rainbow {
-    border: 8px solid transparent; border-radius:16px;
-    background:
-      linear-gradient(#111827, #111827) padding-box,
-      conic-gradient(
+    position: relative; /* For pseudo-element positioning */
+    border: 8px solid transparent;
+    border-radius:16px;
+  }
+  .border-style-rainbow::before {
+    content: '';
+    position: absolute;
+    inset: -8px; /* Expands to cover the border area */
+    border-radius: 16px; /* Match parent's radius */
+    background: conic-gradient(
         #ff004e, #ffe848, #00ffef, #0047ff, #ff004e
-      ) border-box;
+      );
     animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
     background-position: 0% 50%;
+    z-index: -1; /* Sits behind the element's content */
   }
 
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; }
@@ -321,7 +329,8 @@
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
-  const gridSolid16 = ['#FFD84A','#FFE08A','#F8D24E','#FFB703','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
+  // 【UI 修改】更換網格顏色
+  const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
   const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
 
   const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
@@ -520,24 +529,27 @@
             updateSession();
         });
     });
-    const setupPicker = (pickerId, mode, stateKey) => {
+
+    // 【修正】選色器事件綁定邏輯
+    const setupPicker = (pickerId, mode, stateKey, stateValue) => {
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
           if (el) {
-              if (stateKey) controllerState[stateKey] = mode;
+              if (stateKey) controllerState[stateKey] = stateValue;
               updatePickerState(pickerId, el.dataset[mode], mode);
               updateSession();
           }
       });
     };
-    setupPicker('text-color-picker', 'color', 'textColorMode');
-    setupPicker('bg-color-picker', 'color', 'bgColorMode');
-    setupPicker('grid-color-picker', 'color', 'gridColorMode');
+    setupPicker('text-color-picker', 'color', 'textColorMode', 'solid');
+    setupPicker('bg-color-picker', 'color', 'bgColorMode', 'solid');
+    setupPicker('grid-color-picker', 'color', 'gridColorMode', 'solid');
     setupPicker('gap-color-picker', 'color');
     setupPicker('outline-color-picker', 'color');
-    setupPicker('text-gradient-picker', 'gradient', 'textColorMode');
-    setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode');
-    setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode');
+    setupPicker('text-gradient-picker', 'gradient', 'textColorMode', 'gradient');
+    setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode', 'gradient');
+    setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode', 'gradient');
+
     document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tabGroup = btn.closest('#color-tab, #grid-color-tab');
@@ -545,7 +557,7 @@
             const stateKey = tabGroup.id === 'color-tab' ? 'textColorMode' : 'gridColorMode';
             controllerState[stateKey] = targetMode;
             updateColorTab(tabGroup.id, targetMode);
-            updateSession();
+            // 不需要呼叫 updateSession() 因為 updateColorTab 已經處理了顯示/隱藏
         });
     });
   }
@@ -583,7 +595,7 @@
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
-        // 修正：永遠先更新本地 UI，再發送數據
+        // 【修正】永遠先更新本地 UI，確保次級選單正常顯示，再發送數據
         updateControllerUI(settings);
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
