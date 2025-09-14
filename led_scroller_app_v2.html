@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v20.7.7 (功能更新版)</title>
+<title>遠端遙控 LED 跑馬燈 v20.7.8 (最終修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,11 +20,13 @@
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   
+  /* 【更新】彩虹光暈動畫（左右來回） */
   @keyframes rainbow-orb-anim {
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  /* 【更新】彩虹邊框動畫（旋轉） */
   @keyframes rainbow-border-rotate {
     to { transform: rotate(1turn); }
   }
@@ -78,23 +80,27 @@
   }
 
   .border-style-solid { border:8px solid white; }
-  /* 【更新】新的彩虹邊框效果 v3 */
+  
+  /* 【更新】新的、正確的彩虹邊框效果 */
   .border-style-rainbow {
     position: relative;
     border: 8px solid transparent;
     border-radius: 16px;
-    overflow: hidden; /* Important: clips the pseudo-element */
+    background: var(--bg-color); /* 內部背景顏色 */
+    background-clip: padding-box; /* 確保背景只在 padding 區域內，為邊框留出透明空間 */
+    overflow: hidden;
   }
   .border-style-rainbow::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
+    top: 50%;
+    left: 50%;
     width: 200%;
     height: 200%;
     background: conic-gradient(from 180deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
     animation: rainbow-border-rotate 4s linear infinite;
-    z-index: -1;
+    transform: translate(-50%, -50%);
+    z-index: -1; /* 放在背景之後，透過透明邊框顯示出來 */
   }
   
   /* 【更新】恢復並優化彩虹光暈效果 */
@@ -102,14 +108,10 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center,
-        rgba(255,0,110,0.6) 0%,
-        rgba(255,232,72,0.5) 15%,
-        rgba(0,255,239,0.4) 30%,
-        rgba(0,0,0,0) 50%
-    );
-    background-size: 200% 100%;
-    animation: rainbow-orb-anim 6s ease-in-out infinite;
+    background: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
+    animation: rainbow-orb-anim 3s ease-in-out infinite;
+    background-size: 200% 200%;
+    opacity: 0.5;
     z-index: 0;
   }
 
