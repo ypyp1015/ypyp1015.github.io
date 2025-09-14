@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.2 (修正版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.3 (錯誤修正版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -489,15 +489,25 @@
     const gridBg = containerEl.querySelector('.grid-bg');
     const gap = containerEl.querySelector('.gap-overlay');
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
+    const effSize = Number.isFinite(Number(settings.gridSize)) ? Number(settings.gridSize) : 20;
+    const gridSizePx = (isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize))) + 'px';
+    root.style.setProperty('--grid-size', gridSizePx); // 【修正】確保CSS變數被設定
+        
     if (gridBg) {
         if(isGridEnabled) {
             gridBg.style.display = 'block';
+            gridBg.style.maskSize = `${gridSizePx} ${gridSizePx}`; // 【修正】直接設定 maskSize
+            gridBg.style.webkitMaskSize = `${gridSizePx} ${gridSizePx}`;
             root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
             root.style.setProperty('--grid-color', (settings.gridColorMode === 'gradient') ? settings.gradientGrid : settings.gridColor);
         } else { gridBg.style.display = 'none'; }
     }
     if (gap) {
-        if (isGridEnabled && settings.textBlendMode === 'multiply') { gap.style.display = 'block'; } else { gap.style.display = 'none'; }
+        if (isGridEnabled && settings.textBlendMode === 'multiply') { 
+            gap.style.display = 'block';
+            gap.style.maskSize = `${gridSizePx} ${gridSizePx}`; // 【修正】直接設定 maskSize
+            gap.style.webkitMaskSize = `${gridSizePx} ${gridSizePx}`;
+        } else { gap.style.display = 'none'; }
     }
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
 
@@ -519,6 +529,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
+    textEl.style.backgroundImage = ''; // 【修正】重置背景圖片
     
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
@@ -1040,4 +1051,16 @@
 </script>
 </body>
 </html>
+" code between  and  in the most up-to-date Canvas "LED Scroller v24.1.2 (修正版)" document above and am asking a query about/based on this code below.
+Instructions to follow:
+  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
+  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
+    * Don't output the same document/empty document and say that you have edited it.
+    * Don't change unrelated code in the document.
+  * Don't output  and  in your final response.
+  * Any references like "this" or "selected code" refers to the code between  and  tags.
+  * Just acknowledge my request in the introduction.
+  * Make sure to refer to the document as "Canvas" in your response.
+
+這板可以進來測試了,目前發現網格大小沒辦法調整,文字風格切到邊框再切回標準就會變成整塊白色方塊
 
