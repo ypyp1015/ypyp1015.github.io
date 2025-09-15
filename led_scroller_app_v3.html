@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.2.18 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.18 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- 引入所有需要的字體 -->
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -20,7 +19,7 @@
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-  
+
   /* 文字動畫 Keyframes */
   @keyframes rainbow-text-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   @keyframes blink-effect { 50%{ opacity:0; } }
@@ -39,11 +38,21 @@
     z-index:1;
     transition: color .2s, background-color .2s, text-shadow .2s;
   }
+
+  /* 只在父元素做 clip，避免每字 span 套 clip 造成大方塊 */
   .gradient-text{
     background-clip:text; -webkit-background-clip:text;
     color:transparent !important; -webkit-text-fill-color:transparent;
+    background-size:200% 200%;
     background-repeat:no-repeat;
   }
+  .text-anim-rainbow {
+    background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
+    background-size:200% 200%;
+    animation: rainbow-text-anim 3s linear infinite;
+  }
+  .text-anim-blink { animation: blink-effect 1s step-end infinite; }
+
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
@@ -52,9 +61,6 @@
     text-shadow: none !important;
   }
 
-  .text-anim-rainbow { background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e); background-size: 200% 200%; animation: rainbow-text-anim 3s linear infinite; }
-  .text-anim-blink { animation: blink-effect 1s step-end infinite; }
-  
   .display-screen{
     width:100%; height:100%; position:relative;
     background:var(--bg-color,#000); box-sizing:border-box;
@@ -132,13 +138,17 @@
   .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
-
-  .char-btn { transition: all 0.2s; border: 2px solid transparent; }
-  .char-btn-active { border-color: #6366f1; transform: scale(1.1); background-color: #4f46e5 !important; color: white !important; }
-
-  /* 逐字動畫分層：外層做 transform 動畫、內層做 gradient 文字裁切 */
-  .char-wrap{ display:inline-block; will-change: transform; }
-  .char-inner{ display:inline-block; }
+  
+  .char-btn {
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .char-btn-active {
+    border-color: #6366f1;
+    transform: scale(1.1);
+    background-color: #4f46e5 !important;
+    color: white !important;
+  }
 </style>
 </head>
 <body class="text-white">
@@ -234,7 +244,6 @@
         </div>
       </div>
 
-      <!-- 其餘面板維持原樣（略） -->
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
@@ -246,7 +255,157 @@
         </div>
       </div>
 
-      <!-- 其餘設定同原檔，未刪除 -->
+      <div class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">字體模式</label>
+        <div class="grid grid-cols-2 gap-3">
+          <button data-mode="fixed" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">固定大小</button>
+          <button data-mode="fitHeight" class="font-mode-btn p-3 bg-indigo-600 rounded-lg text-sm">填滿高度</button>
+          <button data-mode="fitWidth" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">填滿寬度</button>
+          <button data-mode="multiline" class="font-mode-btn p-3 bg-gray-700 rounded-lg text-sm">自動換行</button>
+        </div>
+      </div>
+
+      <div id="font-size-controls" class="mb-6">
+        <label id="font-size-label" for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">高度佔比: <span id="font-size-value">95</span>%</label>
+        <input id="font-size-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+      </div>
+
+      <div class="mb-6">
+        <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label>
+        <input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+      </div>
+      <div class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label>
+        <div class="grid grid-cols-3 gap-3">
+          <button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button>
+          <button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button>
+          <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button>
+        </div>
+      </div>
+
+      <div id="global-color-wrapper" class="mb-6 p-4 bg-gray-900 rounded-lg">
+        <div class="flex border-b border-gray-700 mb-4">
+          <div id="color-tab" class="flex -mb-px">
+            <button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button>
+            <button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button>
+          </div>
+        </div>
+        <div id="solid-color-panel">
+          <label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label>
+          <div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div>
+          <label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label>
+          <div class="flex flex-wrap gap-3" id="bg-color-picker"></div>
+        </div>
+        <div id="gradient-color-panel" class="hidden">
+          <label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label>
+          <div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div>
+          <label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label>
+          <div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">背景網格</label>
+        <div class="flex flex-wrap gap-3">
+          <button data-grid="none" class="grid-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+          <button data-grid="dot" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
+          <button data-grid="square" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬛️ 方形</button>
+          <button data-grid="diamond" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">♦️ 菱形</button>
+        </div>
+      </div>
+
+      <div id="grid-advanced-section" class="mb-6 space-y-6 hidden">
+        <div>
+          <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
+          <input id="grid-size-slider" type="range" min="4" max="120" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <div class="p-4 bg-gray-900 rounded-lg">
+          <div class="flex border-b border-gray-700 mb-4">
+            <div id="grid-color-tab" class="flex -mb-px">
+              <button data-tab="solid" class="grid-tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button>
+              <button data-tab="gradient" class="grid-tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button>
+            </div>
+          </div>
+          <div id="grid-solid-color-panel">
+            <label class="block mb-2 text-sm font-medium text-gray-300">網格顏色</label>
+            <div class="flex flex-wrap gap-3" id="grid-color-picker"></div>
+          </div>
+          <div id="grid-gradient-color-panel" class="hidden">
+            <label class="block mb-2 text-sm font-medium text-gray-300">網格漸層</label>
+            <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
+          </div>
+        </div>
+        <div class="p-4 bg-gray-900 rounded-lg">
+          <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
+          <div class="flex flex-wrap gap-3">
+            <button data-blend="normal" class="blend-mode-btn p-3 bg-indigo-600 rounded-lg text-sm">關閉</button>
+            <button data-blend="multiply" class="blend-mode-btn p-3 bg-gray-700 rounded-lg text-sm">開啟</button>
+          </div>
+          <div id="gap-controls" class="mt-4 hidden">
+            <label class="block mb-2 text-sm font-medium text-gray-300">隙縫顏色</label>
+            <div class="flex flex-wrap gap-3" id="gap-color-picker"></div>
+            <div class="mt-4">
+              <label for="gap-alpha-slider" class="block mb-2 text-sm font-medium text-gray-300">隙縫不透明度: <span id="gap-alpha-value">1.00</span></label>
+              <input id="gap-alpha-slider" type="range" min="0.10" max="1.00" step="0.05" value="1.00" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="text-style-wrapper" class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label>
+        <div class="flex flex-wrap gap-3">
+          <button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button>
+          <button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button>
+          <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button>
+          <button data-style="dot-matrix" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">💡 點陣圖</button>
+        </div>
+      </div>
+      <div id="outline-color-section" class="mb-6 hidden">
+        <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
+        <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
+      </div>
+      
+      <div id="text-animation-wrapper" class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">文字動畫 (整體)</label>
+        <div class="grid grid-cols-3 gap-3">
+          <button data-animation="none" class="text-animation-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+          <button data-animation="blink" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">閃爍</button>
+          <button data-animation="rainbow" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹</button>
+          <button data-animation="wave" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+          <button data-animation="jump" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🤸 跳躍</button>
+          <button data-animation="heartbeat" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+          <button data-animation="shake" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌀 搖晃</button>
+        </div>
+      </div>
+
+      <div id="border-style-wrapper" class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label>
+        <div class="flex flex-wrap gap-3">
+          <button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+          <button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button>
+          <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
+        </div>
+      </div>
+      
+      <div id="border-controls-section" class="mb-6 space-y-6 hidden">
+        <div>
+            <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
+            <input id="border-width-slider" type="range" min="0" max="50" value="8" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <div>
+            <label for="border-radius-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框圓角: <span id="border-radius-value">16</span>px</label>
+            <input id="border-radius-slider" type="range" min="0" max="100" value="16" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+        </div>
+      </div>
+
+      <div id="bg-effect-wrapper" class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label>
+        <div class="flex flex-wrap gap-3">
+          <button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+          <button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button>
+        </div>
+      </div>
 
       <div class="mt-8 mb-4">
         <a href="#" onclick="window.location.search=''; return false;" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a>
@@ -286,11 +445,70 @@
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
   const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
   const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
-  const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
-  const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
-  const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
+  const gradients16 = [
+    'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)',
+    'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)',
+    'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)',
+    'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)',
+    'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)',
+    'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)',
+    'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)',
+    'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)'
+  ];
+  const bgGradients16 = [
+    'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)',
+    'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)',
+    'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)',
+    'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)',
+    'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)',
+    'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)',
+    'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)',
+    'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)'
+  ];
+  const gridGradients16 = [
+    'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)',
+    'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)',
+    'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)',
+    'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)',
+    'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)',
+    'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)',
+    'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)',
+    'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)'
+  ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16, gradientBg: bgGradients16, gradientGrid: gridGradients16, textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isAdvancedText: false, charColors: [], charAnimations: [], textAnimation: 'none', updatedAt: serverTimestamp() };
+  const defaultSettings = {
+    text: "Hello 👋",
+    textColor: "#FFFFFF",
+    backgroundColor: "#000000",
+    fontSize: 95,
+    fontSizeMode: 'fitHeight',
+    scrollSpeed: 10,
+    scrollDirection: "none",
+    textColorMode: 'solid',
+    bgColorMode: 'solid',
+    gridColorMode: 'solid',
+    gradientText: gradients16,
+    gradientBg: bgGradients16,
+    gradientGrid: gridGradients16,
+    textBlendMode: 'normal',
+    gapColor: "#000000",
+    gapAlpha: 1.0,
+    backgroundBorder: "none",
+    backgroundEffect: "none",
+    gridStyle: "none",
+    gridSize: 20,
+    gridColor: "#374151",
+    textStyle: "normal",
+    outlineColor: "#FF3B30",
+    borderWidth: 8,
+    borderRadius: 16,
+    fontFamily: "'Inter','微軟正黑體',sans-serif",
+    isAdvancedText: false,
+    charColors: [],
+    charAnimations: [],
+    textAnimation: 'none',
+    updatedAt: serverTimestamp()
+  };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -302,8 +520,16 @@
   function showView(name){ [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
   function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
-  function gridMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`; }
-  function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }
+  function gridMaskSVG(shape){
+    if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`;
+    if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`;
+    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`;
+  }
+  function gapMaskSVG(shape){
+    if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`;
+    if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`;
+    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`;
+  }
 
   async function applySettings(els, settings, isPreview = false) {
     const { textEl, containerEl, wrapperEl, bgEffectEl, canvasEl } = els;
@@ -349,9 +575,13 @@
             root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
         } else { gap.style.display = 'none'; }
     }
-    if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
+    if (bgEffectEl) {
+      bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes')
+        ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`
+        : '';
+    }
 
-    // 邊框內縮
+    // 內縮讓邊框不被覆蓋
     const hasBorder = settings.backgroundBorder && settings.backgroundBorder !== 'none';
     const insetSize = hasBorder ? borderWidth : 0;
     const insetPx = `${insetSize}px`;
@@ -386,7 +616,6 @@
     }
   }
 
-  // 修正：transform 動畫與 gradient-clip 分離（雙層節點）
   async function renderStandardText(els, settings, isPreview) {
     const { textEl, containerEl, wrapperEl } = els;
 
@@ -406,30 +635,28 @@
     const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
     const isPerCharGlobalAnim = perCharGlobalAnims.includes(settings.textAnimation) && !useAdvanced;
 
-    // 建立：外層包動畫、內層做漸層裁切
     const fragment = document.createDocumentFragment();
     chars.forEach((char, index) => {
-        const wrap = document.createElement('span');
-        wrap.className = 'char-wrap';
-        const inner = document.createElement('span');
-        inner.className = 'char-inner';
-        inner.textContent = char;
+        const span = document.createElement('span');
+        span.textContent = char;
 
+        // 每字動畫：只做位移或縮放類動畫，不給 span 上任何背景或 clip
         if (useAdvanced) {
             const color = settings.charColors[index];
             const anim = settings.charAnimations[index];
-            if (color) inner.style.color = color;
+            if (color) span.style.color = color;
             if (anim && anim !== 'none') {
-                wrap.style.animation = `${anim}-anim 1.2s ease-in-out infinite`;
-                wrap.style.animationDelay = `${index * 0.1}s`;
+                span.style.display = 'inline-block';
+                span.style.animation = `${anim}-anim 1.2s ease-in-out infinite`;
+                span.style.animationDelay = `${index * 0.1}s`;
             }
         } else if (isPerCharGlobalAnim) {
-            wrap.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
-            wrap.style.animationDelay = `${index * 0.1}s`;
+            span.style.display = 'inline-block';
+            span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
+            span.style.animationDelay = `${index * 0.1}s`;
         }
 
-        wrap.appendChild(inner);
-        fragment.appendChild(wrap);
+        fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
 
@@ -444,65 +671,78 @@
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
       case 'fitWidth': {
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; }
+        }
         finalFontSize = bestSize; break;
       }
       case 'multiline': {
         textEl.style.whiteSpace = 'pre-wrap';
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
+            bestSize = mid; low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
         finalFontSize = bestSize; 
         if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
         break;
       }
-      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
+      default:
+        finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
+        break;
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
-    // 設定顏色 / 漸層 / 效果
     requestAnimationFrame(() => {
-        const applyToChars = (isPerCharGlobalAnim || useAdvanced);
-        const elements = applyToChars ? Array.from(textEl.querySelectorAll('.char-inner')) : [textEl];
-
+        // 關鍵修正：漸層與彩虹只套父層，不進入 span
         if (settings.textAnimation === 'rainbow') {
-            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-        } else if (!useAdvanced && settings.textColorMode === 'gradient') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text');
-                el.style.backgroundImage = settings.gradientText;
-            });
-        } else if (!useAdvanced) {
-            // 純色（非進階）直接上到元素
-            elements.forEach(el => el.style.color = settings.textColor);
+            textEl.classList.add('gradient-text', 'text-anim-rainbow');
+            textEl.style.backgroundImage = ''; // 由 text-anim-rainbow 提供背景
+        } else if (settings.textColorMode === 'gradient') {
+            textEl.classList.add('gradient-text');
+            textEl.style.backgroundImage = settings.gradientText;
+        } else {
+            textEl.classList.remove('gradient-text', 'text-anim-rainbow');
+            textEl.style.backgroundImage = '';
+            textEl.style.color = settings.textColor;
         }
 
+        // 移除原本對每個 span 設定 backgroundPosition / backgroundSize 的邏輯
+        // 這段是造成方塊的根源之一（每字背景盒 + 位移動畫 疊加）
+        // 保留樣式風格
         if (settings.textStyle === 'outline') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text', 'text-style-outline');
-                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-                }
-            });
-        } else if (settings.textStyle === 'glow') {
+            // outline 與漸層共存：仍以父層 gradient-clip，outline 顏色透過 stroke 呈現
+            textEl.classList.add('text-style-outline');
             if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                elements.forEach(el => el.classList.add('text-style-glow'));
+                // 非漸層時用純色當作 outline 的背景來源
+                textEl.classList.add('gradient-text');
+                textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
             }
+        } else {
+            textEl.classList.remove('text-style-outline');
+        }
+
+        if (settings.textStyle === 'glow') {
+            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                textEl.classList.add('text-style-glow');
+            } else {
+                textEl.classList.remove('text-style-glow');
+            }
+        } else {
+            textEl.classList.remove('text-style-glow');
         }
 
         if (settings.textAnimation === 'blink') {
             textEl.classList.add('text-anim-blink');
-        }
-
-        // 逐字動畫或進階模式下，對齊整段漸層
-        if ((isPerCharGlobalAnim || useAdvanced) && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
-            const totalWidth = textEl.scrollWidth;
-            if (totalWidth > 0) {
-                elements.forEach(inner => {
-                    const left = inner.parentElement ? inner.parentElement.offsetLeft : inner.offsetLeft;
-                    inner.style.backgroundSize = `${totalWidth}px 100%`;
-                    inner.style.backgroundPosition = `-${left}px 0`;
-                });
-            }
+        } else {
+            textEl.classList.remove('text-anim-blink');
         }
     });
     
@@ -513,7 +753,11 @@
     textEl.style.animation = globalAnims.join(', ');
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
+    if (settings.scrollDirection === 'none') {
+      wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center';
+    } else {
+      wrapperEl.style.justifyContent = '';
+    }
   }
 
   async function startDotMatrixAnimation(els, settings, isPreview) {
@@ -601,9 +845,13 @@
   
   function setupDisplayListeners(){
     const info = document.getElementById('info-overlay');
-    document.getElementById('display-view').addEventListener('click',(e)=>{ if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
+    document.getElementById('display-view').addEventListener('click',(e)=>{
+      if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
+    });
     setTimeout(()=>info.classList.add('opacity-0'), 5000);
-    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{ if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
+    });
   }
 
   async function startDisplayMode(sessionId){
@@ -676,9 +924,22 @@
     
     const fontSizeControls = document.getElementById('font-size-controls');
     switch(settings.fontSizeMode){
-      case 'fitHeight': fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 100; break;
-      case 'fitWidth': case 'multiline': fontSizeControls.style.display = 'none'; break;
-      default: fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 500; break;
+      case 'fitHeight':
+        fontSizeControls.style.display = 'block';
+        document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
+        document.getElementById('font-size-slider').min = 10;
+        document.getElementById('font-size-slider').max = 100;
+        break;
+      case 'fitWidth':
+      case 'multiline':
+        fontSizeControls.style.display = 'none';
+        break;
+      default:
+        fontSizeControls.style.display = 'block';
+        document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`;
+        document.getElementById('font-size-slider').min = 10;
+        document.getElementById('font-size-slider').max = 500;
+        break;
     }
     
     document.getElementById('border-width-slider').value = settings.borderWidth;
@@ -743,12 +1004,8 @@
       const ensureArray = (arr, newLength, fillVal) => {
         const oldArr = Array.isArray(arr) ? arr : [];
         const oldLength = oldArr.length;
-        if (oldLength === newLength) {
-            return [...oldArr];
-        }
-        if (oldLength > newLength) {
-            return oldArr.slice(0, newLength);
-        }
+        if (oldLength === newLength) return [...oldArr];
+        if (oldLength > newLength) return oldArr.slice(0, newLength);
         const newItems = new Array(newLength - oldLength).fill(fillVal);
         return oldArr.concat(newItems);
       };
@@ -998,4 +1255,3 @@
 </script>
 </body>
 </html>
-
