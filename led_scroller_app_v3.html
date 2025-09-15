@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.28 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.18 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 引入所有需要的字體 -->
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -19,7 +20,7 @@
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-
+  
   /* 文字動畫 Keyframes */
   @keyframes rainbow-text-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
   @keyframes blink-effect { 50%{ opacity:0; } }
@@ -38,21 +39,10 @@
     z-index:1;
     transition: color .2s, background-color .2s, text-shadow .2s;
   }
-
-  /* 只在父元素做 clip，避免每字 span 套 clip 造成大方塊 */
   .gradient-text{
     background-clip:text; -webkit-background-clip:text;
     color:transparent !important; -webkit-text-fill-color:transparent;
-    background-size:200% 200%;
-    background-repeat:no-repeat;
   }
-  .text-anim-rainbow {
-    background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
-    background-size:200% 200%;
-    animation: rainbow-text-anim 3s linear infinite;
-  }
-  .text-anim-blink { animation: blink-effect 1s step-end infinite; }
-
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
@@ -61,6 +51,9 @@
     text-shadow: none !important;
   }
 
+  .text-anim-rainbow { background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e); background-size: 200% 200%; animation: rainbow-text-anim 3s linear infinite; }
+  .text-anim-blink { animation: blink-effect 1s step-end infinite; }
+  
   .display-screen{
     width:100%; height:100%; position:relative;
     background:var(--bg-color,#000); box-sizing:border-box;
@@ -144,7 +137,7 @@
     border: 2px solid transparent;
   }
   .char-btn-active {
-    border-color: #6366f1;
+    border-color: #6366f1; /* Indigo */
     transform: scale(1.1);
     background-color: #4f46e5 !important;
     color: white !important;
@@ -445,70 +438,12 @@
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
   const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
   const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
-  const gradients16 = [
-    'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)',
-    'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)',
-    'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)',
-    'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)',
-    'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)',
-    'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)',
-    'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)',
-    'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)'
-  ];
-  const bgGradients16 = [
-    'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)',
-    'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)',
-    'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)',
-    'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)',
-    'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)',
-    'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)',
-    'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)',
-    'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)'
-  ];
-  const gridGradients16 = [
-    'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)',
-    'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)',
-    'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)',
-    'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)',
-    'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)',
-    'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)',
-    'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)',
-    'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)'
-  ];
 
-  const defaultSettings = {
-    text: "Hello 👋",
-    textColor: "#FFFFFF",
-    backgroundColor: "#000000",
-    fontSize: 95,
-    fontSizeMode: 'fitHeight',
-    scrollSpeed: 10,
-    scrollDirection: "none",
-    textColorMode: 'solid',
-    bgColorMode: 'solid',
-    gridColorMode: 'solid',
-    gradientText: gradients16,
-    gradientBg: bgGradients16,
-    gradientGrid: gridGradients16,
-    textBlendMode: 'normal',
-    gapColor: "#000000",
-    gapAlpha: 1.0,
-    backgroundBorder: "none",
-    backgroundEffect: "none",
-    gridStyle: "none",
-    gridSize: 20,
-    gridColor: "#374151",
-    textStyle: "normal",
-    outlineColor: "#FF3B30",
-    borderWidth: 8,
-    borderRadius: 16,
-    fontFamily: "'Inter','微軟正黑體',sans-serif",
-    isAdvancedText: false,
-    charColors: [],
-    charAnimations: [],
-    textAnimation: 'none',
-    updatedAt: serverTimestamp()
-  };
+  const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
+  const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
+  const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
+
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isAdvancedText: false, charColors: [], charAnimations: [], textAnimation: 'none', updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -520,16 +455,8 @@
   function showView(name){ [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
   function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
-  function gridMaskSVG(shape){
-    if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`;
-    if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`;
-    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`;
-  }
-  function gapMaskSVG(shape){
-    if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`;
-    if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`;
-    return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`;
-  }
+  function gridMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`; }
+  function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }
 
   async function applySettings(els, settings, isPreview = false) {
     const { textEl, containerEl, wrapperEl, bgEffectEl, canvasEl } = els;
@@ -575,17 +502,14 @@
             root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
         } else { gap.style.display = 'none'; }
     }
-    if (bgEffectEl) {
-      bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes')
-        ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>`
-        : '';
-    }
+    if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
 
-    // 內縮讓邊框不被覆蓋
+    // 【修正】處理邊框，確保網格等內容不會覆蓋邊框
     const hasBorder = settings.backgroundBorder && settings.backgroundBorder !== 'none';
     const insetSize = hasBorder ? borderWidth : 0;
     const insetPx = `${insetSize}px`;
 
+    // 將內縮應用於所有絕對定位的內容層
     const contentLayers = [
         containerEl.querySelector('.grid-bg'),
         containerEl.querySelector('.gap-overlay'),
@@ -596,10 +520,11 @@
 
     contentLayers.forEach(layer => {
         if (layer) {
+            // marquee-container-wrapper 的寬度需要特別計算
             if (layer.classList.contains('marquee-container-wrapper')) {
                 layer.style.left = insetPx;
                 layer.style.width = `calc(100% - ${insetSize * 2}px)`;
-            } else {
+            } else { // 其他層級可以直接使用 inset
                 layer.style.inset = insetPx;
             }
         }
@@ -639,8 +564,6 @@
     chars.forEach((char, index) => {
         const span = document.createElement('span');
         span.textContent = char;
-
-        // 每字動畫：只做位移或縮放類動畫，不給 span 上任何背景或 clip
         if (useAdvanced) {
             const color = settings.charColors[index];
             const anim = settings.charAnimations[index];
@@ -655,7 +578,6 @@
             span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
             span.style.animationDelay = `${index * 0.1}s`;
         }
-
         fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
@@ -671,78 +593,64 @@
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
       case 'fitWidth': {
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low+high)/2);
-          textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; }
-        }
+        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
         finalFontSize = bestSize; break;
       }
       case 'multiline': {
         textEl.style.whiteSpace = 'pre-wrap';
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low+high)/2);
-          textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
-            bestSize = mid; low = mid + 1;
-          } else {
-            high = mid - 1;
-          }
-        }
+        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
         finalFontSize = bestSize; 
         if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
         break;
       }
-      default:
-        finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
-        break;
+      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
     requestAnimationFrame(() => {
-        // 關鍵修正：漸層與彩虹只套父層，不進入 span
-        if (settings.textAnimation === 'rainbow') {
-            textEl.classList.add('gradient-text', 'text-anim-rainbow');
-            textEl.style.backgroundImage = ''; // 由 text-anim-rainbow 提供背景
-        } else if (settings.textColorMode === 'gradient') {
-            textEl.classList.add('gradient-text');
-            textEl.style.backgroundImage = settings.gradientText;
-        } else {
-            textEl.classList.remove('gradient-text', 'text-anim-rainbow');
-            textEl.style.backgroundImage = '';
-            textEl.style.color = settings.textColor;
-        }
-
-        // 移除原本對每個 span 設定 backgroundPosition / backgroundSize 的邏輯
-        // 這段是造成方塊的根源之一（每字背景盒 + 位移動畫 疊加）
-        // 保留樣式風格
-        if (settings.textStyle === 'outline') {
-            // outline 與漸層共存：仍以父層 gradient-clip，outline 顏色透過 stroke 呈現
-            textEl.classList.add('text-style-outline');
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                // 非漸層時用純色當作 outline 的背景來源
-                textEl.classList.add('gradient-text');
-                textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-            }
-        } else {
-            textEl.classList.remove('text-style-outline');
-        }
-
-        if (settings.textStyle === 'glow') {
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                textEl.classList.add('text-style-glow');
+        if (!useAdvanced) {
+            const applyToSpans = isPerCharGlobalAnim;
+            const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
+            
+            if (settings.textAnimation === 'rainbow') {
+                elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+            } else if (settings.textColorMode === 'gradient') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text');
+                    el.style.backgroundImage = settings.gradientText;
+                });
             } else {
-                textEl.classList.remove('text-style-glow');
+                elements.forEach(el => el.style.color = settings.textColor);
             }
-        } else {
-            textEl.classList.remove('text-style-glow');
-        }
 
-        if (settings.textAnimation === 'blink') {
-            textEl.classList.add('text-anim-blink');
-        } else {
-            textEl.classList.remove('text-anim-blink');
+            if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+                const totalWidth = textEl.scrollWidth;
+                if (totalWidth > 0) {
+                    elements.forEach(span => {
+                        const spanOffsetLeft = span.offsetLeft;
+                        span.style.backgroundSize = `${totalWidth}px 100%`;
+                        span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+                    });
+                }
+            }
+            
+            if (settings.textStyle === 'outline') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text', 'text-style-outline');
+                    if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                        el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                    }
+                });
+            } else if (settings.textStyle === 'glow') {
+                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                    elements.forEach(el => el.classList.add('text-style-glow'));
+                }
+            }
+
+            if (settings.textAnimation === 'blink') {
+                textEl.classList.add('text-anim-blink');
+            }
         }
     });
     
@@ -753,11 +661,7 @@
     textEl.style.animation = globalAnims.join(', ');
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') {
-      wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center';
-    } else {
-      wrapperEl.style.justifyContent = '';
-    }
+    if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
   }
 
   async function startDotMatrixAnimation(els, settings, isPreview) {
@@ -845,13 +749,9 @@
   
   function setupDisplayListeners(){
     const info = document.getElementById('info-overlay');
-    document.getElementById('display-view').addEventListener('click',(e)=>{
-      if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
-    });
+    document.getElementById('display-view').addEventListener('click',(e)=>{ if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
     setTimeout(()=>info.classList.add('opacity-0'), 5000);
-    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen();
-    });
+    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{ if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
   }
 
   async function startDisplayMode(sessionId){
@@ -866,7 +766,7 @@
     await applySettings(displayEls, defaultSettings);
 
     document.getElementById('session-id-display').textContent = sessionId;
-    const url = `${window.location.href.split('?')}?controller=${sessionId}`;
+    const url = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
     document.getElementById('qrcode-container').innerHTML = '';
     new QRCode(document.getElementById("qrcode-container"), { text:url, width:128, height:128 });
     const ref = doc(db,"sessions",sessionId);
@@ -924,22 +824,9 @@
     
     const fontSizeControls = document.getElementById('font-size-controls');
     switch(settings.fontSizeMode){
-      case 'fitHeight':
-        fontSizeControls.style.display = 'block';
-        document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
-        document.getElementById('font-size-slider').min = 10;
-        document.getElementById('font-size-slider').max = 100;
-        break;
-      case 'fitWidth':
-      case 'multiline':
-        fontSizeControls.style.display = 'none';
-        break;
-      default:
-        fontSizeControls.style.display = 'block';
-        document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`;
-        document.getElementById('font-size-slider').min = 10;
-        document.getElementById('font-size-slider').max = 500;
-        break;
+      case 'fitHeight': fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 100; break;
+      case 'fitWidth': case 'multiline': fontSizeControls.style.display = 'none'; break;
+      default: fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 500; break;
     }
     
     document.getElementById('border-width-slider').value = settings.borderWidth;
@@ -1004,8 +891,12 @@
       const ensureArray = (arr, newLength, fillVal) => {
         const oldArr = Array.isArray(arr) ? arr : [];
         const oldLength = oldArr.length;
-        if (oldLength === newLength) return [...oldArr];
-        if (oldLength > newLength) return oldArr.slice(0, newLength);
+        if (oldLength === newLength) {
+            return [...oldArr];
+        }
+        if (oldLength > newLength) {
+            return oldArr.slice(0, newLength);
+        }
         const newItems = new Array(newLength - oldLength).fill(fillVal);
         return oldArr.concat(newItems);
       };
@@ -1065,7 +956,7 @@
     document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-animation-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             if (e.currentTarget.classList.contains('control-disabled')) return;
-            const group = e.currentTarget.classList;
+            const group = e.currentTarget.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
             updateSession();
@@ -1250,8 +1141,8 @@
     });
   }
 
-  document.getElementById('create-display-btn').addEventListener('click', ()=>{ window.location.href = `${window.location.href.split('?')}?display=${generateId()}`; });
-  document.getElementById('open-controller-btn').addEventListener('click', ()=>{ const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')}?controller=${id}`; else alert('請輸入面板 ID'); });
+  document.getElementById('create-display-btn').addEventListener('click', ()=>{ window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
+  document.getElementById('open-controller-btn').addEventListener('click', ()=>{ const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
 </script>
 </body>
 </html>
