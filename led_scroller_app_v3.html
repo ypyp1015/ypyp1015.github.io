@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.17 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.18 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -544,7 +544,6 @@
   async function renderStandardText(els, settings, isPreview) {
     const { textEl, containerEl, wrapperEl } = els;
 
-    // --- Part 1: Initial setup (doesn't depend on font metrics) ---
     const fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.style.fontFamily = fontFamily;
     textEl.innerHTML = '';
@@ -583,14 +582,12 @@
     });
     textEl.appendChild(fragment);
 
-    // --- Part 2: Size-dependent calculations (waits for fonts) ---
     try {
       await document.fonts.load(`1em ${fontFamily}`);
     } catch (err) {
-      console.warn(`Font '${fontFamily}' failed to load:`, err);
+      console.warn(`Font '${fontFamily}' could not be loaded:`, err);
     }
-
-    // Font sizing
+    
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -611,52 +608,52 @@
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
-    // Global styles
-    if (!useAdvanced) {
-        const applyToSpans = isPerCharGlobalAnim;
-        const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
-        
-        if (settings.textAnimation === 'rainbow') {
-            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-        } else if (settings.textColorMode === 'gradient') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text');
-                el.style.backgroundImage = settings.gradientText;
-            });
-        } else {
-            elements.forEach(el => el.style.color = settings.textColor);
-        }
-
-        if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
-            const totalWidth = textEl.scrollWidth;
-            if (totalWidth > 0) {
-                elements.forEach(span => {
-                    const spanOffsetLeft = span.offsetLeft;
-                    span.style.backgroundSize = `${totalWidth}px 100%`;
-                    span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+    requestAnimationFrame(() => {
+        if (!useAdvanced) {
+            const applyToSpans = isPerCharGlobalAnim;
+            const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
+            
+            if (settings.textAnimation === 'rainbow') {
+                elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+            } else if (settings.textColorMode === 'gradient') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text');
+                    el.style.backgroundImage = settings.gradientText;
                 });
+            } else {
+                elements.forEach(el => el.style.color = settings.textColor);
             }
-        }
-        
-        if (settings.textStyle === 'outline') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text', 'text-style-outline');
-                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-                }
-            });
-        } else if (settings.textStyle === 'glow') {
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                elements.forEach(el => el.classList.add('text-style-glow'));
-            }
-        }
 
-        if (settings.textAnimation === 'blink') {
-            textEl.classList.add('text-anim-blink');
+            if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+                const totalWidth = textEl.scrollWidth;
+                if (totalWidth > 0) {
+                    elements.forEach(span => {
+                        const spanOffsetLeft = span.offsetLeft;
+                        span.style.backgroundSize = `${totalWidth}px 100%`;
+                        span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+                    });
+                }
+            }
+            
+            if (settings.textStyle === 'outline') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text', 'text-style-outline');
+                    if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                        el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                    }
+                });
+            } else if (settings.textStyle === 'glow') {
+                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                    elements.forEach(el => el.classList.add('text-style-glow'));
+                }
+            }
+
+            if (settings.textAnimation === 'blink') {
+                textEl.classList.add('text-anim-blink');
+            }
         }
-    }
+    });
     
-    // Final alignment and scrolling animation
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
         globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
