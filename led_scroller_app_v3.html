@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.15 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.16 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -543,19 +543,18 @@
 
   function renderStandardText(els, settings, isPreview) {
     const { textEl, containerEl, wrapperEl } = els;
-    
+
+    // --- Part 1: Initial setup (doesn't depend on font metrics) ---
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
-    
-    // 1. Whitespace
+
     textEl.style.whiteSpace = 'nowrap';
     if (settings.scrollDirection === 'none') {
         if (settings.fontSizeMode === 'multiline') textEl.style.whiteSpace = 'pre-wrap';
         else textEl.style.whiteSpace = 'pre';
     }
-    
-    // 2. Create character spans
+
     const chars = Array.from(settings.text);
     const useAdvanced = settings.isAdvancedText && Array.isArray(settings.charColors) && Array.isArray(settings.charAnimations);
     const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
@@ -582,86 +581,88 @@
         fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
-    
-    // 3. Font sizing - MUST be done before gradient calculation
-    let finalFontSize = 100;
-    switch(settings.fontSizeMode){
-      case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
-      case 'fitWidth': {
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
-      }
-      case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap'; // Temporarily set for calculation
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
-        finalFontSize = bestSize; 
-        if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
-        break;
-      }
-      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
-    }
-    textEl.style.fontSize = `${finalFontSize}px`;
 
-    // 4. Global styles (now with correct dimensions)
-    if (!useAdvanced) {
-        const applyToSpans = isPerCharGlobalAnim;
-        const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
-        
-        // Base color/gradient
-        if (settings.textAnimation === 'rainbow') {
-            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-        } else if (settings.textColorMode === 'gradient') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text');
-                el.style.backgroundImage = settings.gradientText;
-            });
-        } else {
-            elements.forEach(el => el.style.color = settings.textColor);
+    // --- Part 2: Size-dependent calculations (waits for fonts) ---
+    // 【修正】使用 document.fonts.ready 確保字體載入完成後才進行尺寸計算，
+    // 這是解決漸層動畫在某些情況下消失或錯位的關鍵。
+    document.fonts.ready.then(() => {
+        // Font sizing
+        let finalFontSize = 100;
+        switch(settings.fontSizeMode){
+          case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
+          case 'fitWidth': {
+            let low = 1, high = 2000, bestSize = 10;
+            for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
+            finalFontSize = bestSize; break;
+          }
+          case 'multiline': {
+            textEl.style.whiteSpace = 'pre-wrap';
+            let low = 1, high = 2000, bestSize = 10;
+            for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
+            finalFontSize = bestSize; 
+            if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
+            break;
+          }
+          default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
         }
+        textEl.style.fontSize = `${finalFontSize}px`;
 
-        // Fix gradient positioning for per-span application
-        if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
-            void textEl.offsetHeight; // Force reflow to get correct measurements
-            const totalWidth = textEl.scrollWidth;
-            if (totalWidth > 0) {
-                elements.forEach(span => {
-                    const spanOffsetLeft = span.offsetLeft;
-                    span.style.backgroundSize = `${totalWidth}px 100%`;
-                    span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+        // Global styles
+        if (!useAdvanced) {
+            const applyToSpans = isPerCharGlobalAnim;
+            const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
+            
+            if (settings.textAnimation === 'rainbow') {
+                elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+            } else if (settings.textColorMode === 'gradient') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text');
+                    el.style.backgroundImage = settings.gradientText;
                 });
+            } else {
+                elements.forEach(el => el.style.color = settings.textColor);
+            }
+
+            if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+                const totalWidth = textEl.scrollWidth;
+                if (totalWidth > 0) {
+                    elements.forEach(span => {
+                        const spanOffsetLeft = span.offsetLeft;
+                        span.style.backgroundSize = `${totalWidth}px 100%`;
+                        span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+                    });
+                }
+            }
+            
+            if (settings.textStyle === 'outline') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text', 'text-style-outline');
+                    if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                        el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                    }
+                });
+            } else if (settings.textStyle === 'glow') {
+                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                    elements.forEach(el => el.classList.add('text-style-glow'));
+                }
+            }
+
+            if (settings.textAnimation === 'blink') {
+                textEl.classList.add('text-anim-blink');
             }
         }
         
-        // Additional styles
-        if (settings.textStyle === 'outline') {
-            elements.forEach(el => {
-                el.classList.add('gradient-text', 'text-style-outline');
-                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-                }
-            });
-        } else if (settings.textStyle === 'glow') {
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                elements.forEach(el => el.classList.add('text-style-glow'));
-            }
+        // Final alignment and scrolling animation
+        let globalAnims = [];
+        if (settings.scrollDirection !== 'none') {
+            globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
         }
+        textEl.style.animation = globalAnims.join(', ');
 
-        if (settings.textAnimation === 'blink') {
-            textEl.classList.add('text-anim-blink');
-        }
-    }
+        wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
+        if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
 
-    // 5. Parent container animation (scrolling) and final alignment
-    let globalAnims = [];
-    if (settings.scrollDirection !== 'none') {
-        globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
-    }
-    textEl.style.animation = globalAnims.join(', ');
-
-    wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
+    });
   }
 
   function startDotMatrixAnimation(els, settings, isPreview) {
@@ -681,63 +682,65 @@
     
     const font = `${finalFontSize}px ${settings.fontFamily}`;
     
-    const tempCtx = document.createElement('canvas').getContext('2d');
-    tempCtx.font = font;
-    const metrics = tempCtx.measureText(settings.text);
-    const textWidth = Math.ceil(metrics.width);
-    const textHeight = Math.ceil(finalFontSize);
+    document.fonts.ready.then(() => {
+      const tempCtx = document.createElement('canvas').getContext('2d');
+      tempCtx.font = font;
+      const metrics = tempCtx.measureText(settings.text);
+      const textWidth = Math.ceil(metrics.width);
+      const textHeight = Math.ceil(finalFontSize);
 
-    const dotPatternCanvas = document.createElement('canvas');
-    const dotPatternCtx = dotPatternCanvas.getContext('2d');
-    dotPatternCanvas.width = textWidth;
-    dotPatternCanvas.height = textHeight;
+      const dotPatternCanvas = document.createElement('canvas');
+      const dotPatternCtx = dotPatternCanvas.getContext('2d');
+      dotPatternCanvas.width = textWidth;
+      dotPatternCanvas.height = textHeight;
 
-    dotPatternCtx.font = font;
-    dotPatternCtx.fillStyle = 'white';
-    dotPatternCtx.textBaseline = 'middle';
-    dotPatternCtx.fillText(settings.text, 0, textHeight / 2);
+      dotPatternCtx.font = font;
+      dotPatternCtx.fillStyle = 'white';
+      dotPatternCtx.textBaseline = 'middle';
+      dotPatternCtx.fillText(settings.text, 0, textHeight / 2);
 
-    const imageData = dotPatternCtx.getImageData(0, 0, textWidth, textHeight);
-    const data = imageData.data;
-    
-    const dotSize = Math.max(1.5, finalFontSize / 35);
-    const gap = Math.max(2, Math.floor(dotSize * 1.5));
-    
-    const dotCoordinates = [];
-    for (let y = 0; y < textHeight; y += gap) {
-        for (let x = 0; x < textWidth; x += gap) {
-            const i = (y * textWidth + x) * 4;
-            if (data[i + 3] > 128) {
-                dotCoordinates.push({x: x, y: y});
-            }
-        }
-    }
-    
-    let xOffset = (settings.scrollDirection === 'none') ? (containerEl.clientWidth - textWidth) / 2 : (settings.scrollDirection === 'marquee-left' ? containerEl.clientWidth : -textWidth);
-    const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);
+      const imageData = dotPatternCtx.getImageData(0, 0, textWidth, textHeight);
+      const data = imageData.data;
+      
+      const dotSize = Math.max(1.5, finalFontSize / 35);
+      const gap = Math.max(2, Math.floor(dotSize * 1.5));
+      
+      const dotCoordinates = [];
+      for (let y = 0; y < textHeight; y += gap) {
+          for (let x = 0; x < textWidth; x += gap) {
+              const i = (y * textWidth + x) * 4;
+              if (data[i + 3] > 128) {
+                  dotCoordinates.push({x: x, y: y});
+              }
+          }
+      }
+      
+      let xOffset = (settings.scrollDirection === 'none') ? (containerEl.clientWidth - textWidth) / 2 : (settings.scrollDirection === 'marquee-left' ? containerEl.clientWidth : -textWidth);
+      const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);
 
-    function draw() {
-        ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
-        ctx.fillStyle = settings.textColor;
-        const yOffset = (containerEl.clientHeight - textHeight) / 2;
+      function draw() {
+          ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
+          ctx.fillStyle = settings.textColor;
+          const yOffset = (containerEl.clientHeight - textHeight) / 2;
 
-        for (const dot of dotCoordinates) {
-            ctx.beginPath();
-            ctx.arc(dot.x + xOffset, dot.y + yOffset, dotSize / 2, 0, 2 * Math.PI);
-            ctx.fill();
-        }
+          for (const dot of dotCoordinates) {
+              ctx.beginPath();
+              ctx.arc(dot.x + xOffset, dot.y + yOffset, dotSize / 2, 0, 2 * Math.PI);
+              ctx.fill();
+          }
 
-        if (settings.scrollDirection === 'marquee-left') {
-            xOffset -= speed;
-            if (xOffset < -textWidth) xOffset = containerEl.clientWidth;
-        } else if (settings.scrollDirection === 'marquee-right') {
-            xOffset += speed;
-            if (xOffset > containerEl.clientWidth) xOffset = -textWidth;
-        }
-        
-        animationFrameId = requestAnimationFrame(draw);
-    }
-    draw();
+          if (settings.scrollDirection === 'marquee-left') {
+              xOffset -= speed;
+              if (xOffset < -textWidth) xOffset = containerEl.clientWidth;
+          } else if (settings.scrollDirection === 'marquee-right') {
+              xOffset += speed;
+              if (xOffset > containerEl.clientWidth) xOffset = -textWidth;
+          }
+          
+          animationFrameId = requestAnimationFrame(draw);
+      }
+      draw();
+    });
   }
   
   function setupDisplayListeners(){
