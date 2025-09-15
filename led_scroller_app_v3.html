@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.10 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.11 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -528,7 +528,7 @@
         if (settings.fontSizeMode === 'multiline') {
             textEl.style.whiteSpace = 'pre-wrap'; // 自動換行 + 手動換行
         } else {
-            textEl.style.whiteSpace = 'pre-line'; // 只接受手動換行
+            textEl.style.whiteSpace = 'pre'; // 只接受手動換行，且保留空格
         }
     }
     
@@ -564,7 +564,11 @@
             span.style.display = 'inline-block';
             span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
             span.style.animationDelay = `${index * 0.1}s`;
-            // 【修正2】移除此處的漸層設定，以解決漸層顯示不連續的問題
+            // 【修正2】如果使用了漸層色和逐字動畫，則將漸層應用於每個字元以確保可見性
+            if (settings.textColorMode === 'gradient') {
+                span.classList.add('gradient-text');
+                span.style.backgroundImage = settings.gradientText;
+            }
         }
         fragment.appendChild(span);
     });
@@ -577,19 +581,19 @@
     textEl.style.webkitTextStroke = '';
 
     if (!useAdvanced) {
-        // 【修正2】簡化樣式邏輯，無論是否為逐字動畫，都將漸層應用於父容器
+        // 【修正2】只有在非逐字動畫時，才將漸層應用於父容器
         if (settings.textAnimation === 'rainbow') {
             textEl.classList.add('gradient-text', 'text-anim-rainbow');
-        } else if (settings.textColorMode === 'gradient') {
+        } else if (settings.textColorMode === 'gradient' && !isPerCharGlobalAnim) {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
-        } else {
+        } else if (settings.textColorMode !== 'gradient') {
             textEl.style.color = settings.textColor;
         }
 
         if (settings.textStyle === 'outline') {
             textEl.classList.add('gradient-text', 'text-style-outline');
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow' && !isPerCharGlobalAnim) {
                  textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
             }
         }
@@ -838,17 +842,18 @@
       
       const chars = Array.from(text);
       // 【修正3】修正 ensureArray 邏輯，避免在文字變動時清除已設定的個別動畫
-      const ensureArray = (arr, len, fillVal) => {
-        if (!Array.isArray(arr)) arr = [];
-        const currentLen = arr.length;
-        if (currentLen > len) {
-            return arr.slice(0, len);
+      const ensureArray = (arr, newLength, fillVal) => {
+        const oldArr = Array.isArray(arr) ? arr : [];
+        const oldLength = oldArr.length;
+        if (oldLength === newLength) {
+            return [...oldArr]; // 返回一個副本以避免意外修改
         }
-        if (currentLen < len) {
-            // 使用展開運算符來附加新元素，而不是創建一個全新的陣列
-            return [...arr, ...new Array(len - currentLen).fill(fillVal)];
+        if (oldLength > newLength) {
+            return oldArr.slice(0, newLength);
         }
-        return arr;
+        // oldLength < newLength
+        const newItems = new Array(newLength - oldLength).fill(fillVal);
+        return oldArr.concat(newItems);
       };
       controllerState.charColors = ensureArray(controllerState.charColors, chars.length, null);
       controllerState.charAnimations = ensureArray(controllerState.charAnimations, chars.length, null);
