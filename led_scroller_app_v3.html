@@ -125,9 +125,7 @@
 
   #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:1; }
   .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
-  .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
-
-  .no-scrollbar::-webkit-scrollbar{ display:none; }
+  .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }... .no-scrollbar::-webkit-scrollbar{ display:none; }
   .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
@@ -235,9 +233,7 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="mb-6">
+      </div>... <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
             <button data-font="'Inter','微軟正黑體',sans-serif" class="font-btn p-3 bg-indigo-600 rounded-lg text-sm">標準體</button>
@@ -343,9 +339,7 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <div id="text-style-wrapper" class="mb-6">
+      </div>... <div id="text-style-wrapper" class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label>
         <div class="flex flex-wrap gap-3">
           <button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button>
@@ -437,13 +431,11 @@
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
   const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
-  const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
-
-  const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
+  const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];... const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isAdvancedText: false, charColors: [], charAnimations: [], textAnimation: 'none', updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isAdvancedText: false, charColors: [], charAnimations: [], textAnimation: 'none', updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -456,9 +448,7 @@
   function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
   function gridMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`; }
-  function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }
-
-  async function applySettings(els, settings, isPreview = false) {
+  function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }... async function applySettings(els, settings, isPreview = false) {
     const { textEl, containerEl, wrapperEl, bgEffectEl, canvasEl } = els;
     if (!containerEl) return;
     
@@ -539,9 +529,7 @@
         canvasEl.style.display = 'none';
         await renderStandardText(els, settings, isPreview);
     }
-  }
-
-  async function renderStandardText(els, settings, isPreview) {
+  }... async function renderStandardText(els, settings, isPreview) {
     const { textEl, containerEl, wrapperEl } = els;
 
     const fontFamily = settings.fontFamily || defaultSettings.fontFamily;
@@ -583,11 +571,11 @@
     textEl.appendChild(fragment);
 
     try {
-        await document.fonts.load(`1em ${fontFamily}`);
+      await document.fonts.load(`1em ${fontFamily}`);
     } catch (err) {
-        console.warn(`Font '${fontFamily}' could not be loaded:`, err);
+      console.warn(`Font '${fontFamily}' could not be loaded:`, err);
     }
-
+    
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -608,54 +596,50 @@
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
-    // 正確套用彩虹漸層＋波浪動畫的修正
     requestAnimationFrame(() => {
-        const elements = isPerCharGlobalAnim ? Array.from(textEl.children) : [textEl];
-
-        if (settings.textAnimation === 'rainbow' && !useAdvanced) {
-            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-        } else if (settings.textColorMode === 'gradient' && !useAdvanced) {
-            // 如果有per-character global anim，將gradient正確套用到每個span
-            if (isPerCharGlobalAnim) {
-                // 取得整句的總寬度
-                const totalWidth = textEl.scrollWidth;
-                elements.forEach(span => {
-                    span.classList.add('gradient-text');
-                    span.style.backgroundImage = settings.gradientText;
-                    span.style.backgroundSize = `${totalWidth}px 100%`;
-                    // 設定字元的背景起點, 讓每個span gradient位置固定與畫面預覽一致
-                    span.style.backgroundPosition = `-${span.offsetLeft}px 0`;
-                });
-            } else {
+        if (!useAdvanced) {
+            const applyToSpans = isPerCharGlobalAnim;
+            const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
+            
+            if (settings.textAnimation === 'rainbow') {
+                elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+            } else if (settings.textColorMode === 'gradient') {
                 elements.forEach(el => {
                     el.classList.add('gradient-text');
                     el.style.backgroundImage = settings.gradientText;
                 });
-            }
-        } else {
-            elements.forEach(el => el.style.color = settings.textColor);
-        }
-
-        // 修正文字風格
-        if (settings.textStyle === 'outline' && !useAdvanced) {
-            elements.forEach(el => {
-                el.classList.add('gradient-text', 'text-style-outline');
-                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+            } else {
+                elements.forEach(el => el.style.color = settings.textColor);
+            }... if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+                const totalWidth = textEl.scrollWidth;
+                if (totalWidth > 0) {
+                    elements.forEach(span => {
+                        const spanOffsetLeft = span.offsetLeft;
+                        span.style.backgroundSize = `${totalWidth}px 100%`;
+                        span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+                    });
                 }
-            });
-        } else if (settings.textStyle === 'glow' && !useAdvanced) {
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                elements.forEach(el => el.classList.add('text-style-glow'));
             }
-        }
+            
+            if (settings.textStyle === 'outline') {
+                elements.forEach(el => {
+                    el.classList.add('gradient-text', 'text-style-outline');
+                    if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                        el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                    }
+                });
+            } else if (settings.textStyle === 'glow') {
+                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                    elements.forEach(el => el.classList.add('text-style-glow'));
+                }
+            }
 
-        if (settings.textAnimation === 'blink' && !useAdvanced) {
-            textEl.classList.add('text-anim-blink');
+            if (settings.textAnimation === 'blink') {
+                textEl.classList.add('text-anim-blink');
+            }
         }
     });
-
-    // 動畫
+    
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
         globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
@@ -664,8 +648,7 @@
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
-}
-
+  }
 
   async function startDotMatrixAnimation(els, settings, isPreview) {
     const { canvasEl, containerEl } = els;
@@ -724,9 +707,7 @@
     }
     
     let xOffset = (settings.scrollDirection === 'none') ? (containerEl.clientWidth - textWidth) / 2 : (settings.scrollDirection === 'marquee-left' ? containerEl.clientWidth : -textWidth);
-    const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);
-
-    function draw() {
+    const speed = (containerEl.clientWidth + textWidth) / (Number(settings.scrollSpeed) * 60);... function draw() {
         ctx.clearRect(0, 0, canvasEl.width / dpr, canvasEl.height / dpr);
         ctx.fillStyle = settings.textColor;
         const yOffset = (containerEl.clientHeight - textHeight) / 2;
@@ -815,9 +796,7 @@
     gridSizeState = Number(settings.gridSize) || 20;
     await updateControllerUI(settings);
     setupControllerListeners();
-  }
-
-  async function updateControllerUI(settings){
+  }... async function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
     document.getElementById('font-size-slider').value = settings.fontSize;
     document.getElementById('font-size-value').textContent = settings.fontSize;
@@ -844,7 +823,7 @@
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || settings.isAdvancedText);
     
     document.getElementById('grid-size-slider').value = gridSizeState;
-    document.getElementById('grid-size-value').textContent = gridSizeState;
+    document.getElementById('grid-size-value').textContent = String(gridSizeState);
     updateColorTab('color-tab', settings.textColorMode);
     updateColorTab('grid-color-tab', settings.gridColorMode);
     updatePickerState('text-color-picker', settings.textColor, 'color');
@@ -884,9 +863,7 @@
       } else {
           selectedCharIndices.clear();
       }
-  }
-
-  function renderCharSelector(text) {
+  }... function renderCharSelector(text) {
       const selector = document.getElementById('char-selector');
       selector.innerHTML = '';
       
@@ -964,9 +941,7 @@
             e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
             updateSession();
         });
-    });
-
-    const setupPicker = (pickerId, mode, stateKey, stateValue) => {
+    });... const setupPicker = (pickerId, mode, stateKey, stateValue) => {
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
           if (el) {
@@ -1076,9 +1051,7 @@
           bgEffectEl: null
       };
       await applySettings(previewEls, settings, true);
-  }
-
-  function createPickers(){
+  }... function createPickers(){
     const create = (id, palette, isGradient=false)=>{
       const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
       palette.forEach((value)=>{
@@ -1116,11 +1089,9 @@
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
     create('char-color-picker', solid16);
-  }
-
-  function updatePickerState(id, activeValue, prop){
+  }... function updatePickerState(id, activeValue, prop){
     document.querySelectorAll(`#${id} > div`).forEach(div=>{
-      div.classList.toggle('control-btn-active', div.dataset[(prop||'color')]===activeValue);
+      div.classList.toggle('control-btn-active', div.dataset[(prop||'color')]==activeValue);
     });
   }
   function updateButtonGroupState(selector, dataAttr, value){
@@ -1149,5 +1120,3 @@
 </script>
 </body>
 </html>
-
-
