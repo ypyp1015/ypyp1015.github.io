@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.12 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.13 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -546,27 +546,23 @@
     
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
-    textEl.className = 'marquee-text';
     
-    // 【修正1】處理換行邏輯
-    textEl.style.whiteSpace = 'nowrap'; // 預設為不換行以利滾動
+    // 1. Setup container and whitespace
+    textEl.className = 'marquee-text';
+    textEl.style.whiteSpace = 'nowrap';
     if (settings.scrollDirection === 'none') {
-        if (settings.fontSizeMode === 'multiline') {
-            textEl.style.whiteSpace = 'pre-wrap'; // 自動換行 + 手動換行
-        } else {
-            textEl.style.whiteSpace = 'pre'; // 只接受手動換行，且保留空格
-        }
+        if (settings.fontSizeMode === 'multiline') textEl.style.whiteSpace = 'pre-wrap';
+        else textEl.style.whiteSpace = 'pre';
     }
     
+    // 2. Setup parent animation (scrolling)
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
         globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     }
-    if (settings.textAnimation === 'blink' && !settings.isAdvancedText) {
-        textEl.classList.add('text-anim-blink');
-    }
     textEl.style.animation = globalAnims.join(', ');
 
+    // 3. Create character spans
     const chars = Array.from(settings.text);
     const useAdvanced = settings.isAdvancedText && Array.isArray(settings.charColors) && Array.isArray(settings.charAnimations);
     const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
@@ -590,44 +586,60 @@
             span.style.display = 'inline-block';
             span.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
             span.style.animationDelay = `${index * 0.1}s`;
-            // 【修正2】如果使用了漸層色和逐字動畫，則將漸層應用於每個字元以確保可見性
-            if (settings.textColorMode === 'gradient') {
-                span.classList.add('gradient-text');
-                span.style.backgroundImage = settings.gradientText;
-            }
         }
         fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
 
-    // 重設樣式
-    textEl.classList.remove('gradient-text', 'text-style-glow', 'text-style-outline', 'text-anim-rainbow');
-    textEl.style.backgroundImage = '';
-    textEl.style.color = '';
-    textEl.style.webkitTextStroke = '';
-
+    // 4. Apply global (non-advanced) styles
     if (!useAdvanced) {
-        // 【修正2】只有在非逐字動畫時，才將漸層應用於父容器
+        const applyToSpans = isPerCharGlobalAnim;
+        const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
+        
+        // A. Base color/gradient
         if (settings.textAnimation === 'rainbow') {
-            textEl.classList.add('gradient-text', 'text-anim-rainbow');
-        } else if (settings.textColorMode === 'gradient' && !isPerCharGlobalAnim) {
-            textEl.classList.add('gradient-text');
-            textEl.style.backgroundImage = settings.gradientText;
-        } else if (settings.textColorMode !== 'gradient') {
-            textEl.style.color = settings.textColor;
+            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+        } else if (settings.textColorMode === 'gradient') {
+            elements.forEach(el => {
+                el.classList.add('gradient-text');
+                el.style.backgroundImage = settings.gradientText;
+            });
+        } else {
+            elements.forEach(el => el.style.color = settings.textColor);
         }
 
-        if (settings.textStyle === 'outline') {
-            textEl.classList.add('gradient-text', 'text-style-outline');
-            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow' && !isPerCharGlobalAnim) {
-                 textEl.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+        // B. 【修正】Fix gradient positioning for per-span application
+        if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+            const totalWidth = textEl.scrollWidth;
+            if (totalWidth > 0) {
+                elements.forEach(span => {
+                    const spanOffsetLeft = span.offsetLeft;
+                    span.style.backgroundSize = `${totalWidth}px 100%`;
+                    span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
+                });
             }
         }
-        if (settings.textStyle === 'glow') {
-            textEl.classList.add('text-style-glow');
+        
+        // C. Apply additional styles
+        if (settings.textStyle === 'outline') {
+            elements.forEach(el => {
+                el.classList.add('gradient-text', 'text-style-outline');
+                if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                }
+            });
+        } else if (settings.textStyle === 'glow') {
+            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                elements.forEach(el => el.classList.add('text-style-glow'));
+            }
+        }
+
+        if (settings.textAnimation === 'blink') {
+            textEl.classList.add('text-anim-blink');
         }
     }
-    
+
+    // 5. Font sizing and alignment
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -867,17 +879,15 @@
       selector.innerHTML = '';
       
       const chars = Array.from(text);
-      // 【修正3】修正 ensureArray 邏輯，避免在文字變動時清除已設定的個別動畫
       const ensureArray = (arr, newLength, fillVal) => {
         const oldArr = Array.isArray(arr) ? arr : [];
         const oldLength = oldArr.length;
         if (oldLength === newLength) {
-            return [...oldArr]; // 返回一個副本以避免意外修改
+            return [...oldArr];
         }
         if (oldLength > newLength) {
             return oldArr.slice(0, newLength);
         }
-        // oldLength < newLength
         const newItems = new Array(newLength - oldLength).fill(fillVal);
         return oldArr.concat(newItems);
       };
