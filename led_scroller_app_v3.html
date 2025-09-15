@@ -45,7 +45,10 @@
     color:transparent !important; -webkit-text-fill-color:transparent;
     background-repeat: no-repeat; /* 避免任何重複造成的色塊視覺 */
   }
-
+  /* 新增：逐字動畫把 transform 放外層，gradient 放內層 */
+  .char-wrap{ display:inline-block; will-change: transform; }
+  .char-inner{ display:inline-block; }
+  
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
@@ -388,137 +391,142 @@
 
   // 修正版：將 transform 動畫與 gradient-clip 分層處理，避免方塊問題
   async function renderStandardText(els, settings, isPreview) {
-    const { textEl, containerEl, wrapperEl } = els;
+  const { textEl, containerEl, wrapperEl } = els;
 
-    const fontFamily = settings.fontFamily || defaultSettings.fontFamily;
-    textEl.style.fontFamily = fontFamily;
-    textEl.innerHTML = '';
-    textEl.className = 'marquee-text';
+  const fontFamily = settings.fontFamily || defaultSettings.fontFamily;
+  textEl.style.fontFamily = fontFamily;
+  textEl.innerHTML = '';
+  textEl.className = 'marquee-text';
 
-    textEl.style.whiteSpace = 'nowrap';
-    if (settings.scrollDirection === 'none') {
-      if (settings.fontSizeMode === 'multiline') textEl.style.whiteSpace = 'pre-wrap';
-      else textEl.style.whiteSpace = 'pre';
-    }
+  textEl.style.whiteSpace = 'nowrap';
+  if (settings.scrollDirection === 'none') {
+    if (settings.fontSizeMode === 'multiline') textEl.style.whiteSpace = 'pre-wrap';
+    else textEl.style.whiteSpace = 'pre';
+  }
 
-    const chars = Array.from(settings.text);
-    const useAdvanced = settings.isAdvancedText && Array.isArray(settings.charColors) && Array.isArray(settings.charAnimations);
-    const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
-    const isPerCharGlobalAnim = perCharGlobalAnims.includes(settings.textAnimation) && !useAdvanced;
+  const chars = Array.from(settings.text);
+  const useAdvanced = settings.isAdvancedText && Array.isArray(settings.charColors) && Array.isArray(settings.charAnimations);
+  const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
+  const isPerCharGlobalAnim = perCharGlobalAnims.includes(settings.textAnimation) && !useAdvanced;
 
-    // 建立兩層：外層 .char-wrap（負責動畫）、內層 .char-inner（負責顏色/漸層）
-    const fragment = document.createDocumentFragment();
-    chars.forEach((char, index) => {
-      const wrap = document.createElement('span');
-      wrap.className = 'char-wrap';
-      const inner = document.createElement('span');
-      inner.className = 'char-inner';
-      inner.textContent = char;
+  // 建立兩層：外層 .char-wrap（負責動畫）、內層 .char-inner（負責顏色/漸層）
+  const fragment = document.createDocumentFragment();
+  chars.forEach((char, index) => {
+    const wrap = document.createElement('span');
+    wrap.className = 'char-wrap';
+    const inner = document.createElement('span');
+    inner.className = 'char-inner';
+    inner.textContent = char;
 
-      // 進階 per-char 動畫與配色
-      if (useAdvanced) {
-        const color = settings.charColors[index];
-        const anim = settings.charAnimations[index];
-        if (color) inner.style.color = color;
-        if (anim && anim !== 'none') {
-          wrap.style.animation = `${anim}-anim 1.2s ease-in-out infinite`;
-          wrap.style.animationDelay = `${index * 0.1}s`;
-        }
-      } else if (isPerCharGlobalAnim) {
-        wrap.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
+    // 進階 per-char 動畫與配色
+    if (useAdvanced) {
+      const color = settings.charColors[index];
+      const anim = settings.charAnimations[index];
+      if (color) inner.style.color = color;
+      if (anim && anim !== 'none') {
+        wrap.style.animation = `${anim}-anim 1.2s ease-in-out infinite`;
         wrap.style.animationDelay = `${index * 0.1}s`;
       }
-
-      wrap.appendChild(inner);
-      fragment.appendChild(wrap);
-    });
-    textEl.appendChild(fragment);
-
-    try {
-      await document.fonts.load(`1em ${fontFamily}`);
-    } catch (err) {
-      console.warn(`Font '${fontFamily}' could not be loaded:`, err);
+    } else if (isPerCharGlobalAnim) {
+      wrap.style.animation = `${settings.textAnimation}-anim 1.2s ease-in-out infinite`;
+      wrap.style.animationDelay = `${index * 0.1}s`;
     }
-    
-    // 計算字體大小
-    let finalFontSize = 100;
-    switch(settings.fontSizeMode){
-      case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
-      case 'fitWidth': {
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
+
+    wrap.appendChild(inner);
+    fragment.appendChild(wrap);
+  });
+  textEl.appendChild(fragment);
+
+  try { await document.fonts.load(`1em ${fontFamily}`); } catch (err) { console.warn(`Font '${fontFamily}' could not be loaded:`, err); }
+
+  // 字體大小計算
+  let finalFontSize = 100;
+  switch(settings.fontSizeMode){
+    case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
+    case 'fitWidth': {
+      let low = 1, high = 2000, bestSize = 10;
+      for(let i=0; i<10; i++){
+        let mid = Math.floor((low+high)/2);
+        textEl.style.fontSize = mid + 'px';
+        if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; }
       }
-      case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap';
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
-        finalFontSize = bestSize; 
-        if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
-        break;
-      }
-      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
+      finalFontSize = bestSize; break;
     }
-    textEl.style.fontSize = `${finalFontSize}px`;
-
-    // 設定顏色 / 漸層
-    requestAnimationFrame(() => {
-      const applyToChars = (isPerCharGlobalAnim || useAdvanced);
-      const elements = applyToChars ? Array.from(textEl.querySelectorAll('.char-inner')) : [textEl];
-
-      if (settings.textAnimation === 'rainbow') {
-        elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-      } else if (!useAdvanced && settings.textColorMode === 'gradient') {
-        elements.forEach(el => {
-          el.classList.add('gradient-text');
-          el.style.backgroundImage = settings.gradientText;
-        });
-      } else if (!useAdvanced) {
-        elements.forEach(el => el.style.color = settings.textColor);
+    case 'multiline': {
+      textEl.style.whiteSpace = 'pre-wrap';
+      let low = 1, high = 2000, bestSize = 10;
+      for(let i=0; i<10; i++){
+        let mid = Math.floor((low+high)/2);
+        textEl.style.fontSize = mid + 'px';
+        if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; }
       }
-
-      // 讓 outline/glow 作用於實際呈現字形的層
-      if (settings.textStyle === 'outline') {
-        elements.forEach(el => {
-          el.classList.add('gradient-text', 'text-style-outline');
-          if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-            el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-          }
-        });
-      } else if (settings.textStyle === 'glow') {
-        if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-          elements.forEach(el => el.classList.add('text-style-glow'));
-        }
-      }
-
-      if (settings.textAnimation === 'blink') {
-        textEl.classList.add('text-anim-blink');
-      }
-
-      // 連續漸層對齊：針對 .char-inner 依父層 .char-wrap 的位置設定
-      if ((isPerCharGlobalAnim || useAdvanced) && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
-        const totalWidth = textEl.scrollWidth;
-        if (totalWidth > 0) {
-          elements.forEach(inner => {
-            const left = inner.parentElement ? inner.parentElement.offsetLeft : inner.offsetLeft;
-            inner.style.backgroundSize = `${totalWidth}px 100%`;
-            inner.style.backgroundPosition = `-${left}px 0`;
-          });
-        }
-      }
-    });
-    
-    // 整體滾動（非 per-char）
-    let globalAnims = [];
-    if (settings.scrollDirection !== 'none') {
-      globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
+      finalFontSize = bestSize; 
+      if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
+      break;
     }
-    textEl.style.animation = globalAnims.join(', ');
-
-    // 靜止置中/靠上邏輯
-    wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
+    default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
   }
+  textEl.style.fontSize = `${finalFontSize}px`;
+
+  // 設定顏色 / 漸層 / 效果
+  requestAnimationFrame(() => {
+    const applyToChars = (isPerCharGlobalAnim || useAdvanced);
+    const elements = applyToChars ? Array.from(textEl.querySelectorAll('.char-inner')) : [textEl];
+
+    if (settings.textAnimation === 'rainbow') {
+      elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+    } else if (!useAdvanced && settings.textColorMode === 'gradient') {
+      elements.forEach(el => {
+        el.classList.add('gradient-text');
+        el.style.backgroundImage = settings.gradientText;
+      });
+    } else if (!useAdvanced) {
+      elements.forEach(el => el.style.color = settings.textColor);
+    }
+
+    if (settings.textStyle === 'outline') {
+      elements.forEach(el => {
+        el.classList.add('gradient-text', 'text-style-outline');
+        if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+          el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+        }
+      });
+    } else if (settings.textStyle === 'glow') {
+      if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+        elements.forEach(el => el.classList.add('text-style-glow'));
+      }
+    }
+
+    if (settings.textAnimation === 'blink') {
+      textEl.classList.add('text-anim-blink');
+    }
+
+    // 連續漸層對齊（逐字動畫/進階模式下）
+    if ((isPerCharGlobalAnim || useAdvanced) && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+      const totalWidth = textEl.scrollWidth;
+      if (totalWidth > 0) {
+        elements.forEach(inner => {
+          const left = inner.parentElement ? inner.parentElement.offsetLeft : inner.offsetLeft;
+          inner.style.backgroundSize = `${totalWidth}px 100%`;
+          inner.style.backgroundPosition = `-${left}px 0`;
+        });
+      }
+    }
+  });
+
+  // 整段滾動動畫
+  let globalAnims = [];
+  if (settings.scrollDirection !== 'none') {
+    globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
+  }
+  textEl.style.animation = globalAnims.join(', ');
+
+  // 靜止置中/靠上
+  wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
+  if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center';
+  else wrapperEl.style.justifyContent = '';
+}
+
 
   // 其餘函式（點陣模式、監聽、控制台邏輯等）與原檔相同，未涉及此次修正的部分維持不變
   async function startDotMatrixAnimation(els, settings, isPreview) {
@@ -827,4 +835,5 @@
 </script>
 </body>
 </html>
+
 
