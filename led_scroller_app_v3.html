@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.13 (穩定版)</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>遠端遙控 LED 跑馬燈 v24.1.14 (穩定版)</title>
+<script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+<link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+<link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
 <!-- 引入所有需要的字體 -->
-<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="[https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap](https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap)" rel="stylesheet">
+<script src="[https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js](https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js)"></script>
 <style>
   html, body { height:100%; margin:0; padding:0; background:#0f172a; }
   body { font-family:'Inter','微軟正黑體',sans-serif; overscroll-behavior:none; }
@@ -178,7 +178,7 @@
       <div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div>
     </div>
     <button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
     </button>
   </div>
 
@@ -408,8 +408,8 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { initializeApp } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js)";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "[https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js)";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
@@ -546,23 +546,16 @@
     
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     textEl.innerHTML = '';
-    
-    // 1. Setup container and whitespace
     textEl.className = 'marquee-text';
+    
+    // 1. Whitespace
     textEl.style.whiteSpace = 'nowrap';
     if (settings.scrollDirection === 'none') {
         if (settings.fontSizeMode === 'multiline') textEl.style.whiteSpace = 'pre-wrap';
         else textEl.style.whiteSpace = 'pre';
     }
     
-    // 2. Setup parent animation (scrolling)
-    let globalAnims = [];
-    if (settings.scrollDirection !== 'none') {
-        globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
-    }
-    textEl.style.animation = globalAnims.join(', ');
-
-    // 3. Create character spans
+    // 2. Create character spans
     const chars = Array.from(settings.text);
     const useAdvanced = settings.isAdvancedText && Array.isArray(settings.charColors) && Array.isArray(settings.charAnimations);
     const perCharGlobalAnims = ['wave', 'jump', 'heartbeat', 'shake'];
@@ -572,7 +565,6 @@
     chars.forEach((char, index) => {
         const span = document.createElement('span');
         span.textContent = char;
-        
         if (useAdvanced) {
             const color = settings.charColors[index];
             const anim = settings.charAnimations[index];
@@ -590,13 +582,34 @@
         fragment.appendChild(span);
     });
     textEl.appendChild(fragment);
+    
+    // 3. Font sizing - MUST be done before gradient calculation
+    let finalFontSize = 100;
+    switch(settings.fontSizeMode){
+      case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
+      case 'fitWidth': {
+        let low = 1, high = 2000, bestSize = 10;
+        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
+        finalFontSize = bestSize; break;
+      }
+      case 'multiline': {
+        textEl.style.whiteSpace = 'pre-wrap'; // Temporarily set for calculation
+        let low = 1, high = 2000, bestSize = 10;
+        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
+        finalFontSize = bestSize; 
+        if (settings.scrollDirection !== 'none') textEl.style.whiteSpace = 'nowrap';
+        break;
+      }
+      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
+    }
+    textEl.style.fontSize = `${finalFontSize}px`;
 
-    // 4. Apply global (non-advanced) styles
+    // 4. Global styles (now with correct dimensions)
     if (!useAdvanced) {
         const applyToSpans = isPerCharGlobalAnim;
         const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
         
-        // A. Base color/gradient
+        // Base color/gradient
         if (settings.textAnimation === 'rainbow') {
             elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
         } else if (settings.textColorMode === 'gradient') {
@@ -608,8 +621,9 @@
             elements.forEach(el => el.style.color = settings.textColor);
         }
 
-        // B. 【修正】Fix gradient positioning for per-span application
+        // Fix gradient positioning for per-span application
         if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
+            void textEl.offsetHeight; // Force reflow to get correct measurements
             const totalWidth = textEl.scrollWidth;
             if (totalWidth > 0) {
                 elements.forEach(span => {
@@ -620,7 +634,7 @@
             }
         }
         
-        // C. Apply additional styles
+        // Additional styles
         if (settings.textStyle === 'outline') {
             elements.forEach(el => {
                 el.classList.add('gradient-text', 'text-style-outline');
@@ -639,24 +653,12 @@
         }
     }
 
-    // 5. Font sizing and alignment
-    let finalFontSize = 100;
-    switch(settings.fontSizeMode){
-      case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
-      case 'fitWidth': {
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
-      }
-      case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap';
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
-      }
-      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
+    // 5. Parent container animation (scrolling) and final alignment
+    let globalAnims = [];
+    if (settings.scrollDirection !== 'none') {
+        globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     }
-    textEl.style.fontSize = `${finalFontSize}px`;
+    textEl.style.animation = globalAnims.join(', ');
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
