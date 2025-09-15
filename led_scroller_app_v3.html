@@ -583,11 +583,11 @@
     textEl.appendChild(fragment);
 
     try {
-      await document.fonts.load(`1em ${fontFamily}`);
+        await document.fonts.load(`1em ${fontFamily}`);
     } catch (err) {
-      console.warn(`Font '${fontFamily}' could not be loaded:`, err);
+        console.warn(`Font '${fontFamily}' could not be loaded:`, err);
     }
-    
+
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -608,52 +608,54 @@
     }
     textEl.style.fontSize = `${finalFontSize}px`;
 
+    // 正確套用彩虹漸層＋波浪動畫的修正
     requestAnimationFrame(() => {
-        if (!useAdvanced) {
-            const applyToSpans = isPerCharGlobalAnim;
-            const elements = applyToSpans ? Array.from(textEl.children) : [textEl];
-            
-            if (settings.textAnimation === 'rainbow') {
-                elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
-            } else if (settings.textColorMode === 'gradient') {
+        const elements = isPerCharGlobalAnim ? Array.from(textEl.children) : [textEl];
+
+        if (settings.textAnimation === 'rainbow' && !useAdvanced) {
+            elements.forEach(el => el.classList.add('gradient-text', 'text-anim-rainbow'));
+        } else if (settings.textColorMode === 'gradient' && !useAdvanced) {
+            // 如果有per-character global anim，將gradient正確套用到每個span
+            if (isPerCharGlobalAnim) {
+                // 取得整句的總寬度
+                const totalWidth = textEl.scrollWidth;
+                elements.forEach(span => {
+                    span.classList.add('gradient-text');
+                    span.style.backgroundImage = settings.gradientText;
+                    span.style.backgroundSize = `${totalWidth}px 100%`;
+                    // 設定字元的背景起點, 讓每個span gradient位置固定與畫面預覽一致
+                    span.style.backgroundPosition = `-${span.offsetLeft}px 0`;
+                });
+            } else {
                 elements.forEach(el => {
                     el.classList.add('gradient-text');
                     el.style.backgroundImage = settings.gradientText;
                 });
-            } else {
-                elements.forEach(el => el.style.color = settings.textColor);
             }
+        } else {
+            elements.forEach(el => el.style.color = settings.textColor);
+        }
 
-            if (applyToSpans && (settings.textColorMode === 'gradient' || settings.textAnimation === 'rainbow')) {
-                const totalWidth = textEl.scrollWidth;
-                if (totalWidth > 0) {
-                    elements.forEach(span => {
-                        const spanOffsetLeft = span.offsetLeft;
-                        span.style.backgroundSize = `${totalWidth}px 100%`;
-                        span.style.backgroundPosition = `-${spanOffsetLeft}px 0`;
-                    });
-                }
-            }
-            
-            if (settings.textStyle === 'outline') {
-                elements.forEach(el => {
-                    el.classList.add('gradient-text', 'text-style-outline');
-                    if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                        el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-                    }
-                });
-            } else if (settings.textStyle === 'glow') {
+        // 修正文字風格
+        if (settings.textStyle === 'outline' && !useAdvanced) {
+            elements.forEach(el => {
+                el.classList.add('gradient-text', 'text-style-outline');
                 if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
-                    elements.forEach(el => el.classList.add('text-style-glow'));
+                    el.style.backgroundImage = `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
                 }
-            }
-
-            if (settings.textAnimation === 'blink') {
-                textEl.classList.add('text-anim-blink');
+            });
+        } else if (settings.textStyle === 'glow' && !useAdvanced) {
+            if (settings.textColorMode !== 'gradient' && settings.textAnimation !== 'rainbow') {
+                elements.forEach(el => el.classList.add('text-style-glow'));
             }
         }
+
+        if (settings.textAnimation === 'blink' && !useAdvanced) {
+            textEl.classList.add('text-anim-blink');
+        }
     });
-    
+
+    // 動畫
     let globalAnims = [];
     if (settings.scrollDirection !== 'none') {
         globalAnims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
@@ -662,7 +664,8 @@
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
-  }
+}
+
 
   async function startDotMatrixAnimation(els, settings, isPreview) {
     const { canvasEl, containerEl } = els;
@@ -1146,4 +1149,5 @@
 </script>
 </body>
 </html>
+
 
