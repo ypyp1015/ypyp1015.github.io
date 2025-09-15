@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v24.1.11 (穩定版)</title>
+<title>遠端遙控 LED 跑馬燈 v24.1.12 (穩定版)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -503,6 +503,32 @@
         } else { gap.style.display = 'none'; }
     }
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
+
+    // 【修正】處理邊框，確保網格等內容不會覆蓋邊框
+    const hasBorder = settings.backgroundBorder && settings.backgroundBorder !== 'none';
+    const insetSize = hasBorder ? borderWidth : 0;
+    const insetPx = `${insetSize}px`;
+
+    // 將內縮應用於所有絕對定位的內容層
+    const contentLayers = [
+        containerEl.querySelector('.grid-bg'),
+        containerEl.querySelector('.gap-overlay'),
+        containerEl.querySelector('.marquee-container-wrapper'),
+        containerEl.querySelector('.dot-matrix-canvas'),
+        bgEffectEl
+    ];
+
+    contentLayers.forEach(layer => {
+        if (layer) {
+            // marquee-container-wrapper 的寬度需要特別計算
+            if (layer.classList.contains('marquee-container-wrapper')) {
+                layer.style.left = insetPx;
+                layer.style.width = `calc(100% - ${insetSize * 2}px)`;
+            } else { // 其他層級可以直接使用 inset
+                layer.style.inset = insetPx;
+            }
+        }
+    });
 
     if (settings.textStyle === 'dot-matrix') {
         textEl.style.display = 'none';
