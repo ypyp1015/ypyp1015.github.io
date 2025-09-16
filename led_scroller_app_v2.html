@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v23.4.1</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.28</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,17 +17,10 @@
 
   @keyframes marquee-left { from{ transform:translateX(100vw);} to{ transform:translateX(-100%);} }
   @keyframes marquee-right{ from{ transform:translateX(-100%);} to{ transform:translateX(100vw);} }
+  @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-  
-  /* 【新增】文字動畫 Keyframes */
-  @keyframes rainbow-text-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-  @keyframes blink-effect { 50%{ opacity:0; } }
-  @keyframes wave-anim { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-  @keyframes jump-anim { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-20px) rotate(-5deg); } 75% { transform: translateY(-20px) rotate(5deg); } }
-  @keyframes heartbeat-anim { from { transform: scale(1); } 50% { transform: scale(1.15); } to { transform: scale(1); } }
-  @keyframes shake-anim { 0% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(2px, -2px) rotate(0.5deg); } 50% { transform: translate(-2px, 2px) rotate(-0.5deg); } 75% { transform: translate(2px, 2px) rotate(0.5deg); } 100% { transform: translate(0, 0) rotate(0deg); } }
 
   .marquee-text{
     font-size:var(--font-size,80px);
@@ -58,13 +51,6 @@
     text-shadow: none !important;
     -webkit-text-stroke: 0;
   }
-  /* 【新增】文字動畫 Class */
-  .text-anim-rainbow { background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e); background-size: 200% 200%; animation: rainbow-text-anim 3s linear infinite; }
-  .text-anim-blink { animation: blink-effect 1s step-end infinite; }
-  .text-anim-heartbeat { animation: heartbeat-anim 1.2s ease-in-out infinite; }
-  .text-anim-shake { animation: shake-anim 0.4s linear infinite; }
-  .text-anim-wave-char { animation: wave-anim 1.5s ease-in-out infinite; }
-  .text-anim-jump-char { animation: jump-anim 0.8s ease-in-out infinite; }
 
   .display-screen{
     width:100%; height:100%; position:relative;
@@ -136,6 +122,7 @@
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
   
+  /* 【新增】個別文字上色 UI 樣式 */
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
@@ -209,6 +196,7 @@
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
       
+      <!-- 【新增】個別文字上色功能 -->
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <div class="flex items-center justify-between mb-4">
             <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
@@ -221,11 +209,13 @@
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
             <div id="char-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center">
+              <!-- Character buttons will be generated here -->
             </div>
           </div>
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字上色</label>
             <div class="flex flex-wrap gap-3" id="char-color-picker">
+              <!-- Compact color picker for characters -->
             </div>
           </div>
         </div>
@@ -306,6 +296,7 @@
           <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
           <input id="grid-size-slider" type="range" min="4" max="120" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
         </div>
+
         <div class="p-4 bg-gray-900 rounded-lg">
           <div class="flex border-b border-gray-700 mb-4">
             <div id="grid-color-tab" class="flex -mb-px">
@@ -322,6 +313,7 @@
             <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
           </div>
         </div>
+        
         <div class="p-4 bg-gray-900 rounded-lg">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
           <div class="flex flex-wrap gap-3">
@@ -352,18 +344,14 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      
-      <!-- 【更新】新增文字動畫區塊 -->
-      <div id="text-animation-wrapper" class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">文字動畫</label>
-        <div class="grid grid-cols-3 gap-3">
-          <button data-animation="none" class="text-animation-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-          <button data-animation="blink" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">閃爍</button>
-          <button data-animation="rainbow" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹</button>
-          <button data-animation="wave" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-          <button data-animation="jump" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🤸 跳躍</button>
-          <button data-animation="heartbeat" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
-          <button data-animation="shake" class="text-animation-btn p-3 bg-gray-700 rounded-lg text-sm">🌀 搖晃</button>
+      <div class="mb-6">
+        <label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label>
+        <div class="flex flex-wrap gap-4">
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="blink-toggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            <span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span>
+          </label>
         </div>
       </div>
 
@@ -437,7 +425,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], textAnimation: 'none', updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -479,52 +467,30 @@
     
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
     
-    // --- 【更新】重構文字渲染與動畫邏輯 ---
-    textEl.innerHTML = '';
-    textEl.className = 'marquee-text';
-    textEl.style.animation = ''; // 清除舊動畫
-
-    // A. 處理滾動
-    if (settings.scrollDirection !== 'none') {
-      textEl.style.animation = `${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`;
-    }
-
-    // B. 處理全域文字動畫 (心跳、搖晃、閃爍)
-    if (['heartbeat', 'shake', 'blink'].includes(settings.textAnimation)) {
-        textEl.classList.add(`text-anim-${settings.textAnimation}`);
-    }
-
-    // C. 產生文字內容 (永遠使用 span 以簡化邏輯)
     const chars = Array.from(settings.text);
     const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
-    const usePerCharAnim = ['wave', 'jump'].includes(settings.textAnimation);
-    
-    const textContentFragment = document.createDocumentFragment();
-    chars.forEach((char, index) => {
+
+    textEl.innerHTML = '';
+    textEl.className = 'marquee-text';
+    textEl.style.color = '';
+    textEl.style.backgroundImage = '';
+
+    if (useCharColors) {
+      if (settings.textStyle === 'glow') textEl.classList.add('text-style-glow');
+      chars.forEach((char, index) => {
         const span = document.createElement('span');
         span.textContent = char;
-        
-        // 個別文字動畫
-        if (usePerCharAnim) {
-            span.style.display = 'inline-block';
-            span.classList.add(`text-anim-${settings.textAnimation}-char`);
-            span.style.animationDelay = `${index * 0.08}s`;
+        const color = settings.charColors[index];
+        if (color) {
+            span.style.color = color;
+        } else {
+            span.style.color = settings.textColor; // Fallback to global
         }
-
-        // 個別文字上色
-        if (useCharColors) {
-            const color = settings.charColors[index];
-            span.style.color = color ? color : settings.textColor;
-        }
-        textContentFragment.appendChild(span);
-    });
-    textEl.appendChild(textContentFragment);
-
-    // D. 處理全域文字樣式 (若未啟用個別上色)
-    if (!useCharColors) {
-        if (settings.textAnimation === 'rainbow') {
-            textEl.classList.add('gradient-text', 'text-anim-rainbow');
-        } else if (settings.textStyle === 'dotted') {
+        textEl.appendChild(span);
+      });
+    } else {
+        textEl.textContent = settings.text;
+        if (settings.textStyle === 'dotted') {
             textEl.classList.add('text-style-dotted');
         } else if (settings.textStyle === 'outline') {
             textEl.classList.add('gradient-text', 'text-style-outline');
@@ -541,25 +507,39 @@
             }
         }
     }
-    // --- 結束更新 ---
-
+    
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
       case 'fitWidth': {
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; }
+        }
+        finalFontSize = bestSize;
+        break;
       }
       case 'multiline': {
         textEl.style.whiteSpace = 'pre-wrap';
         let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){ let mid = Math.floor((low+high)/2); textEl.style.fontSize = mid + 'px'; if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; } }
-        finalFontSize = bestSize; break;
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low+high)/2);
+          textEl.style.fontSize = mid + 'px';
+          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; }
+        }
+        finalFontSize = bestSize;
+        break;
       }
       default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
     }
     textEl.style.fontSize = `${finalFontSize}px`;
+    
+    let anims = [];
+    if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
+    if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
+    textEl.style.animation = anims.join(', ');
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
@@ -655,6 +635,7 @@
     document.getElementById('font-size-value').textContent = settings.fontSize;
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
+    document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
     
     const fontSizeControls = document.getElementById('font-size-controls');
@@ -690,7 +671,6 @@
     updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
     updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
     updateButtonGroupState('.text-style-btn','style', settings.textStyle);
-    updateButtonGroupState('.text-animation-btn', 'animation', settings.textAnimation); //【更新】
     updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
     updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
@@ -698,6 +678,7 @@
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     
     toggleCharColoringUI(settings.isCharColoring, settings.text);
+
     updatePreview();
   }
 
@@ -706,17 +687,12 @@
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="outline"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
-      document.querySelector('[data-style="glow"]').classList.toggle('control-disabled', isActive);
-      document.querySelector('[data-animation="rainbow"]').classList.toggle('control-disabled', isActive);
-
+      
       if (isActive) {
           renderCharSelector(text);
-          const activeStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
-          if (activeStyle && activeStyle.match(/outline|dotted|glow/)) {
+          // If turning on, and a conflicting style was active, switch to 'normal' style
+          if (document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style.match(/outline|dotted/)) {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
-          }
-          if (document.querySelector('.text-animation-btn.bg-indigo-600')?.dataset.animation === 'rainbow') {
-              updateButtonGroupState('.text-animation-btn', 'animation', 'none');
           }
       } else {
           selectedCharIndices.clear();
@@ -728,9 +704,11 @@
       selector.innerHTML = '';
       selectedCharIndices.clear();
       const chars = Array.from(text);
+
       if (controllerState.charColors.length !== chars.length) {
           controllerState.charColors = new Array(chars.length).fill(null);
       }
+
       chars.forEach((char, index) => {
           const btn = document.createElement('button');
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
@@ -752,9 +730,9 @@
   }
 
   function setupControllerListeners(){
-    ['text-input','font-size-slider','speed-slider','gap-alpha-slider', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
+    ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
       const el = document.getElementById(id);
-      el && el.addEventListener('input', updateSession);
+      el && el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
     });
     
     document.getElementById('text-input').addEventListener('input', (e) => {
@@ -778,7 +756,7 @@
       updateSession();
     });
 
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-animation-btn').forEach(btn => {
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             if (e.currentTarget.classList.contains('control-disabled')) return;
             const group = e.currentTarget.classList[0];
@@ -834,9 +812,9 @@
       fontSize: document.getElementById('font-size-slider').value,
       fontSizeMode: document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight',
       scrollSpeed: document.getElementById('speed-slider').value,
+      isBlinking: document.getElementById('blink-toggle').checked,
       isCharColoring: document.getElementById('char-color-toggle').checked,
       charColors: controllerState.charColors,
-      textAnimation: document.querySelector('.text-animation-btn.bg-indigo-600')?.dataset.animation || 'none',
       borderWidth: document.getElementById('border-width-slider').value,
       borderRadius: document.getElementById('border-radius-slider').value,
       textColorMode: controllerState.textColorMode,
@@ -867,6 +845,7 @@
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
+        // Do not call updateControllerUI here to prevent loop, preview is enough
         updatePreview();
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
@@ -916,7 +895,7 @@
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
-    create('char-color-picker', solid16);
+    create('char-color-picker', solid16); // Create the new picker
   }
 
   function updatePickerState(id, activeValue, prop){
