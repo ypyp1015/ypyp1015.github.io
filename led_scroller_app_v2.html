@@ -508,34 +508,38 @@
         }
     }
    
-    // 【BUG 修復】 在計算字體大小之前，重置 white-space 屬性
-    textEl.style.whiteSpace = 'nowrap';
-
     let finalFontSize = 100;
+    // Reset white-space based on the font mode to handle newlines correctly.
     switch(settings.fontSizeMode){
-      case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
-      case 'fitWidth': {
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low+high)/2);
-          textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1; } else { high = mid - 1; }
-        }
-        finalFontSize = bestSize;
+      case 'fitHeight':
+        textEl.style.whiteSpace = 'nowrap';
+        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
         break;
-      }
+      
+      case 'fitWidth':
       case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap'; // 此處會為 multiline 模式正確覆蓋樣式
+        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines and wrap text
         let low = 1, high = 2000, bestSize = 10;
+        // Binary search for the best font size that fits both width and height
         for(let i=0; i<10; i++){
-          let mid = Math.floor((low+high)/2);
+          let mid = Math.floor((low + high) / 2);
           textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) { bestSize = mid; low = mid + 1;} else { high = mid - 1; }
+          // Check if both scrollHeight and scrollWidth are within the container's bounds
+          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
+            bestSize = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
         }
         finalFontSize = bestSize;
         break;
       }
-      default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
+
+      default: // This is 'fixed' mode
+        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines
+        finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
+        break;
     }
     textEl.style.fontSize = `${finalFontSize}px`;
    
@@ -932,3 +936,4 @@
 </script>
 </body>
 </html>
+
