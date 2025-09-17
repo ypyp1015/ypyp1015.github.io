@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.29 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.30 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -415,6 +415,7 @@
   const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
   let gridSizeState = 20;
   let selectedCharIndices = new Set();
+  let fillHeightPercentage = 95; // 【BUG 修復】新增狀態變數來保存「填滿高度」的百分比
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
@@ -516,23 +517,8 @@
         finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
         break;
       
-      // 【BUG 修復】將 fitWidth 從 multiline 中分離，使其不換行
-      case 'fitWidth': {
-        textEl.style.whiteSpace = 'nowrap'; // 確保單行顯示
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low + high) / 2);
-          textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollWidth <= containerEl.clientWidth) {
-            bestSize = mid;
-            low = mid + 1;
-          } else {
-            high = mid - 1;
-          }
-        }
-        finalFontSize = bestSize;
-        break;
-      }
+      // 【BUG 修復】讓「填滿寬度」和「自動換行」共用同一套邏輯，以正確處理換行
+      case 'fitWidth':
       case 'multiline': {
         textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines and wrap text
         let low = 1, high = 2000, bestSize = 10;
@@ -646,6 +632,10 @@
       charColors: settings.charColors || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
+    // 【BUG 修復】從載入的設定中初始化「填滿高度」的百分比
+    if (settings.fontSizeMode === 'fitHeight') {
+        fillHeightPercentage = settings.fontSize;
+    }
     updateControllerUI(settings);
     setupControllerListeners();
   }
@@ -751,11 +741,19 @@
   }
 
   function setupControllerListeners(){
-    ['text-input','font-size-slider','speed-slider','gap-alpha-slider','blink-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
+    ['text-input','speed-slider','gap-alpha-slider','blink-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
       const el = document.getElementById(id);
-      el && el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
+      el && el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession);
     });
    
+    document.getElementById('font-size-slider').addEventListener('input', (e) => {
+        const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
+        if (currentMode === 'fitHeight') {
+            fillHeightPercentage = e.target.value; // 【BUG 修復】在「填滿高度」模式下，更新百分比變數
+        }
+        updateSession();
+    });
+
     document.getElementById('text-input').addEventListener('input', (e) => {
         if (document.getElementById('char-color-toggle').checked) {
             renderCharSelector(e.target.value);
@@ -779,10 +777,21 @@
 
     document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            if (e.currentTarget.classList.contains('control-disabled')) return;
-            const group = e.currentTarget.classList[0];
+            const target = e.currentTarget;
+            if (target.classList.contains('control-disabled')) return;
+            
+            const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-            e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+            target.classList.replace('bg-gray-700', 'bg-indigo-600');
+
+            // 【BUG 修復】當切換到「填滿高度」模式時，重置滑桿的值
+            if (target.classList.contains('font-mode-btn')) {
+                const newMode = target.dataset.mode;
+                if (newMode === 'fitHeight') {
+                    document.getElementById('font-size-slider').value = fillHeightPercentage;
+                }
+            }
+            
             updateSession();
         });
     });
@@ -867,7 +876,6 @@
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
         // 【BUG 修復】改為呼叫 updateControllerUI 以便正確顯示/隱藏次級選單
-        // updateControllerUI 內部已包含 updatePreview()
         updateControllerUI(settings);
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
