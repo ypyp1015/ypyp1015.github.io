@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.28</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.28 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,7 +121,7 @@
   .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
-  
+ 
   /* 【新增】個別文字上色 UI 樣式 */
   .char-btn {
     transition: all 0.2s;
@@ -195,7 +195,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
-      
+     
       <!-- 【新增】個別文字上色功能 -->
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <div class="flex items-center justify-between mb-4">
@@ -313,7 +313,7 @@
             <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
           </div>
         </div>
-        
+       
         <div class="p-4 bg-gray-900 rounded-lg">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
           <div class="flex flex-wrap gap-3">
@@ -363,7 +363,7 @@
           <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
         </div>
       </div>
-      
+     
       <div id="border-controls-section" class="mb-6 space-y-6 hidden">
         <div>
             <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
@@ -456,17 +456,17 @@
     root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
-    
+   
     const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
     root.style.setProperty('--bg-color', backgroundValue);
-    
+   
     root.style.setProperty('--grid-color', settings.gridColor);
     root.style.setProperty('--grid-gradient', settings.gradientGrid);
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-    
+   
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
-    
+   
     const chars = Array.from(settings.text);
     const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
 
@@ -507,7 +507,10 @@
             }
         }
     }
-    
+   
+    // 【BUG 修復】 在計算字體大小之前，重置 white-space 屬性
+    textEl.style.whiteSpace = 'nowrap';
+
     let finalFontSize = 100;
     switch(settings.fontSizeMode){
       case 'fitHeight': finalFontSize = containerEl.clientHeight * (settings.fontSize / 100); break;
@@ -522,7 +525,7 @@
         break;
       }
       case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap';
+        textEl.style.whiteSpace = 'pre-wrap'; // 此處會為 multiline 模式正確覆蓋樣式
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
           let mid = Math.floor((low+high)/2);
@@ -535,7 +538,7 @@
       default: finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80); break;
     }
     textEl.style.fontSize = `${finalFontSize}px`;
-    
+   
     let anims = [];
     if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
@@ -543,10 +546,10 @@
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
     if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
-    
+   
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = ''; containerEl.style.backgroundSize = ''; containerEl.style.border = '';
-    
+   
     const borderWidthPx = `${borderWidth}px`;
     if (gridBg) gridBg.style.inset = '0px'; if (gap) gap.style.inset = '0px';
 
@@ -560,7 +563,7 @@
     const effSize = Number.isFinite(Number(settings.gridSize)) ? Number(settings.gridSize) : 20;
     const gridSizePx = (isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize))) + 'px';
     root.style.setProperty('--grid-size', gridSizePx);
-    
+   
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     if (gridBg) {
         if (isGridEnabled) {
@@ -637,25 +640,25 @@
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
-    
+   
     const fontSizeControls = document.getElementById('font-size-controls');
     switch(settings.fontSizeMode){
       case 'fitHeight': fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 100; break;
       case 'fitWidth': case 'multiline': fontSizeControls.style.display = 'none'; break;
       default: fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 500; break;
     }
-    
+   
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
     document.getElementById('border-radius-value').textContent = settings.borderRadius;
     document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
-    
+   
     const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
     document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || settings.isCharColoring);
-    
+   
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
     updateColorTab('color-tab', settings.textColorMode);
@@ -676,7 +679,7 @@
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-    
+   
     toggleCharColoringUI(settings.isCharColoring, settings.text);
 
     updatePreview();
@@ -687,7 +690,7 @@
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="outline"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
-      
+     
       if (isActive) {
           renderCharSelector(text);
           // If turning on, and a conflicting style was active, switch to 'normal' style
@@ -734,7 +737,7 @@
       const el = document.getElementById(id);
       el && el.addEventListener(el.type==='checkbox' ? 'change':'input', updateSession);
     });
-    
+   
     document.getElementById('text-input').addEventListener('input', (e) => {
         if (document.getElementById('char-color-toggle').checked) {
             renderCharSelector(e.target.value);
@@ -929,4 +932,3 @@
 </script>
 </body>
 </html>
-
