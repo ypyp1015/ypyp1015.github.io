@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.30 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.31 (字體模式Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -510,17 +510,51 @@
     }
    
     let finalFontSize = 100;
-    // Reset white-space based on the font mode to handle newlines correctly.
+    
     switch(settings.fontSizeMode){
       case 'fitHeight':
         textEl.style.whiteSpace = 'nowrap';
         finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
         break;
       
-      // 【BUG 修復】讓「填滿寬度」和「自動換行」共用同一套邏輯，以正確處理換行
-      case 'fitWidth':
+      case 'fitWidth': {
+        // 【BUG 修復】判斷文字中是否有換行符
+        if (settings.text.includes('\n')) {
+          // 如果有換行，則行為同「自動換行」，以容納所有文字
+          textEl.style.whiteSpace = 'pre-wrap';
+          let low = 1, high = 2000, bestSize = 10;
+          for(let i=0; i<10; i++){
+            let mid = Math.floor((low + high) / 2);
+            textEl.style.fontSize = mid + 'px';
+            if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
+              bestSize = mid;
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
+          }
+          finalFontSize = bestSize;
+        } else {
+          // 如果沒有換行，則維持單行並縮小字體以符合寬度
+          textEl.style.whiteSpace = 'nowrap';
+          let low = 1, high = 2000, bestSize = 10;
+          for(let i=0; i<10; i++){
+            let mid = Math.floor((low + high) / 2);
+            textEl.style.fontSize = mid + 'px';
+            if(textEl.scrollWidth <= containerEl.clientWidth) {
+              bestSize = mid;
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
+          }
+          finalFontSize = bestSize;
+        }
+        break;
+      }
       case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines and wrap text
+        // 「自動換行」模式永遠尊重換行
+        textEl.style.whiteSpace = 'pre-wrap';
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
           let mid = Math.floor((low + high) / 2);
@@ -536,8 +570,8 @@
         break;
       }
 
-      default: // This is 'fixed' mode
-        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines
+      default: // 'fixed' mode
+        textEl.style.whiteSpace = 'pre-wrap'; // 尊重換行
         finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
         break;
     }
@@ -549,7 +583,11 @@
     textEl.style.animation = anims.join(', ');
 
     wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight') ? 'flex-start' : 'center'; else wrapperEl.style.justifyContent = '';
+    if (settings.scrollDirection === 'none') {
+        wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
+    } else {
+        wrapperEl.style.justifyContent = '';
+    }
    
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = ''; containerEl.style.backgroundSize = ''; containerEl.style.border = '';
