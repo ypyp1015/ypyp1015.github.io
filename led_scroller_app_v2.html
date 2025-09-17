@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.28 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.29 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -516,15 +516,29 @@
         finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
         break;
       
-      case 'fitWidth':
-      case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines and wrap text
+      // 【BUG 修復】將 fitWidth 從 multiline 中分離，使其不換行
+      case 'fitWidth': {
+        textEl.style.whiteSpace = 'nowrap'; // 確保單行顯示
         let low = 1, high = 2000, bestSize = 10;
-        // Binary search for the best font size that fits both width and height
         for(let i=0; i<10; i++){
           let mid = Math.floor((low + high) / 2);
           textEl.style.fontSize = mid + 'px';
-          // Check if both scrollHeight and scrollWidth are within the container's bounds
+          if(textEl.scrollWidth <= containerEl.clientWidth) {
+            bestSize = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        finalFontSize = bestSize;
+        break;
+      }
+      case 'multiline': {
+        textEl.style.whiteSpace = 'pre-wrap'; // Respect newlines and wrap text
+        let low = 1, high = 2000, bestSize = 10;
+        for(let i=0; i<10; i++){
+          let mid = Math.floor((low + high) / 2);
+          textEl.style.fontSize = mid + 'px';
           if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
             bestSize = mid;
             low = mid + 1;
@@ -852,8 +866,9 @@
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(() => {
         const settings = getSettings();
-        // Do not call updateControllerUI here to prevent loop, preview is enough
-        updatePreview();
+        // 【BUG 修復】改為呼叫 updateControllerUI 以便正確顯示/隱藏次級選單
+        // updateControllerUI 內部已包含 updatePreview()
+        updateControllerUI(settings);
         if (currentSessionId) { 
             setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
         }
