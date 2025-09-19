@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.36 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.37 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -565,7 +565,7 @@
       }
 
       default: // 'fixed' mode
-        textEl.style.whiteSpace = 'pre-wrap'; // 尊重換行
+        textEl.style.whiteSpace = 'pre'; // 【BUG 修復】使用 'pre' 模式
         finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
         break;
     }
@@ -671,7 +671,6 @@
         fillHeightPercentage = settings.fontSize;
     }
     updateControllerUI(settings);
-    // 【BUG 修復】設定初始頁簽
     updateColorTab('color-tab', 'solid'); 
     updateColorTab('grid-color-tab', 'solid');
     setupControllerListeners();
@@ -776,38 +775,31 @@
   }
 
   function setupControllerListeners(){
-    ['text-input','speed-slider','gap-alpha-slider','blink-toggle', 'border-width-slider', 'border-radius-slider'].forEach(id=>{
-      const el = document.getElementById(id);
-      el && el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', updateSession);
-    });
-   
-    document.getElementById('font-size-slider').addEventListener('input', (e) => {
-        const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
-        if (currentMode === 'fitHeight') {
-            fillHeightPercentage = e.target.value;
-        }
-        updateSession();
+    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'font-size-slider'];
+    debouncedInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', (e) => {
+            if (id === 'font-size-slider') {
+                const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
+                if (currentMode === 'fitHeight') {
+                    fillHeightPercentage = e.target.value;
+                }
+            } else if (id === 'text-input') {
+                 if (document.getElementById('char-color-toggle').checked) {
+                    renderCharSelector(e.target.value);
+                }
+            }
+            updateSessionDebounced();
+        });
     });
 
-    document.getElementById('text-input').addEventListener('input', (e) => {
-        if (document.getElementById('char-color-toggle').checked) {
-            renderCharSelector(e.target.value);
-        }
-        updateSession();
-    });
-
+    document.getElementById('blink-toggle').addEventListener('change', updateSession);
+    
     document.getElementById('char-color-toggle').addEventListener('change', (e) => {
         toggleCharColoringUI(e.target.checked, document.getElementById('text-input').value);
-        if (!e.target.checked) {
-            controllerState.charColors = [];
-        }
+        // 【BUG 修復】當關閉開關時，不清空 charColors
         updateSession();
-    });
-
-    document.getElementById('grid-size-slider').addEventListener('input', ()=>{
-      gridSizeState = parseInt(document.getElementById('grid-size-slider').value,10);
-      document.getElementById('grid-size-value').textContent = String(gridSizeState);
-      updateSession();
     });
 
     document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
@@ -834,6 +826,16 @@
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
           if (el) {
+              // 【BUG 修復】當選擇全域顏色時，關閉個性化並清空設定
+              if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
+                  const toggle = document.getElementById('char-color-toggle');
+                  if (toggle.checked) {
+                      toggle.checked = false;
+                      toggle.dispatchEvent(new Event('change'));
+                  }
+                  controllerState.charColors = [];
+              }
+
               if (pickerId === 'char-color-picker') {
                   const color = el.dataset[mode];
                   selectedCharIndices.forEach(index => {
@@ -902,15 +904,17 @@
   }
 
   let updateTimeout;
-  function updateSession(){
+  // 【BUG 修復】建立即時更新與延遲更新
+  function updateSession() { 
+      const settings = getSettings();
+      updateControllerUI(settings);
+      if (currentSessionId) { 
+          setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
+      }
+  }
+  function updateSessionDebounced() {
     clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(() => {
-        const settings = getSettings();
-        updateControllerUI(settings);
-        if (currentSessionId) { 
-            setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
-        }
-    }, 200);
+    updateTimeout = setTimeout(updateSession, 200);
   }
 
   function updatePreview(){
