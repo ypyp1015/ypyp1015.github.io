@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.40 (Stable)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.41 (Stable)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -680,6 +680,28 @@
     setupControllerListeners();
   }
 
+  function updateFontSizeUIByMode(mode) {
+      const controls = document.getElementById('font-size-controls');
+      const slider = document.getElementById('font-size-slider');
+      const label = document.getElementById('font-size-label');
+
+      if (mode === 'fitHeight') {
+          controls.style.display = 'block';
+          label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
+          slider.min = 10;
+          slider.max = 100;
+          slider.value = fillHeightPercentage;
+      } else if (mode === 'fixed') {
+          controls.style.display = 'block';
+          label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
+          slider.min = 10;
+          slider.max = 500;
+          slider.value = fixedFontSize;
+      } else { // 'fitWidth' or 'multiline'
+          controls.style.display = 'none';
+      }
+  }
+
   function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
     document.getElementById('speed-slider').value = settings.scrollSpeed;
@@ -687,29 +709,7 @@
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
    
-    const fontSizeControls = document.getElementById('font-size-controls');
-    const fontSizeSlider = document.getElementById('font-size-slider');
-    const fontSizeLabel = document.getElementById('font-size-label');
-
-    switch(settings.fontSizeMode){
-      case 'fitHeight':
-        fontSizeControls.style.display = 'block'; 
-        fontSizeLabel.innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
-        fontSizeSlider.min = 10; 
-        fontSizeSlider.max = 100;
-        fontSizeSlider.value = settings.fontSize;
-        break;
-      case 'fitWidth': case 'multiline': 
-        fontSizeControls.style.display = 'none'; 
-        break;
-      default: // 'fixed'
-        fontSizeControls.style.display = 'block'; 
-        fontSizeLabel.innerHTML = `字體大小: <span id="font-size-value">${settings.fixedFontSize}</span>px`;
-        fontSizeSlider.min = 10; 
-        fontSizeSlider.max = 500;
-        fontSizeSlider.value = settings.fixedFontSize;
-        break;
-    }
+    updateFontSizeUIByMode(settings.fontSizeMode);
    
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
@@ -836,26 +836,7 @@
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
 
             if (target.classList.contains('font-mode-btn')) {
-                const newMode = target.dataset.mode;
-                const controls = document.getElementById('font-size-controls');
-                const slider = document.getElementById('font-size-slider');
-                const label = document.getElementById('font-size-label');
-
-                if (newMode === 'fitHeight') {
-                    controls.style.display = 'block';
-                    label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
-                    slider.min = 10;
-                    slider.max = 100;
-                    slider.value = fillHeightPercentage;
-                } else if (newMode === 'fixed') {
-                    controls.style.display = 'block';
-                    label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
-                    slider.min = 10;
-                    slider.max = 500;
-                    slider.value = fixedFontSize;
-                } else {
-                    controls.style.display = 'none';
-                }
+                updateFontSizeUIByMode(target.dataset.mode);
             }
             updateSession();
         });
@@ -1050,3 +1031,4 @@
 </script>
 </body>
 </html>
+
