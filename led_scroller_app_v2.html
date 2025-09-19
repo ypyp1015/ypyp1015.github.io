@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.42 (Stable)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.43 (Stable)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -242,9 +242,14 @@
         </div>
       </div>
 
-      <div id="font-size-controls" class="mb-6">
-        <label id="font-size-label" for="font-size-slider" class="block mb-2 text-sm font-medium text-gray-300">高度佔比: <span id="font-size-value">95</span>%</label>
-        <input id="font-size-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+      <!-- Font Size Controls -->
+      <div id="fit-height-controls" class="mb-2 space-y-2 transition-opacity">
+          <label for="fit-height-slider" class="block text-sm font-medium text-gray-300">高度佔比: <span id="fit-height-value">95</span>%</label>
+          <input id="fit-height-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:opacity-50">
+      </div>
+      <div id="fixed-size-controls" class="mb-6 space-y-2 transition-opacity">
+          <label for="fixed-size-slider" class="block text-sm font-medium text-gray-300">字體大小: <span id="fixed-size-value">100</span>px</label>
+          <input id="fixed-size-slider" type="range" min="10" max="500" value="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:opacity-50">
       </div>
 
       <div class="mb-6">
@@ -681,26 +686,24 @@
     updateColorTab('grid-color-tab', 'solid');
     setupControllerListeners();
   }
+  
+  function updateFontSizeControlsState(mode) {
+      const fitHeightControls = document.getElementById('fit-height-controls');
+      const fixedSizeControls = document.getElementById('fixed-size-controls');
+      const fitHeightSlider = document.getElementById('fit-height-slider');
+      const fixedSizeSlider = document.getElementById('fixed-size-slider');
 
-  function updateFontSizeUIByMode(mode) {
-      const controls = document.getElementById('font-size-controls');
-      const slider = document.getElementById('font-size-slider');
-      const label = document.getElementById('font-size-label');
+      fitHeightControls.style.opacity = '0.4';
+      fitHeightSlider.disabled = true;
+      fixedSizeControls.style.opacity = '0.4';
+      fixedSizeSlider.disabled = true;
 
       if (mode === 'fitHeight') {
-          controls.style.display = 'block';
-          label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
-          slider.min = 10;
-          slider.max = 100;
-          slider.value = fillHeightPercentage;
+          fitHeightControls.style.opacity = '1';
+          fitHeightSlider.disabled = false;
       } else if (mode === 'fixed') {
-          controls.style.display = 'block';
-          label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
-          slider.min = 10;
-          slider.max = 500;
-          slider.value = fixedFontSize;
-      } else { // 'fitWidth' or 'multiline'
-          controls.style.display = 'none';
+          fixedSizeControls.style.opacity = '1';
+          fixedSizeSlider.disabled = false;
       }
   }
 
@@ -711,7 +714,11 @@
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
    
-    updateFontSizeUIByMode(settings.fontSizeMode);
+    document.getElementById('fit-height-slider').value = settings.fontSize;
+    document.getElementById('fit-height-value').textContent = settings.fontSize;
+    document.getElementById('fixed-size-slider').value = settings.fixedFontSize;
+    document.getElementById('fixed-size-value').textContent = settings.fixedFontSize;
+    updateFontSizeControlsState(settings.fontSizeMode);
    
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
@@ -794,21 +801,12 @@
   }
 
   function setupControllerListeners(){
-    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'font-size-slider'];
+    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider'];
     debouncedInputs.forEach(id => {
         const el = document.getElementById(id);
         el && el.addEventListener('input', (e) => {
             const value = e.target.value;
-           
             switch (id) {
-                case 'font-size-slider':
-                    if (currentFontSizeMode === 'fitHeight') {
-                        fillHeightPercentage = Number(value);
-                    } else if (currentFontSizeMode === 'fixed') {
-                        fixedFontSize = Number(value);
-                    }
-                    document.getElementById('font-size-value').textContent = value;
-                    break;
                 case 'text-input':
                     if (document.getElementById('char-color-toggle').checked) {
                         renderCharSelector(value);
@@ -822,6 +820,17 @@
             }
             updateSessionDebounced();
         });
+    });
+
+    document.getElementById('fit-height-slider').addEventListener('input', (e) => {
+        fillHeightPercentage = Number(e.target.value);
+        document.getElementById('fit-height-value').textContent = fillHeightPercentage;
+        updateSessionDebounced();
+    });
+    document.getElementById('fixed-size-slider').addEventListener('input', (e) => {
+        fixedFontSize = Number(e.target.value);
+        document.getElementById('fixed-size-value').textContent = fixedFontSize;
+        updateSessionDebounced();
     });
 
     document.getElementById('blink-toggle').addEventListener('change', updateSession);
@@ -839,15 +848,13 @@
             const newMode = target.dataset.mode;
             if (target.classList.contains('font-mode-btn')) {
                 currentFontSizeMode = newMode;
+                updateFontSizeControlsState(newMode);
             }
            
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-
-            if (target.classList.contains('font-mode-btn')) {
-                updateFontSizeUIByMode(newMode);
-            }
+            
             updateSession();
         });
     });
