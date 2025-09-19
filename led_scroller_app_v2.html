@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.39 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.40 (Stable)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -415,7 +415,10 @@
   const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
   let gridSizeState = 20;
   let selectedCharIndices = new Set();
+  // 【BUG 修復】為不同模式建立獨立的字體大小狀態
   let fillHeightPercentage = 95;
+  let fixedFontSize = 100;
+
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
@@ -426,7 +429,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -468,7 +471,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
     const chars = Array.from(settings.text);
-    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
+    const useCharColors = settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
@@ -494,7 +497,7 @@
     }
 
     // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (useCharColors) {
+    if (useCharColors && settings.isCharColoring) {
         chars.forEach((char, index) => {
             const span = document.createElement('span');
             span.textContent = char;
@@ -565,7 +568,7 @@
 
       default: // 'fixed' mode
         textEl.style.whiteSpace = 'pre';
-        finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
+        finalFontSize = isPreview ? Math.min(Number(settings.fixedFontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fixedFontSize) || 80);
         break;
     }
     
@@ -666,9 +669,11 @@
       charColors: settings.charColors || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
-    if (settings.fontSizeMode === 'fitHeight') {
-        fillHeightPercentage = settings.fontSize;
-    }
+    
+    // 【BUG 修復】從載入的設定中初始化所有字體大小狀態
+    fillHeightPercentage = settings.fontSize || 95;
+    fixedFontSize = settings.fixedFontSize || 100;
+
     updateControllerUI(settings);
     updateColorTab('color-tab', 'solid'); 
     updateColorTab('grid-color-tab', 'solid');
@@ -677,18 +682,34 @@
 
   function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
-    document.getElementById('font-size-slider').value = settings.fontSize;
-    document.getElementById('font-size-value').textContent = settings.fontSize;
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
    
     const fontSizeControls = document.getElementById('font-size-controls');
+    const fontSizeSlider = document.getElementById('font-size-slider');
+    const fontSizeLabel = document.getElementById('font-size-label');
+    const fontSizeValue = document.getElementById('font-size-value');
+
     switch(settings.fontSizeMode){
-      case 'fitHeight': fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 100; break;
-      case 'fitWidth': case 'multiline': fontSizeControls.style.display = 'none'; break;
-      default: fontSizeControls.style.display = 'block'; document.getElementById('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${settings.fontSize}</span>px`; document.getElementById('font-size-slider').min = 10; document.getElementById('font-size-slider').max = 500; break;
+      case 'fitHeight':
+        fontSizeControls.style.display = 'block'; 
+        fontSizeLabel.innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
+        fontSizeSlider.min = 10; 
+        fontSizeSlider.max = 100;
+        fontSizeSlider.value = settings.fontSize;
+        break;
+      case 'fitWidth': case 'multiline': 
+        fontSizeControls.style.display = 'none'; 
+        break;
+      default: // 'fixed'
+        fontSizeControls.style.display = 'block'; 
+        fontSizeLabel.innerHTML = `字體大小: <span id="font-size-value">${settings.fixedFontSize}</span>px`;
+        fontSizeSlider.min = 10; 
+        fontSizeSlider.max = 500;
+        fontSizeSlider.value = settings.fixedFontSize;
+        break;
     }
    
     document.getElementById('border-width-slider').value = settings.borderWidth;
@@ -781,6 +802,8 @@
                 const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
                 if (currentMode === 'fitHeight') {
                     fillHeightPercentage = e.target.value;
+                } else if (currentMode === 'fixed') {
+                    fixedFontSize = e.target.value;
                 }
             } else if (id === 'text-input') {
                  if (document.getElementById('char-color-toggle').checked) {
@@ -809,8 +832,11 @@
 
             if (target.classList.contains('font-mode-btn')) {
                 const newMode = target.dataset.mode;
+                const slider = document.getElementById('font-size-slider');
                 if (newMode === 'fitHeight') {
-                    document.getElementById('font-size-slider').value = fillHeightPercentage;
+                    slider.value = fillHeightPercentage;
+                } else if (newMode === 'fixed') {
+                    slider.value = fixedFontSize;
                 }
             }
             
@@ -824,7 +850,6 @@
           if (el) {
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
                   const toggle = document.getElementById('char-color-toggle');
-                  //【BUG 修復】點選全域顏色時，僅在個性化開啟時才關閉它，並總是清除 charColors
                   if (toggle.checked) {
                       toggle.checked = false;
                       toggle.dispatchEvent(new Event('change'));
@@ -866,10 +891,10 @@
   }
 
   function getSettings(){
-    return {
+    const fontSizeMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight';
+    const settings = {
       text: document.getElementById('text-input').value,
-      fontSize: document.getElementById('font-size-slider').value,
-      fontSizeMode: document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight',
+      fontSizeMode: fontSizeMode,
       scrollSpeed: document.getElementById('speed-slider').value,
       isBlinking: document.getElementById('blink-toggle').checked,
       isCharColoring: document.getElementById('char-color-toggle').checked,
@@ -896,14 +921,17 @@
       scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
       textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
+      // 【BUG 修復】根據模式儲存對應的字體大小值
+      fontSize: fillHeightPercentage,
+      fixedFontSize: fixedFontSize,
     };
+    return settings;
   }
 
   let updateTimeout;
 
   function performUpdate() {
       const settings = getSettings();
-      // 【BUG 修復】更新鏈調整
       updateControllerUI(settings);
       updatePreview(settings);
       if (currentSessionId) { 
@@ -921,8 +949,7 @@
     updateTimeout = setTimeout(performUpdate, 200);
   }
 
-  function updatePreview(settings){ //【BUG 修復】接收 settings 物件
-    // const settings = getSettings(); // 移除此行
+  function updatePreview(settings){
     applySettings({ textEl: document.getElementById('preview-marquee-text'), containerEl: document.getElementById('controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') }, settings, true);
   }
 
