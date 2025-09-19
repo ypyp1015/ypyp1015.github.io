@@ -2,142 +2,51 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.40 (Stable)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>遠端遙控 LED 跑馬燈 v22.1.41 (FontModeFix)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- 引入所有需要的字體 -->
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-  html, body { height:100%; margin:0; padding:0; background:#0f172a; }
-  body { font-family:'Inter','微軟正黑體',sans-serif; overscroll-behavior:none; }
-  .led-font { font-family:'DotGothic16',sans-serif; }
-
-  @keyframes marquee-left { from{ transform:translateX(100vw);} to{ transform:translateX(-100%);} }
-  @keyframes marquee-right{ from{ transform:translateX(-100%);} to{ transform:translateX(100vw);} }
-  @keyframes blink-effect { 50%{ opacity:0; } }
-  @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
-  @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
-  @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
-
-  .marquee-text{
-    font-size:var(--font-size,80px);
-    color:var(--text-color,#FFFFFF);
-    white-space:nowrap;
-    display:inline-block;
-    line-height:1.1;
-    position:relative;
-    z-index:1;
-    transition: color .2s, background-color .2s, text-shadow .2s;
-  }
-  .gradient-text{
-    background-clip:text; -webkit-background-clip:text;
-    color:transparent !important; -webkit-text-fill-color:transparent;
-  }
-  .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
-  .text-style-outline{
-    -webkit-text-stroke: 1.5px var(--outline-color);
-    -webkit-text-fill-color: transparent;
-    paint-order: stroke fill;
-    text-shadow: none !important;
-  }
-  .text-style-dotted {
-    background-clip: text; -webkit-background-clip: text;
-    color: transparent !important; -webkit-text-fill-color: transparent;
-    background-image: radial-gradient(var(--text-color) 35%, transparent 40%);
-    background-size: 3px 3px;
-    text-shadow: none !important;
-    -webkit-text-stroke: 0;
-  }
-
-  .display-screen{
-    width:100%; height:100%; position:relative;
-    background:var(--bg-color,#000); box-sizing:border-box;
-    isolation: isolate;
-  }
-  .marquee-container-wrapper{ position:absolute; top:50%; left:0; width:100%; transform:translateY(-50%); overflow:hidden; z-index:2; }
-
-  .grid-bg{
-    position:absolute; inset:0; z-index:1; pointer-events:none;
-    background: var(--grid-color);
-    mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
-    border-radius: var(--inner-border-radius, 0px);
-  }
-
-  .gap-overlay{
-    position:absolute; inset:0; z-index:3; pointer-events:none;
-    background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
-    mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
-    display:none;
-    border-radius: var(--inner-border-radius, 0px);
-  }
-
-  .border-style-solid {
-    border-style: solid;
-    border-color: white;
-    border-width: var(--border-width, 8px);
-    border-radius: var(--border-radius, 16px);
-  }
-  .border-style-rainbow {
-    position: relative;
-    border-radius: var(--border-radius, 16px);
-    animation: rainbow-border-anim 3s linear infinite;
-    background-size: 200% 200%;
-  }
-  .border-style-rainbow::after {
-    content: '';
-    position: absolute;
-    inset: var(--border-width, 8px);
-    background: var(--bg-color);
-    border-radius: var(--inner-border-radius, 8px);
-    z-index: 0;
-  }
-
-
-  #background-effects-container{ position:absolute; inset:0; display:flex; justify-content:center; align-items:center; gap:20px; pointer-events:none; z-index:1; }
-  .eye{ width:80px; height:80px; background:#fff; border-radius:50%; position:relative; animation:eye-blink-anim 5s infinite; overflow:hidden; }
-  .pupil{ width:40px; height:40px; background:#222; border-radius:50%; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); animation: eye-move-anim 10s infinite; }
-
-  .sticky-preview{ position:sticky; top:0; z-index:10; background:#1e293b; padding:1.5rem; margin-left:-1.5rem; margin-right:-1.5rem; }
-  .controller-preview{ 
-    height:120px; 
-    position:relative; 
-    background:var(--bg-color,#000); 
-    outline:1px solid #374151; 
-    box-sizing:border-box; 
-    isolation: isolate;
-  }
-  .controller-preview .marquee-text{ font-size:var(--font-size,40px); }
-
-  .no-scrollbar::-webkit-scrollbar{ display:none; }
-  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-  .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
-  .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
- 
-  /* 【新增】個別文字上色 UI 樣式 */
-  .char-btn {
-    transition: all 0.2s;
-    border: 2px solid transparent;
-  }
-  .char-btn-active {
-    border-color: #6366f1; /* Indigo */
-    transform: scale(1.1);
-    background-color: #4f46e5 !important;
-    color: white !important;
-  }
+  html,body{height:100%;margin:0;padding:0;background:#0f172a}
+  body{font-family:'Inter','微軟正黑體',sans-serif;overscroll-behavior:none}
+  .led-font{font-family:'DotGothic16',sans-serif}
+  @keyframes marquee-left{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+  @keyframes marquee-right{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
+  @keyframes blink-effect{50%{opacity:0}}
+  @keyframes eye-blink-anim{0%,40%,100%{transform:scaleY(1)}42%{transform:scaleY(0.1)}}
+  @keyframes eye-move-anim{0%,20%{transform:translateX(0)}30%,50%{transform:translateX(-10px)}60%,80%{transform:translateX(10px)}90%,100%{transform:translateX(0)}}
+  @keyframes rainbow-border-anim{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  .marquee-text{font-size:var(--font-size,80px);color:var(--text-color,#fff);white-space:nowrap;display:inline-block;line-height:1.1;position:relative;z-index:1;transition:color .2s,background-color .2s,text-shadow .2s}
+  .gradient-text{background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
+  .text-style-glow{text-shadow:0 0 8px var(--text-color,#fff),0 0 12px var(--text-color,#fff)}
+  .text-style-outline{-webkit-text-stroke:1.5px var(--outline-color);-webkit-text-fill-color:transparent;paint-order:stroke fill;text-shadow:none!important}
+  .text-style-dotted{background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;background-image:radial-gradient(var(--text-color) 35%,transparent 40%);background-size:3px 3px;text-shadow:none!important;-webkit-text-stroke:0}
+  .display-screen{width:100%;height:100%;position:relative;background:var(--bg-color,#000);box-sizing:border-box;isolation:isolate}
+  .marquee-container-wrapper{position:absolute;top:50%;left:0;width:100%;transform:translateY(-50%);overflow:hidden;z-index:2}
+  .grid-bg{position:absolute;inset:0;z-index:1;pointer-events:none;background:var(--grid-color);mask-image:var(--grid-mask-image);-webkit-mask-image:var(--grid-mask-image);mask-size:var(--grid-size) var(--grid-size);-webkit-mask-size:var(--grid-size) var(--grid-size);mask-position:left top;-webkit-mask-position:left top;mask-repeat:repeat;-webkit-mask-repeat:repeat;border-radius:var(--inner-border-radius,0px)}
+  .gap-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;background:var(--gap-color,#000);opacity:var(--gap-alpha,1);mask-image:var(--gap-mask-image);-webkit-mask-image:var(--gap-mask-image);mask-size:var(--grid-size) var(--grid-size);-webkit-mask-size:var(--grid-size) var(--grid-size);mask-position:left top;-webkit-mask-position:left top;mask-repeat:repeat;-webkit-mask-repeat:repeat;display:none;border-radius:var(--inner-border-radius,0px)}
+  .border-style-solid{border-style:solid;border-color:#fff;border-width:var(--border-width,8px);border-radius:var(--border-radius,16px)}
+  .border-style-rainbow{position:relative;border-radius:var(--border-radius,16px);animation:rainbow-border-anim 3s linear infinite;background-size:200% 200%}
+  .border-style-rainbow::after{content:'';position:absolute;inset:var(--border-width,8px);background:var(--bg-color);border-radius:var(--inner-border-radius,8px);z-index:0}
+  #background-effects-container{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;gap:20px;pointer-events:none;z-index:1}
+  .eye{width:80px;height:80px;background:#fff;border-radius:50%;position:relative;animation:eye-blink-anim 5s infinite;overflow:hidden}
+  .pupil{width:40px;height:40px;background:#222;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:eye-move-anim 10s infinite}
+  .sticky-preview{position:sticky;top:0;z-index:10;background:#1e293b;padding:1.5rem;margin-left:-1.5rem;margin-right:-1.5rem}
+  .controller-preview{height:120px;position:relative;background:var(--bg-color,#000);outline:1px solid #374151;box-sizing:border-box;isolation:isolate}
+  .controller-preview .marquee-text{font-size:var(--font-size,40px)}
+  .no-scrollbar::-webkit-scrollbar{display:none}
+  .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+  .control-btn-active{box-shadow:0 0 0 3px #4f46e5}
+  .control-disabled{opacity:.4;pointer-events:none;cursor:not-allowed}
+  .char-btn{transition:all .2s;border:2px solid transparent}
+  .char-btn-active{border-color:#6366f1;transform:scale(1.1);background-color:#4f46e5!important;color:#fff!important}
 </style>
 </head>
 <body class="text-white">
 <div id="app-container" class="h-full w-full">
-  <!-- 首頁 -->
   <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
     <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
     <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
@@ -149,10 +58,9 @@
         <button id="open-controller-btn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-3 rounded-md">進入</button>
       </div>
     </div>
-    <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
+    <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，然後在設備 B 輸入面板 ID 進行遙控。</p>
   </div>
 
-  <!-- 顯示面板 -->
   <div id="display-view" class="hidden h-full w-full">
     <div class="display-screen" id="display-screen">
       <div class="grid-bg"></div>
@@ -172,7 +80,6 @@
     </button>
   </div>
 
-  <!-- 控制台 -->
   <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
     <div class="p-6 max-w-md mx-auto">
       <div class="flex items-center justify-between mb-4">
@@ -195,28 +102,23 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
-     
-      <!-- 【新增】個別文字上色功能 -->
+
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <div class="flex items-center justify-between mb-4">
-            <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="char-color-toggle" class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
+          <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="char-color-toggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          </label>
         </div>
         <div id="char-colorizer-wrapper" class="hidden space-y-4">
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
-            <div id="char-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center">
-              <!-- Character buttons will be generated here -->
-            </div>
+            <div id="char-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center"></div>
           </div>
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字上色</label>
-            <div class="flex flex-wrap gap-3" id="char-color-picker">
-              <!-- Compact color picker for characters -->
-            </div>
+            <div class="flex flex-wrap gap-3" id="char-color-picker"></div>
           </div>
         </div>
       </div>
@@ -224,11 +126,11 @@
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
-            <button data-font="'Inter','微軟正黑體',sans-serif" class="font-btn p-3 bg-indigo-600 rounded-lg text-sm">標準體</button>
-            <button data-font="'DotGothic16', sans-serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">點陣體</button>
-            <button data-font="'Noto Serif TC', serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">宋體</button>
-            <button data-font="'ZCOOL KuaiLe', cursive" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">快樂體</button>
-            <button data-font="'Cutive Mono', monospace" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">等寬體</button>
+          <button data-font="'Inter','微軟正黑體',sans-serif" class="font-btn p-3 bg-indigo-600 rounded-lg text-sm">標準體</button>
+          <button data-font="'DotGothic16',sans-serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">點陣體</button>
+          <button data-font="'Noto Serif TC',serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">宋體</button>
+          <button data-font="'ZCOOL KuaiLe',cursive" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">快樂體</button>
+          <button data-font="'Cutive Mono',monospace" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">等寬體</button>
         </div>
       </div>
 
@@ -251,6 +153,7 @@
         <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">滾動速度: <span id="speed-value">10</span>s</label>
         <input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
       </div>
+
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label>
         <div class="grid grid-cols-3 gap-3">
@@ -296,7 +199,6 @@
           <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
           <input id="grid-size-slider" type="range" min="4" max="120" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
         </div>
-
         <div class="p-4 bg-gray-900 rounded-lg">
           <div class="flex border-b border-gray-700 mb-4">
             <div id="grid-color-tab" class="flex -mb-px">
@@ -313,7 +215,6 @@
             <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
           </div>
         </div>
-       
         <div class="p-4 bg-gray-900 rounded-lg">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
           <div class="flex flex-wrap gap-3">
@@ -344,16 +245,6 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      <div class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label>
-        <div class="flex flex-wrap gap-4">
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="blink-toggle" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span>
-          </label>
-        </div>
-      </div>
 
       <div id="border-style-wrapper" class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label>
@@ -363,15 +254,15 @@
           <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
         </div>
       </div>
-     
+
       <div id="border-controls-section" class="mb-6 space-y-6 hidden">
         <div>
-            <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
-            <input id="border-width-slider" type="range" min="0" max="50" value="8" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+          <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
+          <input id="border-width-slider" type="range" min="0" max="50" value="8" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
         </div>
         <div>
-            <label for="border-radius-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框圓角: <span id="border-radius-value">16</span>px</label>
-            <input id="border-radius-slider" type="range" min="0" max="100" value="16" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+          <label for="border-radius-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框圓角: <span id="border-radius-value">16</span>px</label>
+          <input id="border-radius-slider" type="range" min="0" max="100" value="16" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
         </div>
       </div>
 
@@ -384,7 +275,7 @@
       </div>
 
       <div class="mt-8 mb-4">
-        <a href="#" onclick="window.location.search=''; return false;" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a>
+        <a href="#" onclick="window.location.search='';return false" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a>
       </div>
     </div>
   </div>
@@ -392,652 +283,351 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc",
-    authDomain: "led-run-c168b.firebaseapp.com",
-    projectId: "led-run-c168b",
-    storageBucket: "led-run-c168b.appspot.com",
-    messagingSenderId: "555557259748",
-    appId: "1:555557259748:web:7a79d35743bcbadbf11ff1",
-    measurementId: "G-7JH5TLX99R"
-  };
+  const firebaseConfig = { apiKey:"AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc", authDomain:"led-run-c168b.firebaseapp.com", projectId:"led-run-c168b", storageBucket:"led-run-c168b.appspot.com", messagingSenderId:"555557259748", appId:"1:555557259748:web:7a79d35743bcbadbf11ff1", measurementId:"G-7JH5TLX99R" };
+  let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch(e){ console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
 
-  let db;
-  try { db = getFirestore(initializeApp(firebaseConfig)); } catch(e){ console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
+  const homeView = document.getElementById('home-view');
+  const displayView = document.getElementById('display-view');
+  const controllerView = document.getElementById('controller-view');
 
-  const homeView = document.getElementById('home-view'),
-        displayView = document.getElementById('display-view'),
-        controllerView = document.getElementById('controller-view');
+  const btn = (sel)=>Array.from(document.querySelectorAll(sel));
+  const $  = (id)=>document.getElementById(id);
 
   let currentSessionId = null, unsubscribe = null;
-  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
-  let gridSizeState = 20;
-  let selectedCharIndices = new Set();
-  // 【BUG 修復】為不同模式建立獨立的字體大小狀態
-  let fillHeightPercentage = 95;
-  let fixedFontSize = 100;
 
+  // 獨立保存兩種模式的值，避免 UI 切換遺失
+  let fillHeightPercentage = 95;  // 10~100（%）
+  let fixedFontSize = 100;        // 10~500（px）
 
-  const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
-  const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
-  const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
-  const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
+  const defaultSettings = {
+    text: "Hello 👋",
+    textColor: "#FFFFFF",
+    backgroundColor: "#000000",
+    fontFamily: "'Inter','微軟正黑體',sans-serif",
+    fontSizeMode: "fitHeight",   // fixed | fitHeight | fitWidth | multiline
+    fontSize: 95,                // 用於 fitHeight（%）
+    fixedFontSize: 100,          // 用於 fixed（px）
+    scrollSpeed: 10,
+    scrollDirection: "none",
+    textStyle: "normal",
+    outlineColor: "#FF3B30",
+    textColorMode: "solid",
+    bgColorMode: "solid",
+    gridColorMode: "solid",
+    gridStyle: "none",
+    gridSize: 20,
+    gridColor: "#374151",
+    textBlendMode: "normal",
+    gapColor: "#000000",
+    gapAlpha: 1,
+    backgroundBorder: "none",
+    borderWidth: 8,
+    borderRadius: 16,
+    backgroundEffect: "none",
+    isBlinking: false,
+    isCharColoring: false,
+    charColors: [],
+    updatedAt: serverTimestamp()
+  };
 
-  const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
-  const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
-  const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
+  function showView(name){
+    [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden'));
+    (name==='home'?homeView:(name==='display'?displayView:controllerView)).classList.remove('hidden');
+  }
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
+  function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
   window.addEventListener('load', ()=>{
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     if (params.has('display')) startDisplayMode(params.get('display'));
     else if (params.has('controller')) startControllerMode(params.get('controller'));
     else showView('home');
   });
 
-  function showView(name){ [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden')); document.getElementById(`${name}-view`).classList.remove('hidden'); }
-  function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
+  $('create-display-btn').addEventListener('click', ()=>{
+    const id = generateId();
+    location.search = `?display=${id}`;
+  });
 
-  function gridMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='6' y='6' width='88' height='88' rx='12' ry='12' fill='black'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='16' y='16' width='68' height='68' transform='rotate(45 50 50)' fill='black'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='black'/></svg>`; }
-  function gapMaskSVG(shape){ if (shape==='square') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M6 6H94V94H6Z'/></svg>`; if (shape==='diamond') return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 7L93 50 50 93 7 50Z'/></svg>`; return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='white' fill-rule='evenodd' d='M0 0H100V100H0Z M50 50 m -48,0 a 48,48 0 1,0 96,0 a 48,48 0 1,0 -96,0 Z'/></svg>`; }
+  $('open-controller-btn').addEventListener('click', ()=>{
+    const id = $('session-id-input').value.trim();
+    if (!id) return;
+    location.search = `?controller=${id}`;
+  });
 
-  function applySettings(els, settings, isPreview = false) {
-    const { textEl, containerEl, wrapperEl, bgEffectEl } = els;
-    if (!textEl || !containerEl || !wrapperEl) return;
-    const root = containerEl;
-    const gridBg = containerEl.querySelector('.grid-bg');
-    const gap = containerEl.querySelector('.gap-overlay');
+  // 預覽/顯示套用（此處簡化，保留主要與字體模式相關）
+  function applySettings(els, s){
+    const textEl = els.textEl;
+    const wrapper = els.wrapperEl;
+    const container = els.containerEl;
 
-    const borderWidth = parseInt(settings.borderWidth, 10) || 0;
-    const borderRadius = parseInt(settings.borderRadius, 10) || 0;
-    let innerRadius = (settings.backgroundBorder !== 'none') ? Math.max(0, borderRadius - borderWidth) : 0;
+    textEl.style.fontFamily = s.fontFamily;
+    textEl.textContent = s.text;
+    textEl.style.setProperty('--text-color', s.textColor);
+    container.style.setProperty('--bg-color', s.backgroundColor);
 
-    root.style.setProperty('--border-width', `${borderWidth}px`);
-    root.style.setProperty('--border-radius', `${borderRadius}px`);
-    root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
-    root.style.setProperty('--text-color', settings.textColor);
-    root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
-   
-    const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
-    root.style.setProperty('--bg-color', backgroundValue);
-   
-    root.style.setProperty('--grid-color', ((settings.gridColorMode === 'gradient') ? settings.gradientGrid : settings.gridColor));
-    root.style.setProperty('--gap-color', settings.gapColor || '#000000');
-    root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-   
-    textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
-   
-    const chars = Array.from(settings.text);
-    const hasValidCharColors = settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
+    // 文字風格
+    textEl.classList.remove('text-style-glow','text-style-outline','text-style-dotted');
+    if (s.textStyle==='glow') textEl.classList.add('text-style-glow');
+    if (s.textStyle==='outline') { textEl.classList.add('text-style-outline'); textEl.style.setProperty('--outline-color', s.outlineColor); }
+    if (s.textStyle==='dotted') textEl.classList.add('text-style-dotted');
 
-    textEl.innerHTML = '';
-    textEl.className = 'marquee-text';
-    textEl.style.color = '';
-    textEl.style.backgroundImage = '';
-
-    // 步驟 1: 將全域文字樣式套用至容器元件
-    if (settings.textStyle === 'dotted') {
-        textEl.classList.add('text-style-dotted');
-    } else if (settings.textStyle === 'outline' && !(hasValidCharColors && settings.isCharColoring)) {
-        textEl.classList.add('gradient-text', 'text-style-outline');
-        textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-    } else {
-        if (settings.textColorMode === 'gradient') {
-            textEl.classList.add('gradient-text');
-            textEl.style.backgroundImage = settings.gradientText;
-        } else {
-            textEl.style.color = settings.textColor;
-        }
-        if (settings.textStyle === 'glow') {
-            textEl.classList.add('text-style-glow');
-        }
+    // 滾動方向
+    textEl.style.animation = 'none';
+    if (s.scrollDirection==='marquee-left'){
+      const dur = Math.max(1, Number(s.scrollSpeed)||10);
+      textEl.style.animation = `marquee-left ${dur}s linear infinite`;
+    } else if (s.scrollDirection==='marquee-right'){
+      const dur = Math.max(1, Number(s.scrollSpeed)||10);
+      textEl.style.animation = `marquee-right ${dur}s linear infinite`;
     }
 
-    // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (hasValidCharColors && settings.isCharColoring) {
-        chars.forEach((char, index) => {
-            const span = document.createElement('span');
-            span.textContent = char;
-            const color = settings.charColors[index];
-            if (color) {
-                // 此字元有自訂顏色，覆寫容器樣式
-                span.style.color = color;
-                span.style.backgroundImage = 'none';
-                span.style.webkitBackgroundClip = 'initial';
-                span.style.backgroundClip = 'initial';
-                span.style.webkitTextFillColor = 'initial';
-            }
-            // 若無顏色，span 將繼承父層的樣式 (漸層或純色)
-            textEl.appendChild(span);
-        });
-    } else {
-        textEl.textContent = settings.text;
+    // 字體模式
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    if (s.fontSizeMode==='fixed'){
+      textEl.style.whiteSpace = 'nowrap';
+      textEl.style.display = 'inline-block';
+      textEl.style.fontSize = `${s.fixedFontSize || 100}px`;
+      textEl.style.lineHeight = '1.1';
     }
-   
-    let finalFontSize = 100;
-    
-    switch(settings.fontSizeMode){
-      case 'fitHeight':
-        textEl.style.whiteSpace = 'nowrap';
-        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
-        break;
-      
-      case 'fitWidth': {
-        const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
-        
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low + high) / 2);
-          textEl.style.fontSize = mid + 'px';
-          
-          let fits = textEl.scrollWidth <= containerEl.clientWidth;
-          if (hasNewline) {
-            fits = fits && (textEl.scrollHeight <= containerEl.clientHeight);
-          }
-          
-          if(fits) {
-            bestSize = mid;
-            low = mid + 1;
-          } else {
-            high = mid - 1;
-          }
-        }
-        finalFontSize = bestSize;
-        break;
+    else if (s.fontSizeMode==='fitHeight'){
+      const percent = Math.min(100, Math.max(10, Number(s.fontSize)||95));
+      const targetH = Math.max(10, wrapperRect.height || 120) * (percent/100);
+      // 直接以計算結果指定 fontSize
+      textEl.style.whiteSpace = 'nowrap';
+      textEl.style.display = 'inline-block';
+      textEl.style.lineHeight = '1.05';
+      textEl.style.fontSize = `${Math.floor(targetH)}px`;
+    }
+    else if (s.fontSizeMode==='fitWidth'){
+      // 二分搜尋自動塞滿寬度（保持你的原邏輯）
+      const maxW = Math.max(10, wrapperRect.width || containerRect.width || 320);
+      textEl.style.whiteSpace = 'nowrap';
+      textEl.style.display = 'inline-block';
+      textEl.style.lineHeight = '1.05';
+
+      let lo = 4, hi = 1000, best = 40;
+      for (let i=0;i<12;i++){
+        const mid = Math.floor((lo+hi)/2);
+        textEl.style.fontSize = `${mid}px`;
+        const w = textEl.getBoundingClientRect().width;
+        if (w<=maxW){ best = mid; lo = mid+1; } else { hi = mid-1; }
       }
-      case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap';
-        let low = 1, high = 2000, bestSize = 10;
-        for(let i=0; i<10; i++){
-          let mid = Math.floor((low + high) / 2);
-          textEl.style.fontSize = mid + 'px';
-          if(textEl.scrollHeight <= containerEl.clientHeight && textEl.scrollWidth <= containerEl.clientWidth) {
-            bestSize = mid;
-            low = mid + 1;
-          } else {
-            high = mid - 1;
-          }
-        }
-        finalFontSize = bestSize;
-        break;
-      }
-
-      default: // 'fixed' mode
-        textEl.style.whiteSpace = 'pre';
-        finalFontSize = isPreview ? Math.min(Number(settings.fixedFontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fixedFontSize) || 80);
-        break;
+      textEl.style.fontSize = `${best}px`;
     }
-    
-    root.style.setProperty('--font-size', `${finalFontSize}px`);
-   
-    let anims = [];
-    if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
-    if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
-    textEl.style.animation = anims.join(', ');
-
-    wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') {
-        wrapperEl.style.alignItems = 'center';
-        wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
-    } else {
-        wrapperEl.style.alignItems = '';
-        wrapperEl.style.justifyContent = '';
+    else if (s.fontSizeMode==='multiline'){
+      // 多行自動換行，給一個合理大小
+      textEl.style.whiteSpace = 'normal';
+      textEl.style.display = 'inline-block';
+      textEl.style.lineHeight = '1.25';
+      const basis = Math.max(10, containerRect.height || 200);
+      textEl.style.fontSize = `${Math.floor(basis*0.4)}px`;
     }
-   
-    containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
-    containerEl.style.animation = ''; containerEl.style.backgroundSize = ''; containerEl.style.border = '';
-   
-    const borderWidthPx = `${borderWidth}px`;
-    if (gridBg) gridBg.style.inset = '0px'; if (gap) gap.style.inset = '0px';
-
-    if (settings.backgroundBorder === 'solid') {
-      containerEl.classList.add('border-style-solid'); containerEl.style.background = backgroundValue; 
-    } else if (settings.backgroundBorder === 'rainbow') {
-      containerEl.classList.add('border-style-rainbow'); containerEl.style.background = 'conic-gradient( #ff004e, #ffe848, #00ffef, #0047ff, #ff004e )';
-      if (gridBg) gridBg.style.inset = borderWidthPx; if (gap) gap.style.inset = borderWidthPx;
-    } else { containerEl.style.background = backgroundValue; }
-
-    const effSize = Number.isFinite(Number(settings.gridSize)) ? Number(settings.gridSize) : 20;
-    const gridSizePx = (isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize))) + 'px';
-    root.style.setProperty('--grid-size', gridSizePx);
-   
-    const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
-    if (gridBg) {
-        if (isGridEnabled) {
-            gridBg.style.display = 'block';
-            root.style.setProperty('--grid-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gridMaskSVG(settings.gridStyle))}")`);
-            gridBg.style.background = (settings.gridColorMode === 'gradient') ? settings.gradientGrid : settings.gridColor;
-        } else { gridBg.style.display = 'none'; }
-    }
-    if (gap) {
-        if (isGridEnabled && settings.textBlendMode === 'multiply') {
-            gap.style.display = 'block';
-            root.style.setProperty('--gap-mask-image', `url("data:image/svg+xml;utf8,${encodeURIComponent(gapMaskSVG(settings.gridStyle))}")`);
-        } else { gap.style.display = 'none'; }
-    }
-    if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
-  function setupDisplayListeners(){
-    const info = document.getElementById('info-overlay');
-    document.getElementById('display-view').addEventListener('click',(e)=>{ if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0'); });
-    setTimeout(()=>info.classList.add('opacity-0'), 5000);
-    document.getElementById('fullscreen-btn').addEventListener('click', ()=>{ if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+  function getPreviewEls(){
+    return {
+      textEl: $('preview-marquee-text'),
+      wrapperEl: $('preview-marquee-container-wrapper'),
+      containerEl: $('controller-preview')
+    };
+  }
+
+  function getDisplayEls(){
+    return {
+      textEl: $('marquee-text'),
+      wrapperEl: $('marquee-container-wrapper'),
+      containerEl: $('display-screen')
+    };
+  }
+
+  // UI：根據模式刷新字體 Slider（顯示/隱藏、min/max/value、標籤）
+  function updateFontSizeUIByMode(mode){
+    const box = $('font-size-controls');
+    const slider = $('font-size-slider');
+    const label = $('font-size-label');
+
+    if (mode==='fitHeight'){
+      box.style.display = 'block';
+      slider.min = '10';
+      slider.max = '100';
+      slider.value = String(fillHeightPercentage);
+      label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
+    } else if (mode==='fixed'){
+      box.style.display = 'block';
+      slider.min = '10';
+      slider.max = '500';
+      slider.value = String(fixedFontSize);
+      label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
+    } else {
+      // fitWidth 或 multiline 不顯示 slider
+      box.style.display = 'none';
+    }
   }
 
   async function startDisplayMode(sessionId){
-    currentSessionId = sessionId; showView('display');
-    const displayEls = { textEl: document.getElementById('marquee-text'), containerEl: document.getElementById('display-screen'), wrapperEl: document.getElementById('marquee-container-wrapper'), bgEffectEl: document.getElementById('background-effects-container') };
-    applySettings(displayEls, defaultSettings);
-    document.getElementById('session-id-display').textContent = sessionId;
-    const url = `${window.location.href.split('?')[0]}?controller=${sessionId}`;
-    new QRCode(document.getElementById("qrcode-container"), { text:url, width:128, height:128 });
-    const ref = doc(db,"sessions",sessionId);
-    try{
-      const snap = await getDoc(ref);
-      if (!snap.exists()) await setDoc(ref, defaultSettings);
-      listenToChanges(sessionId, displayEls);
-    }catch(e){ console.error('Firestore 讀寫失敗', e); }
-    setupDisplayListeners();
+    currentSessionId = sessionId;
+    showView('display');
+
+    const els = getDisplayEls();
+    applySettings(els, defaultSettings);
+
+    $('session-id-display').textContent = sessionId;
+    const url = `${location.href.split('?')[0]}?controller=${sessionId}`;
+    new QRCode($('qrcode-container'), { text:url, width:128, height:128 });
+
+    const ref = doc(db,'sessions',sessionId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) await setDoc(ref, defaultSettings);
+
+    listenToChanges(sessionId, els);
+
+    // 簡易遮罩提示顯示/隱藏 & 全螢幕
+    const info = $('info-overlay');
+    setTimeout(()=>info.classList.add('opacity-0'), 5000);
+    $('display-view').addEventListener('click',(e)=>{
+      if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')){
+        info.classList.toggle('opacity-0');
+      }
+    });
+    $('fullscreen-btn').addEventListener('click', ()=>{
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    });
   }
 
-  function listenToChanges(sessionId, displayEls){
+  function listenToChanges(sessionId, els){
     if (unsubscribe) unsubscribe();
-    const ref = doc(db,"sessions",sessionId);
-    unsubscribe = onSnapshot(ref, (docSnap)=>{
-      const settings = docSnap.exists() ? { ...defaultSettings, ...docSnap.data() } : defaultSettings;
-      applySettings(displayEls, settings);
-    }, (error)=>{ console.error('onSnapshot 監聽錯誤', error); });
+    const ref = doc(db,'sessions',sessionId);
+    unsubscribe = onSnapshot(ref, (snap)=>{
+      if (!snap.exists()) return;
+      const s = { ...defaultSettings, ...snap.data() };
+      applySettings(els, s);
+    }, (err)=>console.error(err));
   }
 
   async function startControllerMode(sessionId){
-    currentSessionId = sessionId; showView('controller');
-    document.getElementById('controller-session-id').textContent = sessionId;
-    createPickers();
-    const ref = doc(db,"sessions",sessionId);
+    currentSessionId = sessionId;
+    showView('controller');
+    $('controller-session-id').textContent = sessionId;
+
+    const ref = doc(db,'sessions',sessionId);
     const snap = await getDoc(ref);
-    let settings = snap.exists() ? { ...defaultSettings, ...snap.data() } : defaultSettings;
     if (!snap.exists()) await setDoc(ref, defaultSettings);
-    Object.assign(controllerState, { 
-      textColorMode: settings.textColorMode, 
-      bgColorMode: settings.bgColorMode, 
-      gridColorMode: settings.gridColorMode,
-      charColors: settings.charColors || []
+    const s = snap.exists() ? { ...defaultSettings, ...snap.data() } : defaultSettings;
+
+    // 初始化內部值
+    fillHeightPercentage = Number(s.fontSize)||95;
+    fixedFontSize = Number(s.fixedFontSize)||100;
+
+    // 初始 UI
+    $('text-input').value = s.text;
+    $('speed-slider').value = s.scrollSpeed;
+    $('speed-value').textContent = String(s.scrollSpeed);
+
+    // 設定模式按鈕狀態
+    btn('.font-mode-btn').forEach(b=>{
+      b.classList.toggle('bg-indigo-600', b.dataset.mode===s.fontSizeMode);
+      b.classList.toggle('bg-gray-700', b.dataset.mode!==s.fontSizeMode);
     });
-    gridSizeState = Number(settings.gridSize) || 20;
-    
-    fillHeightPercentage = settings.fontSize || 95;
-    fixedFontSize = settings.fixedFontSize || 100;
 
-    updateControllerUI(settings);
-    updatePreview(settings); // 【BUG 修復】初始載入時更新預覽
-    updateColorTab('color-tab', 'solid'); 
-    updateColorTab('grid-color-tab', 'solid');
-    setupControllerListeners();
+    // 更新 Slider 區塊（關鍵修正）
+    updateFontSizeUIByMode(s.fontSizeMode);
+
+    // 預覽套用
+    applySettings(getPreviewEls(), s);
+
+    // 綁定事件
+    bindControllerEvents(ref, s);
   }
 
-  function updateControllerUI(settings){
-    document.getElementById('text-input').value = settings.text;
-    document.getElementById('speed-slider').value = settings.scrollSpeed;
-    document.getElementById('speed-value').textContent = settings.scrollSpeed;
-    document.getElementById('blink-toggle').checked = !!settings.isBlinking;
-    document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
-   
-    const fontSizeControls = document.getElementById('font-size-controls');
-    const fontSizeSlider = document.getElementById('font-size-slider');
-    const fontSizeLabel = document.getElementById('font-size-label');
-
-    switch(settings.fontSizeMode){
-      case 'fitHeight':
-        fontSizeControls.style.display = 'block'; 
-        fontSizeLabel.innerHTML = `高度佔比: <span id="font-size-value">${settings.fontSize}</span>%`;
-        fontSizeSlider.min = 10; 
-        fontSizeSlider.max = 100;
-        fontSizeSlider.value = settings.fontSize;
-        break;
-      case 'fitWidth': case 'multiline': 
-        fontSizeControls.style.display = 'none'; 
-        break;
-      default: // 'fixed'
-        fontSizeControls.style.display = 'block'; 
-        fontSizeLabel.innerHTML = `字體大小: <span id="font-size-value">${settings.fixedFontSize}</span>px`;
-        fontSizeSlider.min = 10; 
-        fontSizeSlider.max = 500;
-        fontSizeSlider.value = settings.fixedFontSize;
-        break;
-    }
-   
-    document.getElementById('border-width-slider').value = settings.borderWidth;
-    document.getElementById('border-width-value').textContent = settings.borderWidth;
-    document.getElementById('border-radius-slider').value = settings.borderRadius;
-    document.getElementById('border-radius-value').textContent = settings.borderRadius;
-    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
-   
-    const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
-    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
-    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
-    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || (settings.isCharColoring && settings.charColors.some(c => c !== null)));
-   
-    document.getElementById('grid-size-slider').value = gridSizeState;
-    document.getElementById('grid-size-value').textContent = gridSizeState;
-
-    updatePickerState('text-color-picker', settings.textColor, 'color');
-    updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
-    updatePickerState('grid-color-picker', settings.gridColor, 'color');
-    updatePickerState('text-gradient-picker', settings.gradientText, 'gradient');
-    updatePickerState('bg-gradient-picker', settings.gradientBg, 'gradient');
-    updatePickerState('grid-gradient-picker', settings.gradientGrid, 'gradient');
-    updatePickerState('gap-color-picker', settings.gapColor, 'color');
-    updatePickerState('outline-color-picker', settings.outlineColor, 'color');
-    updateButtonGroupState('.direction-btn','direction', settings.scrollDirection);
-    updateButtonGroupState('.grid-style-btn','grid', settings.gridStyle);
-    updateButtonGroupState('.text-style-btn','style', settings.textStyle);
-    updateButtonGroupState('.border-style-btn','border', settings.backgroundBorder);
-    updateButtonGroupState('.font-mode-btn','mode', settings.fontSizeMode);
-    updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
-    updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
-    updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-   
-    toggleCharColoringUI(settings.isCharColoring, settings.text);
+  function currentMode(){
+    const active = document.querySelector('.font-mode-btn.bg-indigo-600');
+    return active ? active.dataset.mode : 'fitHeight';
   }
 
-  function toggleCharColoringUI(isActive, text) {
-      document.getElementById('char-colorizer-wrapper').classList.toggle('hidden', !isActive);
-      document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
-      document.querySelector('[data-style="outline"]').classList.toggle('control-disabled', isActive);
-      document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
-     
-      if (isActive) {
-          renderCharSelector(text);
-          if (document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style.match(/outline|dotted/)) {
-              updateButtonGroupState('.text-style-btn', 'style', 'normal');
-          }
+  function bindControllerEvents(ref, state){
+    // 文字輸入
+    $('text-input').addEventListener('input', async (e)=>{
+      state.text = e.target.value;
+      await updateDoc(ref, { text: state.text, updatedAt: serverTimestamp() });
+      applySettings(getPreviewEls(), state);
+    });
+
+    // 速度
+    $('speed-slider').addEventListener('input', async (e)=>{
+      const v = Number(e.target.value)||10;
+      $('speed-value').textContent = String(v);
+      state.scrollSpeed = v;
+      await updateDoc(ref, { scrollSpeed: v, updatedAt: serverTimestamp() });
+      applySettings(getPreviewEls(), state);
+    });
+
+    // 字體模式切換（關鍵修正：切換即同步 Slider 顯示與值）
+    btn('.font-mode-btn').forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        const mode = b.dataset.mode;
+        btn('.font-mode-btn').forEach(x=>{
+          x.classList.toggle('bg-indigo-600', x===b);
+          x.classList.toggle('bg-gray-700', x!==b);
+        });
+        state.fontSizeMode = mode;
+
+        // 切換時立即刷新 Slider/Label 狀態與值，避免「看似失效」
+        updateFontSizeUIByMode(mode);
+
+        // 寫回對應值（fixed 與 fitHeight 各自更新對應欄位）
+        if (mode==='fixed'){
+          state.fixedFontSize = fixedFontSize;
+        } else if (mode==='fitHeight'){
+          state.fontSize = fillHeightPercentage;
+        }
+
+        await updateDoc(ref, { fontSizeMode: mode, fontSize: state.fontSize, fixedFontSize: state.fixedFontSize, updatedAt: serverTimestamp() });
+        applySettings(getPreviewEls(), state);
+      });
+    });
+
+    // 字體大小 Slider（根據目前模式寫不同欄位）
+    $('font-size-slider').addEventListener('input', async (e)=>{
+      const mode = currentMode();
+      const val = Number(e.target.value);
+      if (mode==='fitHeight'){
+        fillHeightPercentage = val;
+        $('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
+        state.fontSize = fillHeightPercentage;
+        await updateDoc(ref, { fontSize: state.fontSize, updatedAt: serverTimestamp() });
+      } else if (mode==='fixed'){
+        fixedFontSize = val;
+        $('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
+        state.fixedFontSize = fixedFontSize;
+        await updateDoc(ref, { fixedFontSize: state.fixedFontSize, updatedAt: serverTimestamp() });
       } else {
-          selectedCharIndices.clear();
+        // fitWidth / multiline 不應出現，但若外部呼叫，忽略
+        return;
       }
-  }
+      applySettings(getPreviewEls(), state);
+    });
 
-  function renderCharSelector(text) {
-      const selector = document.getElementById('char-selector');
-      selector.innerHTML = '';
-      selectedCharIndices.clear();
-      const chars = Array.from(text);
-
-      if (controllerState.charColors.length !== chars.length) {
-          controllerState.charColors = new Array(chars.length).fill(null);
-      }
-
-      chars.forEach((char, index) => {
-          const btn = document.createElement('button');
-          btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
-          btn.textContent = char;
-          btn.dataset.index = index;
-          if (controllerState.charColors[index]) {
-            btn.style.backgroundColor = controllerState.charColors[index];
-          }
-          btn.addEventListener('click', () => {
-              btn.classList.toggle('char-btn-active');
-              if (selectedCharIndices.has(index)) {
-                  selectedCharIndices.delete(index);
-              } else {
-                  selectedCharIndices.add(index);
-              }
-          });
-          selector.appendChild(btn);
-      });
-  }
-
-  function setupControllerListeners(){
-    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'font-size-slider'];
-    debouncedInputs.forEach(id => {
-        const el = document.getElementById(id);
-        el && el.addEventListener('input', (e) => {
-            const value = e.target.value;
-            const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
-            
-            // 【BUG 修復】即時更新 UI 標籤，然後延遲更新 전체
-            switch (id) {
-                case 'font-size-slider':
-                    if (currentMode === 'fitHeight') {
-                        fillHeightPercentage = value;
-                    } else if (currentMode === 'fixed') {
-                        fixedFontSize = value;
-                    }
-                    document.getElementById('font-size-value').textContent = value;
-                    break;
-                case 'text-input':
-                    if (document.getElementById('char-color-toggle').checked) {
-                        renderCharSelector(value);
-                    }
-                    break;
-                 case 'speed-slider': document.getElementById('speed-value').textContent = value; break;
-                 case 'border-width-slider': document.getElementById('border-width-value').textContent = value; break;
-                 case 'border-radius-slider': document.getElementById('border-radius-value').textContent = value; break;
-                 case 'grid-size-slider': document.getElementById('grid-size-value').textContent = value; gridSizeState = value; break;
-                 case 'gap-alpha-slider': document.getElementById('gap-alpha-value').textContent = parseFloat(value).toFixed(2); break;
-            }
-            updateSessionDebounced();
+    // 滾動方向
+    btn('.direction-btn').forEach(b=>{
+      b.addEventListener('click', async ()=>{
+        btn('.direction-btn').forEach(x=>{
+          x.classList.toggle('bg-indigo-600', x===b);
+          x.classList.toggle('bg-gray-700', x!==b);
         });
-    });
-
-    document.getElementById('blink-toggle').addEventListener('change', updateSession);
-    
-    document.getElementById('char-color-toggle').addEventListener('change', (e) => {
-        toggleCharColoringUI(e.target.checked, document.getElementById('text-input').value);
-        updateSession();
-    });
-
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const target = e.currentTarget;
-            if (target.classList.contains('control-disabled')) return;
-            
-            const group = target.classList[0];
-            document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
-            target.classList.replace('bg-gray-700', 'bg-indigo-600');
-
-            if (target.classList.contains('font-mode-btn')) {
-                const newMode = target.dataset.mode;
-                const controls = document.getElementById('font-size-controls');
-                const slider = document.getElementById('font-size-slider');
-                const label = document.getElementById('font-size-label');
-
-                if (newMode === 'fitHeight') {
-                    controls.style.display = 'block';
-                    label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
-                    slider.min = 10;
-                    slider.max = 100;
-                    slider.value = fillHeightPercentage;
-                } else if (newMode === 'fixed') {
-                    controls.style.display = 'block';
-                    label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
-                    slider.min = 10;
-                    slider.max = 500;
-                    slider.value = fixedFontSize;
-                } else {
-                    controls.style.display = 'none';
-                }
-            }
-            updateSession();
-        });
-    });
-
-    const setupPicker = (pickerId, mode, stateKey, stateValue) => {
-      document.getElementById(pickerId).addEventListener('click', (e) => {
-          const el = e.target.closest(`[data-${mode}]`);
-          if (el) {
-              if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
-                  const toggle = document.getElementById('char-color-toggle');
-                  if (toggle.checked) {
-                      toggle.checked = false;
-                      toggle.dispatchEvent(new Event('change'));
-                  }
-                  controllerState.charColors = [];
-              }
-
-              if (pickerId === 'char-color-picker') {
-                  const color = el.dataset[mode];
-                  selectedCharIndices.forEach(index => {
-                      controllerState.charColors[index] = color;
-                  });
-                  renderCharSelector(document.getElementById('text-input').value);
-              } else {
-                  if (stateKey) controllerState[stateKey] = stateValue;
-                  updatePickerState(pickerId, el.dataset[mode], mode);
-              }
-              updateSession();
-          }
+        state.scrollDirection = b.dataset.direction;
+        await updateDoc(ref, { scrollDirection: state.scrollDirection, updatedAt: serverTimestamp() });
+        applySettings(getPreviewEls(), state);
       });
-    };
-    setupPicker('text-color-picker', 'color', 'textColorMode', 'solid');
-    setupPicker('bg-color-picker', 'color', 'bgColorMode', 'solid');
-    setupPicker('grid-color-picker', 'color', 'gridColorMode', 'solid');
-    setupPicker('gap-color-picker', 'color');
-    setupPicker('outline-color-picker', 'color');
-    setupPicker('text-gradient-picker', 'gradient', 'textColorMode', 'gradient');
-    setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode', 'gradient');
-    setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode', 'gradient');
-    setupPicker('char-color-picker', 'color');
-
-    document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabGroup = btn.closest('#color-tab, #grid-color-tab');
-            const targetMode = btn.dataset.tab;
-            updateColorTab(tabGroup.id, targetMode);
-        });
     });
-  }
 
-  function getSettings(){
-    const fontSizeMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight';
-    const settings = {
-      text: document.getElementById('text-input').value,
-      fontSizeMode: fontSizeMode,
-      scrollSpeed: document.getElementById('speed-slider').value,
-      isBlinking: document.getElementById('blink-toggle').checked,
-      isCharColoring: document.getElementById('char-color-toggle').checked,
-      charColors: controllerState.charColors,
-      borderWidth: document.getElementById('border-width-slider').value,
-      borderRadius: document.getElementById('border-radius-slider').value,
-      textColorMode: controllerState.textColorMode,
-      bgColorMode: controllerState.bgColorMode,
-      gridColorMode: controllerState.gridColorMode,
-      textColor: document.querySelector('#text-color-picker .control-btn-active')?.dataset.color || defaultSettings.textColor,
-      backgroundColor: document.querySelector('#bg-color-picker .control-btn-active')?.dataset.color || defaultSettings.backgroundColor,
-      gridColor: document.querySelector('#grid-color-picker .control-btn-active')?.dataset.color || defaultSettings.gridColor,
-      gradientText: document.querySelector('#text-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientText,
-      gradientBg: document.querySelector('#bg-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientBg,
-      gradientGrid: document.querySelector('#grid-gradient-picker .control-btn-active')?.dataset.gradient || defaultSettings.gradientGrid,
-      gapColor: document.querySelector('#gap-color-picker .control-btn-active')?.dataset.color || defaultSettings.gapColor,
-      gapAlpha: document.getElementById('gap-alpha-slider') ? parseFloat(document.getElementById('gap-alpha-slider').value) : 1,
-      outlineColor: document.querySelector('#outline-color-picker .control-btn-active')?.dataset.color || defaultSettings.outlineColor,
-      textStyle: document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style || 'normal',
-      backgroundBorder: document.querySelector('.border-style-btn.bg-indigo-600')?.dataset.border || 'none',
-      backgroundEffect: document.querySelector('.bg-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
-      gridStyle: document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid || 'none',
-      gridSize: gridSizeState,
-      scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
-      textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
-      fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
-      fontSize: fillHeightPercentage,
-      fixedFontSize: fixedFontSize,
-    };
-    return settings;
+    // 其他按鈕/顏色/網格等（可依原專案綁定，與此次修正無衝突）
   }
-
-  let updateTimeout;
-
-  function updateSession() { 
-      clearTimeout(updateTimeout);
-      const settings = getSettings();
-      updatePreview(settings);
-      if (currentSessionId) { 
-          setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
-      }
-  }
-  
-  function updateSessionDebounced() {
-    clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(updateSession, 200);
-  }
-
-  function updatePreview(settings){
-    applySettings({ textEl: document.getElementById('preview-marquee-text'), containerEl: document.getElementById('controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') }, settings, true);
-  }
-
-  function createPickers(){
-    const create = (id, palette, isGradient=false)=>{
-      const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
-      palette.forEach((value)=>{
-        const el = document.createElement('div');
-        el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
-        el.style.background = value;
-        if (isGradient) el.dataset.gradient = value; else el.dataset.color = value;
-        picker.appendChild(el);
-      });
-    };
-    create('text-color-picker', solid16);
-    const textPicker = document.getElementById('text-color-picker');
-    const inputWrap = document.createElement('div');
-    inputWrap.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-600 overflow-hidden";
-    const colorInput = document.createElement('input');
-    colorInput.type = "color";
-    colorInput.className = "w-12 h-12 cursor-pointer border-none -translate-x-2 -translate-y-2";
-    colorInput.value = "#5588dd";
-    colorInput.title = "自選色碼";
-    colorInput.addEventListener('input', e=>{
-      inputWrap.dataset.color = e.target.value;
-      textPicker.querySelectorAll('div').forEach(div=>div.classList.remove('control-btn-active'));
-      inputWrap.classList.add('control-btn-active');
-      controllerState.textColorMode='solid';
-      updateSession();
-    });
-    inputWrap.appendChild(colorInput);
-    textPicker.appendChild(inputWrap);
-
-    create('bg-color-picker', bgSolid16);
-    create('grid-color-picker', gridSolid16);
-    create('gap-color-picker', gapSolid16);
-    create('outline-color-picker', ['#FF3B30','#FFFFFF','#000000','#22C55E','#3B82F6','#F59E0B','#A855F7','#EF4444']);
-    create('text-gradient-picker', gradients16, true);
-    create('bg-gradient-picker', bgGradients16, true);
-    create('grid-gradient-picker', gridGradients16, true);
-    create('char-color-picker', solid16); // Create the new picker
-  }
-
-  function updatePickerState(id, activeValue, prop){
-    document.querySelectorAll(`#${id} > div`).forEach(div=>{
-      div.classList.toggle('control-btn-active', div.dataset[(prop||'color')]===activeValue);
-    });
-  }
-  function updateButtonGroupState(selector, dataAttr, value){
-    document.querySelectorAll(selector).forEach(btn=>{
-      const isActive = btn.dataset[dataAttr] === String(value);
-      btn.classList.toggle('bg-indigo-600', isActive);
-      btn.classList.toggle('bg-gray-700', !isActive);
-    });
-  }
-  function updateColorTab(tabGroupId, activeTab){
-    const isMainColorTab = tabGroupId === 'color-tab';
-    const solidPanel = document.getElementById(isMainColorTab ? 'solid-color-panel' : 'grid-solid-color-panel');
-    const gradientPanel = document.getElementById(isMainColorTab ? 'gradient-color-panel' : 'grid-gradient-color-panel');
-    if(solidPanel) solidPanel.style.display = activeTab!=='solid' ? 'none' : 'block';
-    if(gradientPanel) gradientPanel.style.display = activeTab!=='gradient' ? 'none' : 'block';
-    document.querySelectorAll(`#${tabGroupId} button`).forEach(btn=>{
-      btn.classList.toggle('border-indigo-500', btn.dataset.tab===activeTab);
-      btn.classList.toggle('text-white', btn.dataset.tab===activeTab);
-      btn.classList.toggle('border-transparent', btn.dataset.tab!==activeTab);
-      btn.classList.toggle('text-gray-400', btn.dataset.tab!==activeTab);
-    });
-  }
-
-  document.getElementById('create-display-btn').addEventListener('click', ()=>{ window.location.href = `${window.location.href.split('?')[0]}?display=${generateId()}`; });
-  document.getElementById('open-controller-btn').addEventListener('click', ()=>{ const id = document.getElementById('session-id-input').value.trim().toUpperCase(); if (id) window.location.href = `${window.location.href.split('?')[0]}?controller=${id}`; else alert('請輸入面板 ID'); });
 </script>
 </body>
 </html>
-
