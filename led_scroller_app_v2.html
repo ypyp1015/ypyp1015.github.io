@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.41 (FontModeFix)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.42 (FontMode Refit)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,34 +15,13 @@
   .led-font{font-family:'DotGothic16',sans-serif}
   @keyframes marquee-left{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
   @keyframes marquee-right{from{transform:translateX(-100%)}to{transform:translateX(100vw)}}
-  @keyframes blink-effect{50%{opacity:0}}
-  @keyframes eye-blink-anim{0%,40%,100%{transform:scaleY(1)}42%{transform:scaleY(0.1)}}
-  @keyframes eye-move-anim{0%,20%{transform:translateX(0)}30%,50%{transform:translateX(-10px)}60%,80%{transform:translateX(10px)}90%,100%{transform:translateX(0)}}
-  @keyframes rainbow-border-anim{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  .marquee-text{font-size:var(--font-size,80px);color:var(--text-color,#fff);white-space:nowrap;display:inline-block;line-height:1.1;position:relative;z-index:1;transition:color .2s,background-color .2s,text-shadow .2s}
-  .gradient-text{background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent}
-  .text-style-glow{text-shadow:0 0 8px var(--text-color,#fff),0 0 12px var(--text-color,#fff)}
-  .text-style-outline{-webkit-text-stroke:1.5px var(--outline-color);-webkit-text-fill-color:transparent;paint-order:stroke fill;text-shadow:none!important}
-  .text-style-dotted{background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;background-image:radial-gradient(var(--text-color) 35%,transparent 40%);background-size:3px 3px;text-shadow:none!important;-webkit-text-stroke:0}
+  .marquee-text{font-size:var(--font-size,80px);color:var(--text-color,#fff);white-space:nowrap;display:inline-block;line-height:1.1;position:relative;z-index:1}
   .display-screen{width:100%;height:100%;position:relative;background:var(--bg-color,#000);box-sizing:border-box;isolation:isolate}
   .marquee-container-wrapper{position:absolute;top:50%;left:0;width:100%;transform:translateY(-50%);overflow:hidden;z-index:2}
-  .grid-bg{position:absolute;inset:0;z-index:1;pointer-events:none;background:var(--grid-color);mask-image:var(--grid-mask-image);-webkit-mask-image:var(--grid-mask-image);mask-size:var(--grid-size) var(--grid-size);-webkit-mask-size:var(--grid-size) var(--grid-size);mask-position:left top;-webkit-mask-position:left top;mask-repeat:repeat;-webkit-mask-repeat:repeat;border-radius:var(--inner-border-radius,0px)}
-  .gap-overlay{position:absolute;inset:0;z-index:3;pointer-events:none;background:var(--gap-color,#000);opacity:var(--gap-alpha,1);mask-image:var(--gap-mask-image);-webkit-mask-image:var(--gap-mask-image);mask-size:var(--grid-size) var(--grid-size);-webkit-mask-size:var(--grid-size) var(--grid-size);mask-position:left top;-webkit-mask-position:left top;mask-repeat:repeat;-webkit-mask-repeat:repeat;display:none;border-radius:var(--inner-border-radius,0px)}
-  .border-style-solid{border-style:solid;border-color:#fff;border-width:var(--border-width,8px);border-radius:var(--border-radius,16px)}
-  .border-style-rainbow{position:relative;border-radius:var(--border-radius,16px);animation:rainbow-border-anim 3s linear infinite;background-size:200% 200%}
-  .border-style-rainbow::after{content:'';position:absolute;inset:var(--border-width,8px);background:var(--bg-color);border-radius:var(--inner-border-radius,8px);z-index:0}
-  #background-effects-container{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;gap:20px;pointer-events:none;z-index:1}
-  .eye{width:80px;height:80px;background:#fff;border-radius:50%;position:relative;animation:eye-blink-anim 5s infinite;overflow:hidden}
-  .pupil{width:40px;height:40px;background:#222;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:eye-move-anim 10s infinite}
-  .sticky-preview{position:sticky;top:0;z-index:10;background:#1e293b;padding:1.5rem;margin-left:-1.5rem;margin-right:-1.5rem}
   .controller-preview{height:120px;position:relative;background:var(--bg-color,#000);outline:1px solid #374151;box-sizing:border-box;isolation:isolate}
   .controller-preview .marquee-text{font-size:var(--font-size,40px)}
   .no-scrollbar::-webkit-scrollbar{display:none}
   .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
-  .control-btn-active{box-shadow:0 0 0 3px #4f46e5}
-  .control-disabled{opacity:.4;pointer-events:none;cursor:not-allowed}
-  .char-btn{transition:all .2s;border:2px solid transparent}
-  .char-btn-active{border-color:#6366f1;transform:scale(1.1);background-color:#4f46e5!important;color:#fff!important}
 </style>
 </head>
 <body class="text-white">
@@ -51,7 +30,7 @@
     <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
     <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
     <div class="space-y-4 w-full max-w-xs">
-      <button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition">建立新的顯示面板</button>
+      <button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg">建立新的顯示面板</button>
       <p class="text-gray-500">或</p>
       <div class="relative">
         <input type="text" id="session-id-input" placeholder="輸入面板 ID 進入控制台" class="w-full bg-gray-800 border border-gray-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -63,12 +42,9 @@
 
   <div id="display-view" class="hidden h-full w-full">
     <div class="display-screen" id="display-screen">
-      <div class="grid-bg"></div>
-      <div id="background-effects-container"></div>
       <div class="marquee-container-wrapper" id="marquee-container-wrapper">
         <div class="marquee-text" id="marquee-text"><span>請稍候...</span></div>
       </div>
-      <div class="gap-overlay" id="gap-overlay"></div>
     </div>
     <div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500">
       <p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p>
@@ -90,48 +66,15 @@
       <div class="sticky-preview">
         <label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label>
         <div class="controller-preview" id="controller-preview">
-          <div class="grid-bg"></div>
           <div class="marquee-container-wrapper" id="preview-marquee-container-wrapper">
             <div class="marquee-text" id="preview-marquee-text"></div>
           </div>
-          <div class="gap-overlay"></div>
         </div>
       </div>
 
       <div class="mb-6 mt-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
-      </div>
-
-      <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
-        <div class="flex items-center justify-between mb-4">
-          <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="char-color-toggle" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-          </label>
-        </div>
-        <div id="char-colorizer-wrapper" class="hidden space-y-4">
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
-            <div id="char-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center"></div>
-          </div>
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字上色</label>
-            <div class="flex flex-wrap gap-3" id="char-color-picker"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
-        <div class="grid grid-cols-3 gap-3">
-          <button data-font="'Inter','微軟正黑體',sans-serif" class="font-btn p-3 bg-indigo-600 rounded-lg text-sm">標準體</button>
-          <button data-font="'DotGothic16',sans-serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">點陣體</button>
-          <button data-font="'Noto Serif TC',serif" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">宋體</button>
-          <button data-font="'ZCOOL KuaiLe',cursive" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">快樂體</button>
-          <button data-font="'Cutive Mono',monospace" class="font-btn p-3 bg-gray-700 rounded-lg text-sm">等寬體</button>
-        </div>
       </div>
 
       <div class="mb-6">
@@ -154,126 +97,6 @@
         <input id="speed-slider" type="range" min="1" max="60" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
       </div>
 
-      <div class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label>
-        <div class="grid grid-cols-3 gap-3">
-          <button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button>
-          <button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button>
-          <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button>
-        </div>
-      </div>
-
-      <div id="global-color-wrapper" class="mb-6 p-4 bg-gray-900 rounded-lg">
-        <div class="flex border-b border-gray-700 mb-4">
-          <div id="color-tab" class="flex -mb-px">
-            <button data-tab="solid" class="tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button>
-            <button data-tab="gradient" class="tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button>
-          </div>
-        </div>
-        <div id="solid-color-panel">
-          <label class="block mb-2 text-sm font-medium text-gray-300">文字顏色</label>
-          <div class="flex flex-wrap gap-3 mb-4" id="text-color-picker"></div>
-          <label class="block mb-2 text-sm font-medium text-gray-300">背景顏色</label>
-          <div class="flex flex-wrap gap-3" id="bg-color-picker"></div>
-        </div>
-        <div id="gradient-color-panel" class="hidden">
-          <label class="block mb-2 text-sm font-medium text-gray-300">文字漸層</label>
-          <div class="flex flex-wrap gap-2 mb-4" id="text-gradient-picker"></div>
-          <label class="block mb-2 text-sm font-medium text-gray-300">背景漸層</label>
-          <div class="flex flex-wrap gap-2" id="bg-gradient-picker"></div>
-        </div>
-      </div>
-
-      <div class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">背景網格</label>
-        <div class="flex flex-wrap gap-3">
-          <button data-grid="none" class="grid-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-          <button data-grid="dot" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
-          <button data-grid="square" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬛️ 方形</button>
-          <button data-grid="diamond" class="grid-style-btn p-3 bg-gray-700 rounded-lg text-sm">♦️ 菱形</button>
-        </div>
-      </div>
-
-      <div id="grid-advanced-section" class="mb-6 space-y-6 hidden">
-        <div>
-          <label for="grid-size-slider" class="block mb-2 text-sm font-medium text-gray-300">網格大小: <span id="grid-size-value">20</span>px</label>
-          <input id="grid-size-slider" type="range" min="4" max="120" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-        </div>
-        <div class="p-4 bg-gray-900 rounded-lg">
-          <div class="flex border-b border-gray-700 mb-4">
-            <div id="grid-color-tab" class="flex -mb-px">
-              <button data-tab="solid" class="grid-tab-btn text-white py-2 px-4 border-b-2 border-indigo-500 font-medium">純色</button>
-              <button data-tab="gradient" class="grid-tab-btn text-gray-400 py-2 px-4 border-b-2 border-transparent">漸層</button>
-            </div>
-          </div>
-          <div id="grid-solid-color-panel">
-            <label class="block mb-2 text-sm font-medium text-gray-300">網格顏色</label>
-            <div class="flex flex-wrap gap-3" id="grid-color-picker"></div>
-          </div>
-          <div id="grid-gradient-color-panel" class="hidden">
-            <label class="block mb-2 text-sm font-medium text-gray-300">網格漸層</label>
-            <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
-          </div>
-        </div>
-        <div class="p-4 bg-gray-900 rounded-lg">
-          <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
-          <div class="flex flex-wrap gap-3">
-            <button data-blend="normal" class="blend-mode-btn p-3 bg-indigo-600 rounded-lg text-sm">關閉</button>
-            <button data-blend="multiply" class="blend-mode-btn p-3 bg-gray-700 rounded-lg text-sm">開啟</button>
-          </div>
-          <div id="gap-controls" class="mt-4 hidden">
-            <label class="block mb-2 text-sm font-medium text-gray-300">隙縫顏色</label>
-            <div class="flex flex-wrap gap-3" id="gap-color-picker"></div>
-            <div class="mt-4">
-              <label for="gap-alpha-slider" class="block mb-2 text-sm font-medium text-gray-300">隙縫不透明度: <span id="gap-alpha-value">1.00</span></label>
-              <input id="gap-alpha-slider" type="range" min="0.10" max="1.00" step="0.05" value="1.00" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="text-style-wrapper" class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">文字風格</label>
-        <div class="flex flex-wrap gap-3">
-          <button data-style="normal" class="text-style-btn p-3 bg-indigo-600 rounded-lg text-sm">標準</button>
-          <button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button>
-          <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button>
-          <button data-style="dotted" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
-        </div>
-      </div>
-      <div id="outline-color-section" class="mb-6 hidden">
-        <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
-        <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
-      </div>
-
-      <div id="border-style-wrapper" class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label>
-        <div class="flex flex-wrap gap-3">
-          <button data-border="none" class="border-style-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-          <button data-border="solid" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">⬜️ 實線</button>
-          <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
-        </div>
-      </div>
-
-      <div id="border-controls-section" class="mb-6 space-y-6 hidden">
-        <div>
-          <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
-          <input id="border-width-slider" type="range" min="0" max="50" value="8" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-        </div>
-        <div>
-          <label for="border-radius-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框圓角: <span id="border-radius-value">16</span>px</label>
-          <input id="border-radius-slider" type="range" min="0" max="100" value="16" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-        </div>
-      </div>
-
-      <div id="bg-effect-wrapper" class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">背景動畫</label>
-        <div class="flex flex-wrap gap-3">
-          <button data-effect="none" class="bg-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-          <button data-effect="eyes" class="bg-effect-btn p-3 bg-gray-700 rounded-lg text-sm">👀 眼睛</button>
-        </div>
-      </div>
-
       <div class="mt-8 mb-4">
         <a href="#" onclick="window.location.search='';return false" class="w-full text-center block bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg">返回首頁</a>
       </div>
@@ -288,56 +111,33 @@
   const firebaseConfig = { apiKey:"AIzaSyDiXuuIQB9EJQZtW8zYuTByxr-Y5wMpRdc", authDomain:"led-run-c168b.firebaseapp.com", projectId:"led-run-c168b", storageBucket:"led-run-c168b.appspot.com", messagingSenderId:"555557259748", appId:"1:555557259748:web:7a79d35743bcbadbf11ff1", measurementId:"G-7JH5TLX99R" };
   let db; try { db = getFirestore(initializeApp(firebaseConfig)); } catch(e){ console.error("Firebase 初始化失敗", e); alert("Firebase 連線失敗！"); }
 
-  const homeView = document.getElementById('home-view');
-  const displayView = document.getElementById('display-view');
-  const controllerView = document.getElementById('controller-view');
-
-  const btn = (sel)=>Array.from(document.querySelectorAll(sel));
-  const $  = (id)=>document.getElementById(id);
+  const $ = id => document.getElementById(id);
+  const btn = sel => Array.from(document.querySelectorAll(sel));
 
   let currentSessionId = null, unsubscribe = null;
 
-  // 獨立保存兩種模式的值，避免 UI 切換遺失
-  let fillHeightPercentage = 95;  // 10~100（%）
-  let fixedFontSize = 100;        // 10~500（px）
+  // 分離儲存
+  let fillHeightPercentage = 95; // %
+  let fixedFontSize = 100;       // px
+  let lastMeasuredFontPx = 40;   // 提供切換時的初始值，降低跳動
 
   const defaultSettings = {
     text: "Hello 👋",
-    textColor: "#FFFFFF",
     backgroundColor: "#000000",
+    textColor: "#FFFFFF",
     fontFamily: "'Inter','微軟正黑體',sans-serif",
-    fontSizeMode: "fitHeight",   // fixed | fitHeight | fitWidth | multiline
-    fontSize: 95,                // 用於 fitHeight（%）
-    fixedFontSize: 100,          // 用於 fixed（px）
+    fontSizeMode: "fitHeight",
+    fontSize: 95,
+    fixedFontSize: 100,
     scrollSpeed: 10,
     scrollDirection: "none",
-    textStyle: "normal",
-    outlineColor: "#FF3B30",
-    textColorMode: "solid",
-    bgColorMode: "solid",
-    gridColorMode: "solid",
-    gridStyle: "none",
-    gridSize: 20,
-    gridColor: "#374151",
-    textBlendMode: "normal",
-    gapColor: "#000000",
-    gapAlpha: 1,
-    backgroundBorder: "none",
-    borderWidth: 8,
-    borderRadius: 16,
-    backgroundEffect: "none",
-    isBlinking: false,
-    isCharColoring: false,
-    charColors: [],
     updatedAt: serverTimestamp()
   };
 
   function showView(name){
-    [homeView, displayView, controllerView].forEach(v=>v.classList.add('hidden'));
-    (name==='home'?homeView:(name==='display'?displayView:controllerView)).classList.remove('hidden');
+    ['home','display','controller'].forEach(v=>$(v+'-view').classList.add('hidden'));
+    $(name+'-view').classList.remove('hidden');
   }
-
-  function generateId(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(location.search);
@@ -347,34 +147,56 @@
   });
 
   $('create-display-btn').addEventListener('click', ()=>{
-    const id = generateId();
-    location.search = `?display=${id}`;
+    const id = Math.random().toString(36).slice(2,8).toUpperCase();
+    location.search='?display='+id;
   });
 
   $('open-controller-btn').addEventListener('click', ()=>{
     const id = $('session-id-input').value.trim();
     if (!id) return;
-    location.search = `?controller=${id}`;
+    location.search='?controller='+id;
   });
 
-  // 預覽/顯示套用（此處簡化，保留主要與字體模式相關）
+  function measureTextHeight(textEl){
+    const r = textEl.getBoundingClientRect();
+    return r.height || parseFloat(getComputedStyle(textEl).fontSize)||40;
+  }
+
+  // 二分搜尋：使實際高度貼近 targetH
+  function fitHeightByBinary(textEl, wrapperEl, targetH){
+    let lo = 4, hi = 1600, best = lastMeasuredFontPx;
+    for (let i=0;i<14;i++){
+      const mid = Math.floor((lo+hi)/2);
+      textEl.style.fontSize = mid+'px';
+      const h = measureTextHeight(textEl);
+      if (h <= targetH){ best = mid; lo = mid+1; } else { hi = mid-1; }
+    }
+    textEl.style.fontSize = best+'px';
+    lastMeasuredFontPx = best;
+    return best;
+  }
+
+  function fitWidthByBinary(textEl, wrapperEl, maxW){
+    let lo = 4, hi = 1600, best = lastMeasuredFontPx;
+    for (let i=0;i<14;i++){
+      const mid = Math.floor((lo+hi)/2);
+      textEl.style.fontSize = mid+'px';
+      const w = textEl.getBoundingClientRect().width;
+      if (w <= maxW){ best = mid; lo = mid+1; } else { hi = mid-1; }
+    }
+    textEl.style.fontSize = best+'px';
+    lastMeasuredFontPx = best;
+    return best;
+  }
+
   function applySettings(els, s){
-    const textEl = els.textEl;
-    const wrapper = els.wrapperEl;
-    const container = els.containerEl;
-
+    const { textEl, wrapperEl, containerEl } = els;
     textEl.style.fontFamily = s.fontFamily;
-    textEl.textContent = s.text;
     textEl.style.setProperty('--text-color', s.textColor);
-    container.style.setProperty('--bg-color', s.backgroundColor);
+    containerEl.style.setProperty('--bg-color', s.backgroundColor);
+    textEl.textContent = s.text;
 
-    // 文字風格
-    textEl.classList.remove('text-style-glow','text-style-outline','text-style-dotted');
-    if (s.textStyle==='glow') textEl.classList.add('text-style-glow');
-    if (s.textStyle==='outline') { textEl.classList.add('text-style-outline'); textEl.style.setProperty('--outline-color', s.outlineColor); }
-    if (s.textStyle==='dotted') textEl.classList.add('text-style-dotted');
-
-    // 滾動方向
+    // 方向
     textEl.style.animation = 'none';
     if (s.scrollDirection==='marquee-left'){
       const dur = Math.max(1, Number(s.scrollSpeed)||10);
@@ -384,115 +206,80 @@
       textEl.style.animation = `marquee-right ${dur}s linear infinite`;
     }
 
-    // 字體模式
-    const wrapperRect = wrapper.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-
+    // 模式
+    textEl.style.whiteSpace = 'nowrap';
+    const wr = wrapperEl.getBoundingClientRect();
     if (s.fontSizeMode==='fixed'){
-      textEl.style.whiteSpace = 'nowrap';
-      textEl.style.display = 'inline-block';
-      textEl.style.fontSize = `${s.fixedFontSize || 100}px`;
+      textEl.style.fontSize = (Number(s.fixedFontSize)||100)+'px';
       textEl.style.lineHeight = '1.1';
-    }
-    else if (s.fontSizeMode==='fitHeight'){
+      lastMeasuredFontPx = Number(s.fixedFontSize)||100;
+    } else if (s.fontSizeMode==='fitHeight'){
       const percent = Math.min(100, Math.max(10, Number(s.fontSize)||95));
-      const targetH = Math.max(10, wrapperRect.height || 120) * (percent/100);
-      // 直接以計算結果指定 fontSize
-      textEl.style.whiteSpace = 'nowrap';
-      textEl.style.display = 'inline-block';
+      const targetH = Math.max(8, wr.height) * (percent/100);
       textEl.style.lineHeight = '1.05';
-      textEl.style.fontSize = `${Math.floor(targetH)}px`;
-    }
-    else if (s.fontSizeMode==='fitWidth'){
-      // 二分搜尋自動塞滿寬度（保持你的原邏輯）
-      const maxW = Math.max(10, wrapperRect.width || containerRect.width || 320);
-      textEl.style.whiteSpace = 'nowrap';
-      textEl.style.display = 'inline-block';
+      fitHeightByBinary(textEl, wrapperEl, targetH);
+    } else if (s.fontSizeMode==='fitWidth'){
+      const maxW = Math.max(8, wr.width);
       textEl.style.lineHeight = '1.05';
-
-      let lo = 4, hi = 1000, best = 40;
-      for (let i=0;i<12;i++){
-        const mid = Math.floor((lo+hi)/2);
-        textEl.style.fontSize = `${mid}px`;
-        const w = textEl.getBoundingClientRect().width;
-        if (w<=maxW){ best = mid; lo = mid+1; } else { hi = mid-1; }
-      }
-      textEl.style.fontSize = `${best}px`;
-    }
-    else if (s.fontSizeMode==='multiline'){
-      // 多行自動換行，給一個合理大小
+      fitWidthByBinary(textEl, wrapperEl, maxW);
+    } else if (s.fontSizeMode==='multiline'){
       textEl.style.whiteSpace = 'normal';
-      textEl.style.display = 'inline-block';
       textEl.style.lineHeight = '1.25';
-      const basis = Math.max(10, containerRect.height || 200);
-      textEl.style.fontSize = `${Math.floor(basis*0.4)}px`;
+      // 以容器高 40% 當基準
+      const basis = Math.max(10, containerEl.getBoundingClientRect().height||200);
+      const px = Math.floor(basis*0.4);
+      textEl.style.fontSize = px+'px';
+      lastMeasuredFontPx = px;
     }
   }
 
   function getPreviewEls(){
-    return {
-      textEl: $('preview-marquee-text'),
-      wrapperEl: $('preview-marquee-container-wrapper'),
-      containerEl: $('controller-preview')
-    };
+    return { textEl:$('preview-marquee-text'), wrapperEl:$('preview-marquee-container-wrapper'), containerEl:$('controller-preview') };
   }
-
   function getDisplayEls(){
-    return {
-      textEl: $('marquee-text'),
-      wrapperEl: $('marquee-container-wrapper'),
-      containerEl: $('display-screen')
-    };
+    return { textEl:$('marquee-text'), wrapperEl:$('marquee-container-wrapper'), containerEl:$('display-screen') };
   }
 
-  // UI：根據模式刷新字體 Slider（顯示/隱藏、min/max/value、標籤）
   function updateFontSizeUIByMode(mode){
     const box = $('font-size-controls');
     const slider = $('font-size-slider');
     const label = $('font-size-label');
-
     if (mode==='fitHeight'){
       box.style.display = 'block';
-      slider.min = '10';
-      slider.max = '100';
-      slider.value = String(fillHeightPercentage);
+      slider.min='10'; slider.max='100'; slider.value=String(fillHeightPercentage);
       label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
-    } else if (mode==='fixed'){
+    }else if(mode==='fixed'){
       box.style.display = 'block';
-      slider.min = '10';
-      slider.max = '500';
-      slider.value = String(fixedFontSize);
+      slider.min='10'; slider.max='500'; slider.value=String(fixedFontSize);
       label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
-    } else {
-      // fitWidth 或 multiline 不顯示 slider
+    }else{
       box.style.display = 'none';
     }
   }
 
   async function startDisplayMode(sessionId){
-    currentSessionId = sessionId;
-    showView('display');
-
-    const els = getDisplayEls();
-    applySettings(els, defaultSettings);
-
+    currentSessionId = sessionId; showView('display');
     $('session-id-display').textContent = sessionId;
-    const url = `${location.href.split('?')[0]}?controller=${sessionId}`;
-    new QRCode($('qrcode-container'), { text:url, width:128, height:128 });
+    new QRCode($('qrcode-container'), { text: location.href.split('?')[0]+`?controller=${sessionId}`, width:128, height:128 });
 
     const ref = doc(db,'sessions',sessionId);
     const snap = await getDoc(ref);
     if (!snap.exists()) await setDoc(ref, defaultSettings);
 
-    listenToChanges(sessionId, els);
+    const els = getDisplayEls();
+    applySettings(els, snap.exists()?{...defaultSettings,...snap.data()}:defaultSettings);
 
-    // 簡易遮罩提示顯示/隱藏 & 全螢幕
+    if (unsubscribe) unsubscribe();
+    unsubscribe = onSnapshot(ref, (ds)=>{
+      if (!ds.exists()) return;
+      const s = { ...defaultSettings, ...ds.data() };
+      applySettings(els, s);
+    });
+
     const info = $('info-overlay');
-    setTimeout(()=>info.classList.add('opacity-0'), 5000);
+    setTimeout(()=>info.classList.add('opacity-0'), 4000);
     $('display-view').addEventListener('click',(e)=>{
-      if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')){
-        info.classList.toggle('opacity-0');
-      }
+      if (!e.target.closest('#fullscreen-btn') && !e.target.closest('#info-overlay')) info.classList.toggle('opacity-0');
     });
     $('fullscreen-btn').addEventListener('click', ()=>{
       if (!document.fullscreenElement) document.documentElement.requestFullscreen();
@@ -500,58 +287,31 @@
     });
   }
 
-  function listenToChanges(sessionId, els){
-    if (unsubscribe) unsubscribe();
-    const ref = doc(db,'sessions',sessionId);
-    unsubscribe = onSnapshot(ref, (snap)=>{
-      if (!snap.exists()) return;
-      const s = { ...defaultSettings, ...snap.data() };
-      applySettings(els, s);
-    }, (err)=>console.error(err));
-  }
-
   async function startControllerMode(sessionId){
-    currentSessionId = sessionId;
-    showView('controller');
+    currentSessionId = sessionId; showView('controller');
     $('controller-session-id').textContent = sessionId;
 
     const ref = doc(db,'sessions',sessionId);
     const snap = await getDoc(ref);
     if (!snap.exists()) await setDoc(ref, defaultSettings);
-    const s = snap.exists() ? { ...defaultSettings, ...snap.data() } : defaultSettings;
+    const state = snap.exists()?{...defaultSettings,...snap.data()}:defaultSettings;
 
-    // 初始化內部值
-    fillHeightPercentage = Number(s.fontSize)||95;
-    fixedFontSize = Number(s.fixedFontSize)||100;
+    // 初始化本地值
+    fillHeightPercentage = Number(state.fontSize)||95;
+    fixedFontSize = Number(state.fixedFontSize)||100;
 
     // 初始 UI
-    $('text-input').value = s.text;
-    $('speed-slider').value = s.scrollSpeed;
-    $('speed-value').textContent = String(s.scrollSpeed);
-
-    // 設定模式按鈕狀態
+    $('text-input').value = state.text;
+    $('speed-slider').value = state.scrollSpeed;
+    $('speed-value').textContent = String(state.scrollSpeed);
     btn('.font-mode-btn').forEach(b=>{
-      b.classList.toggle('bg-indigo-600', b.dataset.mode===s.fontSizeMode);
-      b.classList.toggle('bg-gray-700', b.dataset.mode!==s.fontSizeMode);
+      b.classList.toggle('bg-indigo-600', b.dataset.mode===state.fontSizeMode);
+      b.classList.toggle('bg-gray-700', b.dataset.mode!==state.fontSizeMode);
     });
+    updateFontSizeUIByMode(state.fontSizeMode);
+    applySettings(getPreviewEls(), state);
 
-    // 更新 Slider 區塊（關鍵修正）
-    updateFontSizeUIByMode(s.fontSizeMode);
-
-    // 預覽套用
-    applySettings(getPreviewEls(), s);
-
-    // 綁定事件
-    bindControllerEvents(ref, s);
-  }
-
-  function currentMode(){
-    const active = document.querySelector('.font-mode-btn.bg-indigo-600');
-    return active ? active.dataset.mode : 'fitHeight';
-  }
-
-  function bindControllerEvents(ref, state){
-    // 文字輸入
+    // 文本
     $('text-input').addEventListener('input', async (e)=>{
       state.text = e.target.value;
       await updateDoc(ref, { text: state.text, updatedAt: serverTimestamp() });
@@ -567,66 +327,42 @@
       applySettings(getPreviewEls(), state);
     });
 
-    // 字體模式切換（關鍵修正：切換即同步 Slider 顯示與值）
+    // 模式切換（不依賴樣式作為狀態）
     btn('.font-mode-btn').forEach(b=>{
       b.addEventListener('click', async ()=>{
         const mode = b.dataset.mode;
+        state.fontSizeMode = mode;
         btn('.font-mode-btn').forEach(x=>{
           x.classList.toggle('bg-indigo-600', x===b);
           x.classList.toggle('bg-gray-700', x!==b);
         });
-        state.fontSizeMode = mode;
-
-        // 切換時立即刷新 Slider/Label 狀態與值，避免「看似失效」
+        if (mode==='fixed') state.fixedFontSize = fixedFontSize;
+        if (mode==='fitHeight') state.fontSize = fillHeightPercentage;
         updateFontSizeUIByMode(mode);
-
-        // 寫回對應值（fixed 與 fitHeight 各自更新對應欄位）
-        if (mode==='fixed'){
-          state.fixedFontSize = fixedFontSize;
-        } else if (mode==='fitHeight'){
-          state.fontSize = fillHeightPercentage;
-        }
-
         await updateDoc(ref, { fontSizeMode: mode, fontSize: state.fontSize, fixedFontSize: state.fixedFontSize, updatedAt: serverTimestamp() });
         applySettings(getPreviewEls(), state);
       });
     });
 
-    // 字體大小 Slider（根據目前模式寫不同欄位）
+    // Slider：依目前模式寫入不同欄位，並立即重算
     $('font-size-slider').addEventListener('input', async (e)=>{
-      const mode = currentMode();
+      const mode = (document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode) || state.fontSizeMode;
       const val = Number(e.target.value);
       if (mode==='fitHeight'){
-        fillHeightPercentage = val;
+        fillHeightPercentage = Math.min(100, Math.max(10, val));
         $('font-size-label').innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
         state.fontSize = fillHeightPercentage;
         await updateDoc(ref, { fontSize: state.fontSize, updatedAt: serverTimestamp() });
       } else if (mode==='fixed'){
-        fixedFontSize = val;
+        fixedFontSize = Math.min(500, Math.max(10, val));
         $('font-size-label').innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
         state.fixedFontSize = fixedFontSize;
         await updateDoc(ref, { fixedFontSize: state.fixedFontSize, updatedAt: serverTimestamp() });
       } else {
-        // fitWidth / multiline 不應出現，但若外部呼叫，忽略
         return;
       }
       applySettings(getPreviewEls(), state);
     });
-
-    // 滾動方向
-    btn('.direction-btn').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        btn('.direction-btn').forEach(x=>{
-          x.classList.toggle('bg-indigo-600', x===b);
-          x.classList.toggle('bg-gray-700', x!==b);
-        });
-        state.scrollDirection = b.dataset.direction;
-        await updateDoc(ref, { scrollDirection: state.scrollDirection, updatedAt: serverTimestamp() });
-        applySettings(getPreviewEls(), state);
-      });
-    });
-
-    // 其他按鈕/顏色/網格等（可依原專案綁定，與此次修正無衝突）
   }
 </script>
 </body>
