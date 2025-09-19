@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.35 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.36 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -467,45 +467,52 @@
    
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
-    const chars = Array.from(settings.text);
-    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
+    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === Array.from(settings.text).length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
     textEl.style.color = '';
     textEl.style.backgroundImage = '';
 
-    if (useCharColors) {
-      if (settings.textStyle === 'glow') textEl.classList.add('text-style-glow');
-      chars.forEach((char, index) => {
-        const span = document.createElement('span');
-        span.textContent = char;
-        const color = settings.charColors[index];
-        if (color) {
-            span.style.color = color;
+    // 【BUG 修復】重構文字樣式邏輯
+    // 步驟 1: 將全域文字樣式套用至容器元件
+    if (settings.textStyle === 'dotted') {
+        textEl.classList.add('text-style-dotted');
+    } else if (settings.textStyle === 'outline' && !useCharColors) {
+        textEl.classList.add('gradient-text', 'text-style-outline');
+        textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+    } else {
+        if (settings.textColorMode === 'gradient') {
+            textEl.classList.add('gradient-text');
+            textEl.style.backgroundImage = settings.gradientText;
         } else {
-            span.style.color = settings.textColor; // Fallback to global
+            textEl.style.color = settings.textColor;
         }
-        textEl.appendChild(span);
-      });
+        if (settings.textStyle === 'glow') {
+            textEl.classList.add('text-style-glow');
+        }
+    }
+
+    // 步驟 2: 填入文字內容，並在需要時套用個別樣式
+    if (useCharColors) {
+        const chars = Array.from(settings.text);
+        chars.forEach((char, index) => {
+            const span = document.createElement('span');
+            span.textContent = char;
+            const color = settings.charColors[index];
+            if (color) {
+                // 此字元有自訂顏色，覆寫容器樣式
+                span.style.color = color;
+                span.style.backgroundImage = 'none';
+                span.style.webkitBackgroundClip = 'initial';
+                span.style.backgroundClip = 'initial';
+                span.style.webkitTextFillColor = 'initial';
+            }
+            // 若無顏色，span 將繼承父層的樣式 (漸層或純色)
+            textEl.appendChild(span);
+        });
     } else {
         textEl.textContent = settings.text;
-        if (settings.textStyle === 'dotted') {
-            textEl.classList.add('text-style-dotted');
-        } else if (settings.textStyle === 'outline') {
-            textEl.classList.add('gradient-text', 'text-style-outline');
-            textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-        } else {
-            if (settings.textColorMode === 'gradient') {
-                textEl.classList.add('gradient-text');
-                textEl.style.backgroundImage = settings.gradientText;
-            } else {
-                textEl.style.color = settings.textColor;
-            }
-            if (settings.textStyle === 'glow') {
-                textEl.classList.add('text-style-glow');
-            }
-        }
     }
    
     let finalFontSize = 100;
@@ -664,6 +671,9 @@
         fillHeightPercentage = settings.fontSize;
     }
     updateControllerUI(settings);
+    // 【BUG 修復】設定初始頁簽
+    updateColorTab('color-tab', 'solid'); 
+    updateColorTab('grid-color-tab', 'solid');
     setupControllerListeners();
   }
 
@@ -696,10 +706,6 @@
    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
-    
-    // Update tab UI without changing state
-    updateColorTab('color-tab', document.querySelector('#solid-color-panel').style.display !== 'none' ? 'solid' : 'gradient');
-    updateColorTab('grid-color-tab', document.querySelector('#grid-solid-color-panel').style.display !== 'none' ? 'solid' : 'gradient');
 
     updatePickerState('text-color-picker', settings.textColor, 'color');
     updatePickerState('bg-color-picker', settings.backgroundColor, 'color');
