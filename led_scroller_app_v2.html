@@ -471,7 +471,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
     const chars = Array.from(settings.text);
-    const useCharColors = settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
+    const hasValidCharColors = settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
@@ -481,7 +481,7 @@
     // 步驟 1: 將全域文字樣式套用至容器元件
     if (settings.textStyle === 'dotted') {
         textEl.classList.add('text-style-dotted');
-    } else if (settings.textStyle === 'outline' && !useCharColors) {
+    } else if (settings.textStyle === 'outline' && !(hasValidCharColors && settings.isCharColoring)) {
         textEl.classList.add('gradient-text', 'text-style-outline');
         textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
     } else {
@@ -497,7 +497,7 @@
     }
 
     // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (useCharColors && settings.isCharColoring) {
+    if (hasValidCharColors && settings.isCharColoring) {
         chars.forEach((char, index) => {
             const span = document.createElement('span');
             span.textContent = char;
@@ -670,11 +670,11 @@
     });
     gridSizeState = Number(settings.gridSize) || 20;
     
-    // 【BUG 修復】從載入的設定中初始化所有字體大小狀態
     fillHeightPercentage = settings.fontSize || 95;
     fixedFontSize = settings.fixedFontSize || 100;
 
     updateControllerUI(settings);
+    updatePreview(settings); // 【BUG 修復】初始載入時更新預覽
     updateColorTab('color-tab', 'solid'); 
     updateColorTab('grid-color-tab', 'solid');
     setupControllerListeners();
@@ -690,7 +690,6 @@
     const fontSizeControls = document.getElementById('font-size-controls');
     const fontSizeSlider = document.getElementById('font-size-slider');
     const fontSizeLabel = document.getElementById('font-size-label');
-    const fontSizeValue = document.getElementById('font-size-value');
 
     switch(settings.fontSizeMode){
       case 'fitHeight':
@@ -796,19 +795,30 @@
     const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'font-size-slider'];
     debouncedInputs.forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener('input', (e) => {
-            if (id === 'font-size-slider') {
-                const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
-                if (currentMode === 'fitHeight') {
-                    fillHeightPercentage = e.target.value;
-                } else if (currentMode === 'fixed') {
-                    fixedFontSize = e.target.value;
-                }
-            } else if (id === 'text-input') {
-                 if (document.getElementById('char-color-toggle').checked) {
-                    renderCharSelector(e.target.value);
-                }
+        el && el.addEventListener('input', (e) => {
+            const value = e.target.value;
+            const currentMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode;
+            
+            // 【BUG 修復】即時更新 UI 標籤，然後延遲更新 전체
+            switch (id) {
+                case 'font-size-slider':
+                    if (currentMode === 'fitHeight') {
+                        fillHeightPercentage = value;
+                    } else if (currentMode === 'fixed') {
+                        fixedFontSize = value;
+                    }
+                    document.getElementById('font-size-value').textContent = value;
+                    break;
+                case 'text-input':
+                    if (document.getElementById('char-color-toggle').checked) {
+                        renderCharSelector(value);
+                    }
+                    break;
+                 case 'speed-slider': document.getElementById('speed-value').textContent = value; break;
+                 case 'border-width-slider': document.getElementById('border-width-value').textContent = value; break;
+                 case 'border-radius-slider': document.getElementById('border-radius-value').textContent = value; break;
+                 case 'grid-size-slider': document.getElementById('grid-size-value').textContent = value; gridSizeState = value; break;
+                 case 'gap-alpha-slider': document.getElementById('gap-alpha-value').textContent = parseFloat(value).toFixed(2); break;
             }
             updateSessionDebounced();
         });
@@ -832,14 +842,26 @@
 
             if (target.classList.contains('font-mode-btn')) {
                 const newMode = target.dataset.mode;
+                const controls = document.getElementById('font-size-controls');
                 const slider = document.getElementById('font-size-slider');
+                const label = document.getElementById('font-size-label');
+
                 if (newMode === 'fitHeight') {
+                    controls.style.display = 'block';
+                    label.innerHTML = `高度佔比: <span id="font-size-value">${fillHeightPercentage}</span>%`;
+                    slider.min = 10;
+                    slider.max = 100;
                     slider.value = fillHeightPercentage;
                 } else if (newMode === 'fixed') {
+                    controls.style.display = 'block';
+                    label.innerHTML = `字體大小: <span id="font-size-value">${fixedFontSize}</span>px`;
+                    slider.min = 10;
+                    slider.max = 500;
                     slider.value = fixedFontSize;
+                } else {
+                    controls.style.display = 'none';
                 }
             }
-            
             updateSession();
         });
     });
@@ -921,7 +943,6 @@
       scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
       textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
-      // 【BUG 修復】根據模式儲存對應的字體大小值
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
     };
@@ -930,23 +951,18 @@
 
   let updateTimeout;
 
-  function performUpdate() {
+  function updateSession() { 
+      clearTimeout(updateTimeout);
       const settings = getSettings();
-      updateControllerUI(settings);
       updatePreview(settings);
       if (currentSessionId) { 
           setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
       }
   }
-
-  function updateSession() { 
-      clearTimeout(updateTimeout);
-      performUpdate();
-  }
   
   function updateSessionDebounced() {
     clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(performUpdate, 200);
+    updateTimeout = setTimeout(updateSession, 200);
   }
 
   function updatePreview(settings){
