@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.38 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.39 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -468,8 +468,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
     const chars = Array.from(settings.text);
-    const useCharColors = settings.charColors && settings.charColors.length === chars.length;
-
+    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
@@ -724,8 +723,6 @@
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
    
     toggleCharColoringUI(settings.isCharColoring, settings.text);
-
-    updatePreview();
   }
 
   function toggleCharColoringUI(isActive, text) {
@@ -827,6 +824,7 @@
           if (el) {
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
                   const toggle = document.getElementById('char-color-toggle');
+                  //【BUG 修復】點選全域顏色時，僅在個性化開啟時才關閉它，並總是清除 charColors
                   if (toggle.checked) {
                       toggle.checked = false;
                       toggle.dispatchEvent(new Event('change'));
@@ -905,7 +903,9 @@
 
   function performUpdate() {
       const settings = getSettings();
+      // 【BUG 修復】更新鏈調整
       updateControllerUI(settings);
+      updatePreview(settings);
       if (currentSessionId) { 
           setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
       }
@@ -921,8 +921,8 @@
     updateTimeout = setTimeout(performUpdate, 200);
   }
 
-  function updatePreview(){
-    const settings = getSettings();
+  function updatePreview(settings){ //【BUG 修復】接收 settings 物件
+    // const settings = getSettings(); // 移除此行
     applySettings({ textEl: document.getElementById('preview-marquee-text'), containerEl: document.getElementById('controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') }, settings, true);
   }
 
