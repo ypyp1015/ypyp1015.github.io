@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.41 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v23 (已修復)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,6 +91,7 @@
     border-radius: var(--border-radius, 16px);
     animation: rainbow-border-anim 3s linear infinite;
     background-size: 200% 200%;
+    background-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet, red);
   }
   .border-style-rainbow::after {
     content: '';
@@ -122,7 +123,6 @@
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
  
-  /* 【新增】個別文字上色 UI 樣式 */
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
@@ -136,69 +136,645 @@
 </style>
 </head>
 <body class="text-white">
+
 <div id="app-container" class="h-full w-full">
-  <!-- 首頁 -->
-  <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
-    <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
-    <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
-    <div class="space-y-4 w-full max-w-xs">
-      <button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition">建立新的顯示面板</button>
-      <p class="text-gray-500">或</p>
-      <div class="relative">
-        <input type="text" id="session-id-input" placeholder="輸入面板 ID 進入控制台" class="w-full bg-gray-800 border border-gray-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-        <button id="open-controller-btn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-3 rounded-md">進入</button>
-      </div>
-    </div>
-    <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
-  </div>
-
-  <!-- 顯示面板 -->
-  <div id="display-view" class="hidden h-full w-full">
-    <div class="display-screen" id="display-screen">
-      <div class="grid-bg"></div>
-      <div id="background-effects-container"></div>
-      <div class="marquee-container-wrapper" id="marquee-container-wrapper">
-        <div class="marquee-text" id="marquee-text"><span>請稍候...</span></div>
-      </div>
-      <div class="gap-overlay" id="gap-overlay"></div>
-    </div>
-    <div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500">
-      <p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p>
-      <p id="session-id-display" class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded"></p>
-      <div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div>
-    </div>
-    <button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    </button>
-  </div>
-
-  <!-- 控制台 -->
-  <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
-    <div class="p-6 max-w-md mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-bold led-font">控制台</h2>
-        <p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p>
-      </div>
-
-      <div class="sticky-preview">
-        <label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label>
-        <div class="controller-preview" id="controller-preview">
-          <div class="grid-bg"></div>
-          <div class="marquee-container-wrapper" id="preview-marquee-container-wrapper">
-            <div class="marquee-text" id="preview-marquee-text"></div>
-          </div>
-          <div class="gap-overlay"></div>
+    <!-- 首頁 -->
+    <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
+        <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
+        <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
+        <div class="space-y-4 w-full max-w-xs">
+            <button id="create-display-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition">建立新的顯示面板</button>
+            <p class="text-gray-500">或</p>
+            <div class="relative">
+                <input type="text" id="session-id-input" placeholder="輸入面板 ID 進入控制台" class="w-full bg-gray-800 border border-gray-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="open-controller-btn" class="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-3 rounded-md">進入</button>
+            </div>
         </div>
-      </div>
+        <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
+    </div>
 
-      <div class="mb-6 mt-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
-        <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
-      </div>
-      
-      <!-- 【新增】個別文字上色功能 -->
-      <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
-        <div class="flex items-center justify-between mb-4">
-            <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="char-color-toggle" class="sr
+    <!-- 顯示面板 -->
+    <div id="display-view" class="hidden h-full w-full">
+        <div class="display-screen" id="display-screen">
+            <div class="grid-bg"></div>
+            <div id="background-effects-container"></div>
+            <div class="marquee-container-wrapper" id="marquee-container-wrapper">
+                <div class="marquee-text" id="marquee-text"><span>請稍候...</span></div>
+            </div>
+            <div class="gap-overlay" id="gap-overlay"></div>
+        </div>
+        <div id="info-overlay" class="absolute top-4 left-4 bg-black bg-opacity-70 p-4 rounded-lg text-white transition-opacity duration-500">
+            <p class="text-sm">輕觸螢幕可隱藏/顯示此資訊</p>
+            <p id="session-id-display" class="font-mono text-lg my-2 bg-gray-700 px-2 py-1 rounded"></p>
+            <div id="qrcode-container" class="p-2 bg-white rounded-md mt-2"></div>
+        </div>
+        <button id="fullscreen-btn" class="absolute bottom-4 right-4 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75 transition" aria-label="fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+    </div>
+
+    <!-- 控制台 -->
+    <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
+        <div class="p-6 max-w-4xl mx-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl font-bold led-font">控制台</h2>
+                <p class="text-sm text-gray-400 font-mono">ID: <span id="controller-session-id"></span></p>
+            </div>
+
+            <div class="sticky-preview">
+                <label class="block mb-2 text-sm font-medium text-gray-300">效果預覽</label>
+                <div class="controller-preview" id="controller-preview">
+                    <div class="grid-bg"></div>
+                    <div class="marquee-container-wrapper" id="preview-marquee-container-wrapper">
+                        <div class="marquee-text" id="preview-marquee-text"></div>
+                    </div>
+                    <div class="gap-overlay"></div>
+                </div>
+            </div>
+            
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 左側控制項 -->
+                <div class="space-y-6">
+                    <div>
+                        <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
+                        <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字...">Hello World! 🚀</textarea>
+                    </div>
+
+                    <!-- 字體大小模式 (Bug Fix Implemented) -->
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">字體大小模式</label>
+                        <div class="flex flex-col space-y-2" id="font-size-mode-group">
+                            <label class="inline-flex items-center"><input type="radio" name="fontSizeMode" value="fixed" class="form-radio text-indigo-600 bg-gray-700 border-gray-500"><span class="ml-2">固定大小</span></label>
+                            <label class="inline-flex items-center"><input type="radio" name="fontSizeMode" value="fillWidth" class="form-radio text-indigo-600 bg-gray-700 border-gray-500"><span class="ml-2">填滿寬度</span></label>
+                            <label class="inline-flex items-center"><input type="radio" name="fontSizeMode" value="fillHeight" class="form-radio text-indigo-600 bg-gray-700 border-gray-500"><span class="ml-2">填滿高度</span></label>
+                        </div>
+                    </div>
+                    
+                    <!-- 依賴於模式的滑桿 -->
+                    <div id="font-size-sliders" class="space-y-4 p-4 bg-gray-900/50 rounded-lg">
+                         <div id="font-size-ratio-container">
+                            <label for="font-size-ratio-input" class="block text-sm font-medium text-gray-300">字體大小佔比: <span id="font-size-ratio-value">80</span>%</label>
+                            <input type="range" id="font-size-ratio-input" min="1" max="150" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div id="height-ratio-container">
+                            <label for="height-ratio-input" class="block text-sm font-medium text-gray-300">高度佔比: <span id="height-ratio-value">100</span>%</label>
+                            <input type="range" id="height-ratio-input" min="10" max="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="scroll-speed-input" class="block text-sm font-medium text-gray-300">滾動速度: <span id="scroll-speed-value">5</span></label>
+                        <input type="range" id="scroll-speed-input" min="-20" max="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- 右側控制項 -->
+                <div class="space-y-6">
+                     <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <label for="text-color-input" class="block text-sm font-medium text-gray-300 mb-2">文字顏色</label>
+                        <input type="color" id="text-color-input" class="w-full h-10 p-1 bg-gray-700 border-gray-600 rounded-md cursor-pointer">
+                    </div>
+                     <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <label for="bg-color-input" class="block text-sm font-medium text-gray-300 mb-2">背景顏色</label>
+                        <input type="color" id="bg-color-input" class="w-full h-10 p-1 bg-gray-700 border-gray-600 rounded-md cursor-pointer">
+                    </div>
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">字體樣式</label>
+                        <select id="font-family-select" class="w-full bg-gray-700 border-gray-600 rounded-md px-3 py-2 text-white">
+                            <option value="'Inter', '微軟正黑體', sans-serif">預設 (Inter)</option>
+                            <option value="'DotGothic16', sans-serif">點陣 (DotGothic16)</option>
+                            <option value="'Noto Serif TC', serif">襯線 (思源宋體)</option>
+                            <option value="'ZCOOL KuaiLe', cursive">快樂體</option>
+                            <option value="'Cutive Mono', monospace">等寬 (Cutive Mono)</option>
+                        </select>
+                    </div>
+                    <div class="p-4 bg-gray-900/50 rounded-lg">
+                         <label class="block text-sm font-medium text-gray-300 mb-2">文字效果</label>
+                         <div id="text-style-group" class="grid grid-cols-2 gap-2">
+                             <button data-value="none" class="control-btn-active bg-gray-700 p-2 rounded-md">無</button>
+                             <button data-value="glow" class="bg-gray-700 p-2 rounded-md">光暈</button>
+                             <button data-value="outline" class="bg-gray-700 p-2 rounded-md">描邊</button>
+                             <button data-value="dotted" class="bg-gray-700 p-2 rounded-md">點陣</button>
+                         </div>
+                    </div>
+                     <div class="p-4 bg-gray-900/50 rounded-lg">
+                         <label class="block text-sm font-medium text-gray-300 mb-2">邊框樣式</label>
+                         <div id="border-style-group" class="grid grid-cols-2 gap-2">
+                             <button data-value="none" class="control-btn-active bg-gray-700 p-2 rounded-md">無</button>
+                             <button data-value="solid" class="bg-gray-700 p-2 rounded-md">實心</button>
+                             <button data-value="rainbow" class="bg-gray-700 p-2 rounded-md">彩虹</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 個性化文字顏色 -->
+            <div class="mt-6 p-4 bg-gray-900/50 rounded-lg">
+                <div class="flex items-center justify-between mb-4">
+                    <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="char-color-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
+                <div id="char-color-container" class="hidden flex flex-wrap gap-2 items-center">
+                    <input type="color" id="char-color-picker" class="w-12 h-10 p-1 bg-gray-700 border-gray-600 rounded-md cursor-pointer">
+                    <div id="char-buttons-wrapper" class="flex flex-wrap gap-1"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DOM Elements ---
+    const dom = {
+        views: {
+            home: document.getElementById('home-view'),
+            display: document.getElementById('display-view'),
+            controller: document.getElementById('controller-view'),
+        },
+        home: {
+            createBtn: document.getElementById('create-display-btn'),
+            joinInput: document.getElementById('session-id-input'),
+            joinBtn: document.getElementById('open-controller-btn'),
+        },
+        display: {
+            screen: document.getElementById('display-screen'),
+            marqueeText: document.getElementById('marquee-text'),
+            sessionId: document.getElementById('session-id-display'),
+            qrCode: document.getElementById('qrcode-container'),
+            infoOverlay: document.getElementById('info-overlay'),
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+        },
+        controller: {
+            sessionId: document.getElementById('controller-session-id'),
+            preview: {
+                screen: document.getElementById('controller-preview'),
+                marqueeText: document.getElementById('preview-marquee-text'),
+            },
+            inputs: {
+                text: document.getElementById('text-input'),
+                fontSizeMode: document.querySelectorAll('input[name="fontSizeMode"]'),
+                fontSizeRatio: document.getElementById('font-size-ratio-input'),
+                heightRatio: document.getElementById('height-ratio-input'),
+                scrollSpeed: document.getElementById('scroll-speed-input'),
+                textColor: document.getElementById('text-color-input'),
+                bgColor: document.getElementById('bg-color-input'),
+                fontFamily: document.getElementById('font-family-select'),
+                charColorToggle: document.getElementById('char-color-toggle'),
+                charColorPicker: document.getElementById('char-color-picker'),
+            },
+            values: {
+                fontSizeRatio: document.getElementById('font-size-ratio-value'),
+                heightRatio: document.getElementById('height-ratio-value'),
+                scrollSpeed: document.getElementById('scroll-speed-value'),
+            },
+            containers: {
+                fontSizeSliders: document.getElementById('font-size-sliders'),
+                fontSizeRatio: document.getElementById('font-size-ratio-container'),
+                heightRatio: document.getElementById('height-ratio-container'),
+                charColor: document.getElementById('char-color-container'),
+                charButtons: document.getElementById('char-buttons-wrapper'),
+            },
+            groups: {
+                textStyle: document.getElementById('text-style-group'),
+                borderStyle: document.getElementById('border-style-group'),
+            }
+        }
+    };
+
+    // --- State Management ---
+    let sessionId = null;
+    let currentMode = 'home'; // 'home', 'display', 'controller'
+    let selectedCharIndices = new Set();
+    
+    const defaultSettings = {
+        text: 'Hello World! 🚀',
+        textColor: '#00FF00',
+        bgColor: '#000000',
+        fontSizeMode: 'fixed',
+        fontSizeRatio: 80,
+        heightRatio: 100,
+        scrollSpeed: 5,
+        fontFamily: "'Inter', '微軟正黑體', sans-serif",
+        textStyle: 'none',
+        borderStyle: 'none',
+        charColors: {},
+        // Non-persistent state
+        animationDuration: 10,
+    };
+    let settings = { ...defaultSettings };
+    
+    // --- Core Logic ---
+
+    /**
+     * Updates the display (or preview) based on current settings.
+     * @param {HTMLElement} screenEl - The screen element (display or preview).
+     * @param {HTMLElement} textEl - The marquee text element.
+     * @param {Object} currentSettings - The settings object to apply.
+     */
+    function updateDisplay(screenEl, textEl, currentSettings) {
+        // Apply colors and base styles
+        screenEl.style.setProperty('--bg-color', currentSettings.bgColor);
+        textEl.style.setProperty('--text-color', currentSettings.textColor);
+        textEl.style.fontFamily = currentSettings.fontFamily;
+        
+        // Update text content with individual character colors
+        const textContent = currentSettings.text || " ";
+        if (currentSettings.charColors && Object.keys(currentSettings.charColors).length > 0) {
+            textEl.innerHTML = [...textContent].map((char, index) => {
+                const color = currentSettings.charColors[index];
+                return color ? `<span style="color: ${color};">${char}</span>` : `<span>${char}</span>`;
+            }).join('');
+        } else {
+            textEl.innerHTML = `<span>${textContent}</span>`;
+        }
+
+        // Apply text style
+        textEl.classList.toggle('text-style-glow', currentSettings.textStyle === 'glow');
+        textEl.classList.toggle('text-style-outline', currentSettings.textStyle === 'outline');
+        textEl.classList.toggle('text-style-dotted', currentSettings.textStyle === 'dotted');
+        screenEl.style.setProperty('--outline-color', currentSettings.textColor);
+
+        // Apply border style
+        screenEl.className = 'display-screen'; // Reset classes
+        if (currentSettings.borderStyle !== 'none') {
+            screenEl.classList.add(`border-style-${currentSettings.borderStyle}`);
+            const borderWidth = 8; // Example fixed border width
+            const borderRadius = 16;
+            screenEl.style.setProperty('--border-width', `${borderWidth}px`);
+            screenEl.style.setProperty('--border-radius', `${borderRadius}px`);
+            screenEl.style.setProperty('--inner-border-radius', `${borderRadius - borderWidth}px`);
+        }
+
+        // Handle animation
+        const marqueeContainer = textEl.parentElement;
+        const speed = Number(currentSettings.scrollSpeed);
+        if (speed !== 0) {
+            const textWidth = textEl.offsetWidth;
+            const containerWidth = screenEl.offsetWidth;
+            // A simple approximation for duration
+            const duration = (containerWidth + textWidth) / (Math.abs(speed) * 10);
+            
+            marqueeContainer.style.animation = ``; // Reset animation
+            void marqueeContainer.offsetWidth; // Trigger reflow
+            marqueeContainer.style.animation = `${speed > 0 ? 'marquee-left' : 'marquee-right'} ${duration}s linear infinite`;
+        } else {
+            marqueeContainer.style.animation = '';
+            marqueeContainer.style.transform = 'translateY(-50%)'; // Recenter
+        }
+
+        // *** THIS IS THE BUG FIX ***
+        updateFontSizeAndLayout(screenEl, textEl, currentSettings);
+    }
+
+    /**
+     * Handles font size calculation and UI visibility based on the selected mode.
+     */
+    function updateFontSizeAndLayout(screenEl, textEl, currentSettings) {
+        const { fontSizeMode, fontSizeRatio, heightRatio, text } = currentSettings;
+        const container = textEl.parentElement; // marquee-container-wrapper
+        const screenHeight = screenEl.clientHeight;
+        const screenWidth = screenEl.clientWidth;
+        
+        let finalFontSize = 10;
+        
+        // Step 1: Manage UI visibility
+        const isFixed = fontSizeMode === 'fixed';
+        dom.controller.containers.fontSizeSliders.style.display = isFixed ? 'block' : 'none';
+        
+        // Step 2: Calculate font size and container height
+        if (fontSizeMode === 'fixed') {
+            container.style.height = `${screenHeight * (heightRatio / 100)}px`;
+            finalFontSize = (parseFloat(container.style.height) * (fontSizeRatio / 100));
+        } else if (fontSizeMode === 'fillHeight') {
+            container.style.height = `${screenHeight}px`;
+            finalFontSize = findOptimalFontSize(text, currentSettings.fontFamily, screenWidth, screenHeight, true);
+        } else if (fontSizeMode === 'fillWidth') {
+            finalFontSize = findOptimalFontSize(text, currentSettings.fontFamily, screenWidth, screenHeight, false);
+            // After finding font size, set container height based on text metrics
+            const metrics = measureText(text, `${finalFontSize}px ${currentSettings.fontFamily}`);
+            container.style.height = `${metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent}px`;
+        }
+        
+        textEl.style.setProperty('--font-size', `${Math.max(1, finalFontSize)}px`);
+    }
+
+    // Helper for measuring text
+    const measureCanvas = document.createElement('canvas');
+    const measureCtx = measureCanvas.getContext('2d');
+    function measureText(text, font) {
+        measureCtx.font = font;
+        return measureCtx.measureText(text || " ");
+    }
+    
+    // Helper to find best font size
+    function findOptimalFontSize(text, fontFamily, maxWidth, maxHeight, fitHeight = true) {
+        let low = 1, high = Math.max(maxWidth, maxHeight);
+        let optimal = low;
+        while(low <= high) {
+            let mid = Math.floor((low + high) / 2);
+            const font = `${mid}px ${fontFamily}`;
+            const metrics = measureText(text, font);
+            const textW = metrics.width;
+            const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+            if (fitHeight) {
+                if (textH <= maxHeight) {
+                    optimal = mid;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            } else { // Fit Width
+                 if (textW <= maxWidth) {
+                    optimal = mid;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+        }
+        return optimal;
+    }
+
+
+    /**
+     * Syncs the controller UI with the provided settings object.
+     */
+    function syncUiWithSettings() {
+        dom.controller.inputs.text.value = settings.text;
+        dom.controller.inputs.textColor.value = settings.textColor;
+        dom.controller.inputs.bgColor.value = settings.bgColor;
+        
+        document.querySelector(`input[name="fontSizeMode"][value="${settings.fontSizeMode}"]`).checked = true;
+
+        dom.controller.inputs.fontSizeRatio.value = settings.fontSizeRatio;
+        dom.controller.values.fontSizeRatio.textContent = settings.fontSizeRatio;
+        
+        dom.controller.inputs.heightRatio.value = settings.heightRatio;
+        dom.controller.values.heightRatio.textContent = settings.heightRatio;
+
+        dom.controller.inputs.scrollSpeed.value = settings.scrollSpeed;
+        dom.controller.values.scrollSpeed.textContent = settings.scrollSpeed;
+        
+        dom.controller.inputs.fontFamily.value = settings.fontFamily;
+        
+        updateButtonGroup(dom.controller.groups.textStyle, settings.textStyle);
+        updateButtonGroup(dom.controller.groups.borderStyle, settings.borderStyle);
+
+        dom.controller.inputs.charColorToggle.checked = Object.keys(settings.charColors).length > 0;
+        dom.controller.containers.charColor.style.display = dom.controller.inputs.charColorToggle.checked ? 'flex' : 'none';
+
+        generateCharButtons();
+        updateDisplay(dom.controller.preview.screen, dom.controller.preview.marqueeText, settings);
+    }
+    
+    function saveSettings() {
+        if (sessionId) {
+            localStorage.setItem(`led_session_${sessionId}`, JSON.stringify(settings));
+        }
+    }
+
+    function loadSettings(id) {
+        const saved = localStorage.getItem(`led_session_${id}`);
+        if (saved) {
+            settings = { ...defaultSettings, ...JSON.parse(saved) };
+        } else {
+            settings = { ...defaultSettings };
+        }
+    }
+
+    function showView(viewName) {
+        Object.values(dom.views).forEach(v => v.classList.add('hidden'));
+        if (dom.views[viewName]) {
+            dom.views[viewName].classList.remove('hidden');
+        }
+        currentMode = viewName;
+    }
+    
+    function generateCharButtons() {
+        const text = dom.controller.inputs.text.value;
+        const wrapper = dom.controller.containers.charButtons;
+        wrapper.innerHTML = '';
+        [...text].forEach((char, index) => {
+            const btn = document.createElement('button');
+            btn.textContent = char === ' ' ? '_' : char;
+            btn.className = 'char-btn p-1 rounded-md bg-gray-600 text-gray-200 font-mono';
+            btn.dataset.index = index;
+            if (settings.charColors[index]) {
+                btn.style.backgroundColor = settings.charColors[index];
+                btn.style.color = '#fff';
+            }
+            if (selectedCharIndices.has(index)) {
+                btn.classList.add('char-btn-active');
+            }
+            wrapper.appendChild(btn);
+        });
+    }
+
+    function updateButtonGroup(groupEl, value) {
+        groupEl.querySelectorAll('button').forEach(btn => {
+            btn.classList.toggle('control-btn-active', btn.dataset.value === value);
+        });
+    }
+
+    // --- Event Listeners ---
+    function setupEventListeners() {
+        // Home View
+        dom.home.createBtn.addEventListener('click', () => {
+            sessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            settings = { ...defaultSettings }; // Reset to defaults
+            saveSettings();
+            // Open display in a new tab and then go to controller view
+            window.open(`${window.location.pathname}#display?session=${sessionId}`, '_blank');
+            loadSettings(sessionId);
+            showView('controller');
+            dom.controller.sessionId.textContent = sessionId;
+            syncUiWithSettings();
+        });
+        
+        dom.home.joinBtn.addEventListener('click', () => {
+            const id = dom.home.joinInput.value.trim().toUpperCase();
+            if (id) {
+                sessionId = id;
+                loadSettings(id);
+                showView('controller');
+                dom.controller.sessionId.textContent = sessionId;
+                syncUiWithSettings();
+            }
+        });
+
+        // Display View
+        dom.display.screen.addEventListener('click', () => {
+            dom.display.infoOverlay.style.opacity = dom.display.infoOverlay.style.opacity === '0' ? '1' : '0';
+        });
+        dom.display.fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Controller View: Handle all inputs
+        dom.controller.inputs.text.addEventListener('input', (e) => {
+            settings.text = e.target.value;
+            generateCharButtons(); // Regenerate buttons on text change
+            saveAndRerender();
+        });
+        
+        dom.controller.inputs.fontSizeMode.forEach(radio => radio.addEventListener('change', (e) => {
+            settings.fontSizeMode = e.target.value;
+            saveAndRerender();
+        }));
+
+        const sliderInputs = {
+            fontSizeRatio: dom.controller.inputs.fontSizeRatio,
+            heightRatio: dom.controller.inputs.heightRatio,
+            scrollSpeed: dom.controller.inputs.scrollSpeed,
+        };
+        for(const [key, inputEl] of Object.entries(sliderInputs)) {
+            inputEl.addEventListener('input', () => {
+                settings[key] = Number(inputEl.value);
+                dom.controller.values[key].textContent = inputEl.value;
+                saveAndRerender();
+            });
+        }
+        
+        const colorInputs = { textColor: dom.controller.inputs.textColor, bgColor: dom.controller.inputs.bgColor };
+        for(const [key, inputEl] of Object.entries(colorInputs)) {
+            inputEl.addEventListener('input', () => {
+                settings[key] = inputEl.value;
+                saveAndRerender();
+            });
+        }
+
+        dom.controller.inputs.fontFamily.addEventListener('change', (e) => {
+            settings.fontFamily = e.target.value;
+            saveAndRerender();
+        });
+        
+        dom.controller.groups.textStyle.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                settings.textStyle = e.target.dataset.value;
+                updateButtonGroup(dom.controller.groups.textStyle, settings.textStyle);
+                saveAndRerender();
+            }
+        });
+
+        dom.controller.groups.borderStyle.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                settings.borderStyle = e.target.dataset.value;
+                updateButtonGroup(dom.controller.groups.borderStyle, settings.borderStyle);
+                saveAndRerender();
+            }
+        });
+        
+        // Character Coloring Logic
+        dom.controller.inputs.charColorToggle.addEventListener('change', (e) => {
+            dom.controller.containers.charColor.style.display = e.target.checked ? 'flex' : 'none';
+            if (!e.target.checked) {
+                settings.charColors = {}; // Clear colors if disabled
+                selectedCharIndices.clear();
+                generateCharButtons();
+                saveAndRerender();
+            }
+        });
+
+        dom.controller.containers.charButtons.addEventListener('click', (e) => {
+             if (e.target.classList.contains('char-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                if (e.shiftKey && selectedCharIndices.size > 0) { // Range selection
+                    const lastSelected = [...selectedCharIndices].pop();
+                    const start = Math.min(index, lastSelected);
+                    const end = Math.max(index, lastSelected);
+                    for (let i = start; i <= end; i++) {
+                        selectedCharIndices.add(i);
+                    }
+                } else if (e.ctrlKey || e.metaKey) { // Multi-selection
+                    selectedCharIndices.has(index) ? selectedCharIndices.delete(index) : selectedCharIndices.add(index);
+                } else { // Single selection
+                    selectedCharIndices.clear();
+                    selectedCharIndices.add(index);
+                }
+                generateCharButtons(); // Redraw buttons to show selection
+             }
+        });
+
+        dom.controller.inputs.charColorPicker.addEventListener('input', (e) => {
+            const color = e.target.value;
+            selectedCharIndices.forEach(index => {
+                settings.charColors[index] = color;
+            });
+            generateCharButtons();
+            saveAndRerender();
+        });
+
+        // Window Storage Event (for display to listen to controller)
+        window.addEventListener('storage', (e) => {
+            if (currentMode === 'display' && e.key === `led_session_${sessionId}`) {
+                loadSettings(sessionId);
+                updateDisplay(dom.display.screen, dom.display.marqueeText, settings);
+            }
+        });
+    }
+    
+    function saveAndRerender() {
+        saveSettings();
+        updateDisplay(dom.controller.preview.screen, dom.controller.preview.marqueeText, settings);
+    }
+
+    // --- Initialization ---
+    function init() {
+        const hash = window.location.hash;
+        if (hash.startsWith('#display')) {
+            const params = new URLSearchParams(hash.split('?')[1]);
+            sessionId = params.get('session');
+            if (sessionId) {
+                currentMode = 'display';
+                showView('display');
+                loadSettings(sessionId);
+                dom.display.sessionId.textContent = `ID: ${sessionId}`;
+                new QRCode(dom.display.qrCode, {
+                    text: `${window.location.origin}${window.location.pathname}#controller?session=${sessionId}`,
+                    width: 128,
+                    height: 128,
+                });
+                updateDisplay(dom.display.screen, dom.display.marqueeText, settings);
+            }
+        } else if (hash.startsWith('#controller')) {
+            const params = new URLSearchParams(hash.split('?')[1]);
+            sessionId = params.get('session');
+            if (sessionId) {
+                 currentMode = 'controller';
+                 loadSettings(sessionId);
+                 showView('controller');
+                 dom.controller.sessionId.textContent = sessionId;
+                 syncUiWithSettings();
+            }
+        } else {
+            showView('home');
+        }
+
+        setupEventListeners();
+        // Initial sync for controller if it's the starting view
+        if(currentMode === 'controller') {
+            syncUiWithSettings();
+        } else if (currentMode === 'home') {
+            // Setup default preview for home screen's controller view
+            loadSettings('__preview');
+            syncUiWithSettings();
+        }
+    }
+
+    init();
+});
+</script>
+</body>
+</html>
+
