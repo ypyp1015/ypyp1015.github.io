@@ -687,12 +687,19 @@
     setupControllerListeners();
   }
   
-  function updateFontSizeControlsState(mode) {
+  function updateFontSizeUI(mode) {
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
       const fitHeightSlider = document.getElementById('fit-height-slider');
       const fixedSizeSlider = document.getElementById('fixed-size-slider');
 
+      // 根據儲存的狀態更新UI數值
+      document.getElementById('fit-height-value').textContent = fillHeightPercentage;
+      fitHeightSlider.value = fillHeightPercentage;
+      document.getElementById('fixed-size-value').textContent = fixedFontSize;
+      fixedSizeSlider.value = fixedFontSize;
+
+      // 根據當前模式決定哪個滑桿是啟用的
       fitHeightControls.style.opacity = '0.4';
       fitHeightSlider.disabled = true;
       fixedSizeControls.style.opacity = '0.4';
@@ -714,11 +721,10 @@
     document.getElementById('blink-toggle').checked = !!settings.isBlinking;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
    
-    document.getElementById('fit-height-slider').value = settings.fontSize;
-    document.getElementById('fit-height-value').textContent = settings.fontSize;
-    document.getElementById('fixed-size-slider').value = settings.fixedFontSize;
-    document.getElementById('fixed-size-value').textContent = settings.fixedFontSize;
-    updateFontSizeControlsState(settings.fontSizeMode);
+    // 初始化時，使用settings的值更新狀態，然後用新的UI函數來設定UI
+    fillHeightPercentage = settings.fontSize;
+    fixedFontSize = settings.fixedFontSize;
+    updateFontSizeUI(settings.fontSizeMode);
    
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
@@ -845,10 +851,13 @@
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
             
-            const newMode = target.dataset.mode;
             if (target.classList.contains('font-mode-btn')) {
+                const newMode = target.dataset.mode;
                 currentFontSizeMode = newMode;
-                updateFontSizeControlsState(newMode);
+                if (newMode === 'fitHeight') {
+                    fillHeightPercentage = 95; // 每次點選都重設為95
+                }
+                updateFontSizeUI(newMode);
             }
            
             const group = target.classList[0];
