@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.37 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.38 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -467,14 +467,15 @@
    
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
-    const useCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length === Array.from(settings.text).length;
+    const chars = Array.from(settings.text);
+    const useCharColors = settings.charColors && settings.charColors.length === chars.length;
+
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
     textEl.style.color = '';
     textEl.style.backgroundImage = '';
 
-    // 【BUG 修復】重構文字樣式邏輯
     // 步驟 1: 將全域文字樣式套用至容器元件
     if (settings.textStyle === 'dotted') {
         textEl.classList.add('text-style-dotted');
@@ -495,7 +496,6 @@
 
     // 步驟 2: 填入文字內容，並在需要時套用個別樣式
     if (useCharColors) {
-        const chars = Array.from(settings.text);
         chars.forEach((char, index) => {
             const span = document.createElement('span');
             span.textContent = char;
@@ -565,7 +565,7 @@
       }
 
       default: // 'fixed' mode
-        textEl.style.whiteSpace = 'pre'; // 【BUG 修復】使用 'pre' 模式
+        textEl.style.whiteSpace = 'pre';
         finalFontSize = isPreview ? Math.min(Number(settings.fontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fontSize) || 80);
         break;
     }
@@ -701,7 +701,7 @@
     const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
     document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
-    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || settings.isCharColoring);
+    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || (settings.isCharColoring && settings.charColors.some(c => c !== null)));
    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
@@ -798,7 +798,6 @@
     
     document.getElementById('char-color-toggle').addEventListener('change', (e) => {
         toggleCharColoringUI(e.target.checked, document.getElementById('text-input').value);
-        // 【BUG 修復】當關閉開關時，不清空 charColors
         updateSession();
     });
 
@@ -826,7 +825,6 @@
       document.getElementById(pickerId).addEventListener('click', (e) => {
           const el = e.target.closest(`[data-${mode}]`);
           if (el) {
-              // 【BUG 修復】當選擇全域顏色時，關閉個性化並清空設定
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
                   const toggle = document.getElementById('char-color-toggle');
                   if (toggle.checked) {
@@ -904,17 +902,23 @@
   }
 
   let updateTimeout;
-  // 【BUG 修復】建立即時更新與延遲更新
-  function updateSession() { 
+
+  function performUpdate() {
       const settings = getSettings();
       updateControllerUI(settings);
       if (currentSessionId) { 
           setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
       }
   }
+
+  function updateSession() { 
+      clearTimeout(updateTimeout);
+      performUpdate();
+  }
+  
   function updateSessionDebounced() {
     clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(updateSession, 200);
+    updateTimeout = setTimeout(performUpdate, 200);
   }
 
   function updatePreview(){
