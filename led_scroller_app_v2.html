@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.41 (Stable)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.42 (Stable)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -418,6 +418,7 @@
   // 為不同模式建立獨立的字體大小狀態
   let fillHeightPercentage = 95;
   let fixedFontSize = 100;
+  let currentFontSizeMode = 'fitHeight';
 
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
@@ -672,6 +673,7 @@
    
     fillHeightPercentage = settings.fontSize || 95;
     fixedFontSize = settings.fixedFontSize || 100;
+    currentFontSizeMode = settings.fontSizeMode || 'fitHeight';
 
     updateControllerUI(settings);
     updatePreview(settings);
@@ -798,10 +800,13 @@
         el && el.addEventListener('input', (e) => {
             const value = e.target.value;
            
-            // 即時更新 UI 標籤，然後延遲更新 전체
             switch (id) {
                 case 'font-size-slider':
-                    // **【修正】** 只更新標籤文字，狀態邏輯移至 getSettings
+                    if (currentFontSizeMode === 'fitHeight') {
+                        fillHeightPercentage = Number(value);
+                    } else if (currentFontSizeMode === 'fixed') {
+                        fixedFontSize = Number(value);
+                    }
                     document.getElementById('font-size-value').textContent = value;
                     break;
                 case 'text-input':
@@ -830,13 +835,18 @@
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
+            
+            const newMode = target.dataset.mode;
+            if (target.classList.contains('font-mode-btn')) {
+                currentFontSizeMode = newMode;
+            }
            
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
 
             if (target.classList.contains('font-mode-btn')) {
-                updateFontSizeUIByMode(target.dataset.mode);
+                updateFontSizeUIByMode(newMode);
             }
             updateSession();
         });
@@ -888,24 +898,10 @@
     });
   }
 
-  // **【修正】** 重新設計 getSettings 函式以集中管理字體大小狀態
   function getSettings(){
-    const fontSizeMode = document.querySelector('.font-mode-btn.bg-indigo-600')?.dataset.mode || 'fitHeight';
-
-    // 當滑桿可見時，從滑桿讀取當前值並更新對應的 JS 狀態變數
-    // 這確保了在每次收集設定時，JS 變數都與 UI 同步
-    if (document.getElementById('font-size-controls').style.display !== 'none') {
-        const sliderValue = Number(document.getElementById('font-size-slider').value);
-        if (fontSizeMode === 'fitHeight') {
-            fillHeightPercentage = sliderValue;
-        } else if (fontSizeMode === 'fixed') {
-            fixedFontSize = sliderValue;
-        }
-    }
-
     const settings = {
       text: document.getElementById('text-input').value,
-      fontSizeMode: fontSizeMode,
+      fontSizeMode: currentFontSizeMode,
       scrollSpeed: document.getElementById('speed-slider').value,
       isBlinking: document.getElementById('blink-toggle').checked,
       isCharColoring: document.getElementById('char-color-toggle').checked,
@@ -932,7 +928,6 @@
       scrollDirection: document.querySelector('.direction-btn.bg-indigo-600')?.dataset.direction || 'none',
       textBlendMode: document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend || 'normal',
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
-      // 總是使用已同步的 JS 變數，確保資料一致性
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
     };
