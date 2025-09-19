@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.32 (Fixed)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.33 (Fixed)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -415,7 +415,7 @@
   const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
   let gridSizeState = 20;
   let selectedCharIndices = new Set();
-  let fillHeightPercentage = 95; // 【BUG 修復】新增狀態變數來保存「填滿高度」的百分比
+  let fillHeightPercentage = 95;
 
   const solid16 = ['#FFFFFF','#000000','#1F2937','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#22D3EE','#A3E635','#F97316','#84CC16'];
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
@@ -519,7 +519,8 @@
       
       case 'fitWidth': {
         const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = hasNewline ? 'pre-wrap' : 'nowrap';
+        // 【BUG 修復】使用 'pre' 可以尊重換行符，但同時避免自動換掉過長的單行文字
+        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
         
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
