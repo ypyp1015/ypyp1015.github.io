@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v23 (已修復)</title>
+<title>遠端遙控 LED 跑馬燈 v23.1 (已修復)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -415,9 +415,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const marqueeContainer = textEl.parentElement;
         const speed = Number(currentSettings.scrollSpeed);
         if (speed !== 0) {
+            // Must calculate text width *after* font size is set
+            // We'll call a dedicated function for font size first
+            updateFontSizeAndLayout(screenEl, textEl, currentSettings);
+            
+            // Now that font size is correct, get the width for animation calculation
             const textWidth = textEl.offsetWidth;
             const containerWidth = screenEl.offsetWidth;
-            // A simple approximation for duration
             const duration = (containerWidth + textWidth) / (Math.abs(speed) * 10);
             
             marqueeContainer.style.animation = ``; // Reset animation
@@ -426,82 +430,98 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             marqueeContainer.style.animation = '';
             marqueeContainer.style.transform = 'translateY(-50%)'; // Recenter
+            // Update font size for static text as well
+            updateFontSizeAndLayout(screenEl, textEl, currentSettings);
         }
-
-        // *** THIS IS THE BUG FIX ***
-        updateFontSizeAndLayout(screenEl, textEl, currentSettings);
     }
 
-    /**
-     * Handles font size calculation and UI visibility based on the selected mode.
-     */
-    function updateFontSizeAndLayout(screenEl, textEl, currentSettings) {
-        const { fontSizeMode, fontSizeRatio, heightRatio, text } = currentSettings;
-        const container = textEl.parentElement; // marquee-container-wrapper
-        const screenHeight = screenEl.clientHeight;
-        const screenWidth = screenEl.clientWidth;
-        
-        let finalFontSize = 10;
-        
-        // Step 1: Manage UI visibility
-        const isFixed = fontSizeMode === 'fixed';
-        dom.controller.containers.fontSizeSliders.style.display = isFixed ? 'block' : 'none';
-        
-        // Step 2: Calculate font size and container height
-        if (fontSizeMode === 'fixed') {
-            container.style.height = `${screenHeight * (heightRatio / 100)}px`;
-            finalFontSize = (parseFloat(container.style.height) * (fontSizeRatio / 100));
-        } else if (fontSizeMode === 'fillHeight') {
-            container.style.height = `${screenHeight}px`;
-            finalFontSize = findOptimalFontSize(text, currentSettings.fontFamily, screenWidth, screenHeight, true);
-        } else if (fontSizeMode === 'fillWidth') {
-            finalFontSize = findOptimalFontSize(text, currentSettings.fontFamily, screenWidth, screenHeight, false);
-            // After finding font size, set container height based on text metrics
-            const metrics = measureText(text, `${finalFontSize}px ${currentSettings.fontFamily}`);
-            container.style.height = `${metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent}px`;
-        }
-        
-        textEl.style.setProperty('--font-size', `${Math.max(1, finalFontSize)}px`);
-    }
-
-    // Helper for measuring text
+    // Helper for measuring text, used for font size calculation
     const measureCanvas = document.createElement('canvas');
     const measureCtx = measureCanvas.getContext('2d');
     function measureText(text, font) {
         measureCtx.font = font;
         return measureCtx.measureText(text || " ");
     }
-    
-    // Helper to find best font size
-    function findOptimalFontSize(text, fontFamily, maxWidth, maxHeight, fitHeight = true) {
-        let low = 1, high = Math.max(maxWidth, maxHeight);
-        let optimal = low;
-        while(low <= high) {
-            let mid = Math.floor((low + high) / 2);
-            const font = `${mid}px ${fontFamily}`;
-            const metrics = measureText(text, font);
-            const textW = metrics.width;
-            const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
-            if (fitHeight) {
-                if (textH <= maxHeight) {
-                    optimal = mid;
+    /**
+     * [FIXED] Handles font size calculation and UI visibility based on the selected mode.
+     * This version integrates the font-finding logic directly to be clearer.
+     */
+    function updateFontSizeAndLayout(screenEl, textEl, currentSettings) {
+        const { fontSizeMode, fontSizeRatio, heightRatio, text, fontFamily } = currentSettings;
+        const container = textEl.parentElement; // marquee-container-wrapper
+        const screenHeight = screenEl.clientHeight;
+        const screenWidth = screenEl.clientWidth;
+        
+        let finalFontSize = 10;
+        
+        // Step 1: Manage UI visibility for sliders based on mode.
+        // This is the core of the bug fix: only show sliders in 'fixed' mode.
+        const isFixed = fontSizeMode === 'fixed';
+        dom.controller.containers.fontSizeSliders.style.display = isFixed ? 'block' : 'none';
+        
+        // Step 2: Calculate font size and container height for the current mode.
+        if (fontSizeMode === 'fixed') {
+            // In 'fixed' mode, height and font size are determined by sliders.
+            container.style.height = `${screenHeight * (heightRatio / 100)}px`;
+            // Ensure height is not zero before calculating font size
+            const containerHeight = parseFloat(container.style.height) || 0;
+            finalFontSize = (containerHeight * (fontSizeRatio / 100));
+
+        } else if (fontSizeMode === 'fillHeight') {
+            // In 'fillHeight' mode, container takes full screen height.
+            container.style.height = `${screenHeight}px`;
+            
+            // Find the largest font size that fits within the container height using binary search.
+            let low = 1, high = screenHeight * 2; // Start with a generous upper bound
+            let optimal = low;
+            while(low <= high) {
+                let mid = Math.floor((low + high) / 2);
+                if (mid === 0) break; // Prevent infinite loop
+                const font = `${mid}px ${fontFamily}`;
+                const metrics = measureText(text, font);
+                const textH = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+                if (textH <= screenHeight) {
+                    optimal = mid; // This size fits, try larger
                     low = mid + 1;
                 } else {
-                    high = mid - 1;
-                }
-            } else { // Fit Width
-                 if (textW <= maxWidth) {
-                    optimal = mid;
-                    low = mid + 1;
-                } else {
-                    high = mid - 1;
+                    high = mid - 1; // This size is too big, try smaller
                 }
             }
-        }
-        return optimal;
-    }
+            finalFontSize = optimal;
 
+        } else if (fontSizeMode === 'fillWidth') {
+            // In 'fillWidth' mode, first find the font size that fits the width.
+            let low = 1, high = screenWidth * 2; // Start with a generous upper bound
+            let optimal = low;
+            while(low <= high) {
+                let mid = Math.floor((low + high) / 2);
+                if (mid === 0) break; // Prevent infinite loop
+                const font = `${mid}px ${fontFamily}`;
+                const metrics = measureText(text, font);
+                const textW = metrics.width;
+
+                if (textW <= screenWidth) {
+                    optimal = mid; // This size fits, try larger
+                    low = mid + 1;
+                } else {
+                    high = mid - 1; // This size is too big, try smaller
+                }
+            }
+            finalFontSize = optimal;
+            
+            // Then, set the container height to match the text's actual height at that font size.
+            const finalFont = `${finalFontSize}px ${fontFamily}`;
+            const finalMetrics = measureText(text, finalFont);
+            const finalTextHeight = finalMetrics.actualBoundingBoxAscent + finalMetrics.actualBoundingBoxDescent;
+            // Use Math.ceil to prevent clipping and ensure it has at least 1px height.
+            container.style.height = `${Math.ceil(finalTextHeight) || 1}px`;
+        }
+        
+        // Step 3: Apply the calculated font size. Use Math.max to ensure it's at least 1px.
+        textEl.style.setProperty('--font-size', `${Math.max(1, finalFontSize)}px`);
+    }
 
     /**
      * Syncs the controller UI with the provided settings object.
