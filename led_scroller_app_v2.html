@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.15.1 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.16 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +23,10 @@
   @keyframes jump-effect {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(calc(-1 * var(--jump-amplitude, 20px))); }
+  }
+  @keyframes wave-effect {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(calc(-1 * var(--wave-amplitude, 20px))); }
   }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
