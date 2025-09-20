@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.9 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.10 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -145,12 +145,23 @@
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
+    position: relative;
   }
   .char-btn-active {
     border-color: #6366f1; /* Indigo */
     transform: scale(1.1);
     background-color: #4f46e5 !important;
     color: white !important;
+  }
+  .effect-indicator {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 1px solid #1e293b;
   }
 </style>
 </head>
@@ -448,7 +459,7 @@
         controllerView = document.getElementById('controller-view');
 
   let currentSessionId = null, unsubscribe = null;
-  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
+  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [], charEffects: [] };
   let gridSizeState = 20;
   let selectedCharIndices = new Set();
   // 為不同模式建立獨立的字體大小狀態
@@ -467,7 +478,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, isCharEffecting: false, charEffects: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -511,6 +522,7 @@
    
     const chars = Array.from(settings.text);
     const hasValidCharColors = settings.isCharColoring && settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
+    const hasValidCharEffects = settings.isCharEffecting && settings.charEffects && settings.charEffects.length > 0 && settings.charEffects.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
@@ -559,12 +571,20 @@
             }
         }
         
-        // Apply global text effect animation to each span
         let effectAnimation = '';
-        if (settings.textEffect === 'blink') {
-            effectAnimation = 'blink-effect 1s step-end infinite';
-        } else if (settings.textEffect === 'jump') {
-            effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out infinite`;
+        if (hasValidCharEffects && settings.charEffects[index] && settings.charEffects[index] !== 'none') {
+            const charEffect = settings.charEffects[index];
+            if (charEffect === 'blink') {
+                effectAnimation = 'blink-effect 1s step-end infinite';
+            } else if (charEffect === 'jump') {
+                effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out infinite`;
+            }
+        } else if (!hasValidCharEffects && settings.textEffect !== 'none') {
+            if (settings.textEffect === 'blink') {
+                effectAnimation = 'blink-effect 1s step-end infinite';
+            } else if (settings.textEffect === 'jump') {
+                effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out infinite`;
+            }
         }
         span.style.animation = effectAnimation;
 
@@ -762,7 +782,8 @@
       textColorMode: settings.textColorMode, 
       bgColorMode: settings.bgColorMode, 
       gridColorMode: settings.gridColorMode,
-      charColors: settings.charColors || []
+      charColors: settings.charColors || [],
+      charEffects: settings.charEffects || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
    
@@ -805,6 +826,7 @@
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
+    document.getElementById('char-effect-toggle').checked = !!settings.isCharEffecting;
    
     // 初始化時，使用settings的值更新狀態，然後用新的UI函數來設定UI
     fillHeightPercentage = settings.fontSize;
@@ -850,31 +872,37 @@
     document.getElementById('jump-frequency-value').textContent = settings.jumpFrequency;
    
     toggleCharColoringUI(settings.isCharColoring, settings.text);
+    toggleCharEffectUI(settings.isCharEffecting, settings.text);
   }
 
   function toggleCharColoringUI(isActive, text) {
       document.getElementById('char-colorizer-wrapper').classList.toggle('hidden', !isActive);
-      // 當個性化開啟時，不再禁用全域顏色選擇，而是讓其作為預設/未指定顏色
-      // document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       
-      // 更新衝突項目的禁用狀態
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="rainbow"]').classList.toggle('control-disabled', isActive);
      
       if (isActive) {
           renderCharSelector(text);
-          // 如果目前選中的是衝突樣式，則切換回 normal
           const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
-              // 手動觸發一次更新以確保 UI 同步
               document.querySelector('.text-style-btn[data-style="normal"]').dispatchEvent(new Event('click'));
           }
       }
-      // 不再自動清除顏色，讓用戶決定
-      // else {
-      //     selectedCharIndices.clear();
-      // }
+  }
+
+  function toggleCharEffectUI(isActive, text) {
+      document.getElementById('char-effect-wrapper').classList.toggle('hidden', !isActive);
+      document.querySelector('.text-effect-btn[data-effect="none"]').parentElement.classList.toggle('control-disabled', isActive);
+      
+      if (isActive) {
+          renderCharEffectSelector(text);
+          const currentGlobalEffect = document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect;
+          if (currentGlobalEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn', 'effect', 'none');
+              document.querySelector('.text-effect-btn[data-effect="none"]').dispatchEvent(new Event('click'));
+          }
+      }
   }
 
 
@@ -907,6 +935,42 @@
           selector.appendChild(btn);
       });
   }
+  
+  function renderCharEffectSelector(text) {
+      const selector = document.getElementById('char-effect-selector');
+      selector.innerHTML = '';
+      selectedCharIndices.clear();
+      const chars = Array.from(text);
+
+      if (controllerState.charEffects.length !== chars.length) {
+          controllerState.charEffects = new Array(chars.length).fill(null);
+      }
+
+      chars.forEach((char, index) => {
+          const btn = document.createElement('button');
+          btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
+          btn.textContent = char;
+          btn.dataset.index = index;
+
+          const effect = controllerState.charEffects[index];
+          if (effect && effect !== 'none') {
+              const indicator = document.createElement('div');
+              indicator.className = 'effect-indicator';
+              btn.appendChild(indicator);
+          }
+          
+          btn.addEventListener('click', () => {
+              btn.classList.toggle('char-btn-active');
+              if (selectedCharIndices.has(index)) {
+                  selectedCharIndices.delete(index);
+              } else {
+                  selectedCharIndices.add(index);
+              }
+          });
+          selector.appendChild(btn);
+      });
+  }
+
 
   function setupControllerListeners(){
     const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider'];
@@ -917,9 +981,12 @@
             switch (id) {
                 case 'text-input':
                     if (document.getElementById('char-color-toggle').checked) {
-                        // 文字變動時，重設顏色陣列並重新渲染選擇器
                         controllerState.charColors = new Array(value.length).fill(null);
                         renderCharSelector(value);
+                    }
+                    if (document.getElementById('char-effect-toggle').checked) {
+                        controllerState.charEffects = new Array(value.length).fill(null);
+                        renderCharEffectSelector(value);
                     }
                     break;
                  case 'speed-slider': document.getElementById('speed-value').textContent = value; break;
@@ -946,9 +1013,25 @@
     });
    
     document.getElementById('char-color-toggle').addEventListener('change', (e) => {
-        toggleCharColoringUI(e.target.checked, document.getElementById('text-input').value);
+        const isActive = e.target.checked;
+        toggleCharColoringUI(isActive, document.getElementById('text-input').value);
+        if (isActive && document.getElementById('char-effect-toggle').checked) {
+            document.getElementById('char-effect-toggle').checked = false;
+            toggleCharEffectUI(false, document.getElementById('text-input').value);
+        }
         updateSession();
     });
+
+    document.getElementById('char-effect-toggle').addEventListener('change', (e) => {
+        const isActive = e.target.checked;
+        toggleCharEffectUI(isActive, document.getElementById('text-input').value);
+        if (isActive && document.getElementById('char-color-toggle').checked) {
+            document.getElementById('char-color-toggle').checked = false;
+            toggleCharColoringUI(false, document.getElementById('text-input').value);
+        }
+        updateSession();
+    });
+
 
     // --- 字體模式按鈕的專屬事件處理 ---
     document.querySelectorAll('.font-mode-btn').forEach(btn => {
@@ -1051,6 +1134,20 @@
     setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode', 'gradient');
     setupPicker('char-color-picker', 'color');
 
+    document.getElementById('char-effect-picker').addEventListener('click', (e) => {
+        const el = e.target.closest('.char-effect-btn');
+        if(el) {
+            const effect = el.dataset.effect;
+            document.querySelectorAll('#char-effect-picker .char-effect-btn').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            el.classList.replace('bg-gray-700', 'bg-indigo-600');
+            selectedCharIndices.forEach(index => {
+                controllerState.charEffects[index] = effect;
+            });
+            renderCharEffectSelector(document.getElementById('text-input').value);
+            updateSession();
+        }
+    });
+
     document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tabGroup = btn.closest('#color-tab, #grid-color-tab');
@@ -1066,7 +1163,9 @@
       fontSizeMode: currentFontSizeMode,
       scrollSpeed: document.getElementById('speed-slider').value,
       isCharColoring: document.getElementById('char-color-toggle').checked,
+      isCharEffecting: document.getElementById('char-effect-toggle').checked,
       charColors: controllerState.charColors,
+      charEffects: controllerState.charEffects,
       borderWidth: document.getElementById('border-width-slider').value,
       borderRadius: document.getElementById('border-radius-slider').value,
       textColorMode: controllerState.textColorMode,
