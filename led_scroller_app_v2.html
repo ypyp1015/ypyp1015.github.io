@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.2 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.3 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,7 @@
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+  @keyframes rainbow-text-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
 
   .marquee-text{
     font-size:var(--font-size,80px);
@@ -50,6 +51,11 @@
     background-size: 3px 3px;
     text-shadow: none !important;
     -webkit-text-stroke: 0;
+  }
+  .text-style-rainbow {
+    background-image: linear-gradient(90deg, #ff004e, #ffe848, #00ffef, #0047ff, #ff004e);
+    background-size: 200% 200%;
+    animation: rainbow-text-anim 4s linear infinite;
   }
 
   .display-screen{
@@ -345,6 +351,7 @@
           <button data-style="glow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 發光</button>
           <button data-style="outline" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">✏️ 邊框</button>
           <button data-style="dotted" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">⚫️ 點狀</button>
+          <button data-style="rainbow" class="text-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹漸層</button>
         </div>
       </div>
       <div id="outline-color-section" class="mb-6 hidden">
@@ -432,6 +439,7 @@
   const bgSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#EF4444','#F59E0B','#10B981','#3B82F6','#8B5CF6','#EC4899','#14B8A6','#F3F4F6'];
   const gridSolid16 = ['#374151', '#6B7280', '#9CA3AF', '#000000','#F59E0B','#EAB308','#10B981','#22C55E','#3B82F6','#6366F1','#A855F7','#EC4899','#EF4444','#9333EA','#22D3EE','#A3E635'];
   const gapSolid16 = ['#000000','#0B1220','#111827','#1F2937','#374151','#6B7280','#9CA3AF','#FFFFFF','#FFB703','#F59E0B','#22C55E','#3B82F6','#8B5CF6','#EC4899','#22D3EE','#A3E635'];
+  const outlineSolid = ['#FF3B30','#FFFFFF','#000000','#22C55E','#3B82F6','#F59E0B','#A855F7','#EC4899'];
 
   const gradients16 = [ 'linear-gradient(90deg,#F37335,#FDC830)','linear-gradient(90deg,#2193b0,#6dd5ed)', 'linear-gradient(90deg,#56ab2f,#a8e063)','linear-gradient(90deg,#e94057,#f27121)', 'linear-gradient(90deg,#4776E6,#8E54E9)','linear-gradient(90deg,#ff9966,#ff5e62)', 'linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#f953c6,#b91d73)', 'linear-gradient(90deg,#00c6ff,#0072ff)','linear-gradient(90deg,#43cea2,#185a9d)', 'linear-gradient(90deg,#ff7e5f,#feb47b)','linear-gradient(90deg,#36d1dc,#5b86e5)', 'linear-gradient(90deg,#c471f5,#fa71cd)','linear-gradient(90deg,#f00000,#dc281e)', 'linear-gradient(90deg,#bdc3c7,#2c3e50)','linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet)' ];
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
@@ -488,13 +496,14 @@
     textEl.style.fontSize = ''; // 清除殘留的 inline font-size 以避免鎖定
 
     // 步驟 1: 將全域文字樣式套用至容器元件
-    if (settings.textStyle === 'dotted') {
+    textEl.classList.remove('text-style-dotted', 'text-style-outline', 'text-style-glow', 'text-style-rainbow', 'gradient-text');
+
+    if (settings.textStyle === 'rainbow' && !settings.isCharColoring) {
+        textEl.classList.add('gradient-text', 'text-style-rainbow');
+    } else if (settings.textStyle === 'dotted' && !settings.isCharColoring) {
         textEl.classList.add('text-style-dotted');
-    } else if (settings.textStyle === 'outline' && !(hasValidCharColors && settings.isCharColoring)) {
-        textEl.classList.add('gradient-text', 'text-style-outline');
-        textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
     } else {
-        if (settings.textColorMode === 'gradient') {
+        if (settings.textColorMode === 'gradient' && !settings.isCharColoring) {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
@@ -505,24 +514,42 @@
         }
     }
 
+
     // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (hasValidCharColors && settings.isCharColoring) {
+    if (settings.isCharColoring) {
         chars.forEach((char, index) => {
             const span = document.createElement('span');
             span.textContent = char;
             const color = settings.charColors[index];
             if (color) {
-                // 此字元有自訂顏色，覆寫容器樣式
+                // 此字元有自訂顏色
                 span.style.color = color;
-                span.style.backgroundImage = 'none';
-                span.style.webkitBackgroundClip = 'initial';
-                span.style.backgroundClip = 'initial';
-                span.style.webkitTextFillColor = 'initial';
+                if(settings.textStyle === 'glow') {
+                  span.style.textShadow = `0 0 8px ${color}, 0 0 12px ${color}`;
+                }
+            } else {
+                // 此字元無自訂顏色，繼承全域樣式
+                if (settings.textStyle === 'outline') {
+                    span.classList.add('gradient-text', 'text-style-outline');
+                    span.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+                } else if (settings.textColorMode === 'gradient') {
+                    span.classList.add('gradient-text');
+                    span.style.backgroundImage = settings.gradientText;
+                } else {
+                    span.style.color = settings.textColor;
+                }
             }
-            // 若無顏色，span 將繼承父層的樣式 (漸層或純色)
             textEl.appendChild(span);
         });
+        // 如果是邊框模式，全域容器也要套用
+        if (settings.textStyle === 'outline') {
+            textEl.classList.add('text-style-outline');
+        }
     } else {
+        if (settings.textStyle === 'outline') {
+            textEl.classList.add('gradient-text', 'text-style-outline');
+            textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
+        }
         textEl.textContent = settings.text;
     }
    
@@ -734,7 +761,7 @@
     const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
     document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
-    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline' || (settings.isCharColoring && settings.charColors.some(c => c !== null)));
+    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline');
    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
@@ -762,13 +789,19 @@
   function toggleCharColoringUI(isActive, text) {
       document.getElementById('char-colorizer-wrapper').classList.toggle('hidden', !isActive);
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
-      document.querySelector('[data-style="outline"]').classList.toggle('control-disabled', isActive);
+      
+      // 更新衝突項目的禁用狀態
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
+      document.querySelector('[data-style="rainbow"]').classList.toggle('control-disabled', isActive);
      
       if (isActive) {
           renderCharSelector(text);
-          if (document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style.match(/outline|dotted/)) {
+          // 如果目前選中的是衝突樣式，則切換回 normal
+          const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
+          if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
+              // 手動觸發一次更新以確保 UI 同步
+              document.querySelector('.text-style-btn[data-style="normal"]').dispatchEvent(new Event('click'));
           }
       } else {
           selectedCharIndices.clear();
@@ -846,33 +879,17 @@
     });
 
     // --- 字體模式按鈕的專屬事件處理 ---
-    // 將其獨立出來以確保邏輯清晰，並解決狀態鎖定問題
     document.querySelectorAll('.font-mode-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             const newMode = target.dataset.mode;
-
-            // 1. 更新當前的模式狀態
             currentFontSizeMode = newMode;
-
-            // 2. 處理「填滿高度」的重設邏輯
-            // 根據您的要求，每次點選「填滿高度」時，都將佔比重設回 95%
             if (newMode === 'fitHeight') {
                 fillHeightPercentage = 95;
             }
-
-            // 3. "解鎖" 機制：更新UI以反應最新狀態
-            //    此函數會根據當前模式啟用/禁用對應的滑桿，
-            //    並從獨立變數中讀取正確的數值來還原滑桿位置。
-            //    這確保了從自動模式（填滿寬度/自動換行）切換回來時，
-            //    手動設定（高度佔比/字體大小）能夠正確恢復，不會被鎖定。
             updateFontSizeUI(newMode);
-
-            // 4. 更新按鈕的視覺樣式
             document.querySelectorAll('.font-mode-btn').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-
-            // 5. 保存設定並更新預覽
             updateSession();
         });
     });
@@ -883,12 +900,10 @@
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
             
-            // --- Update button visual state ---
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
 
-            // --- ADDED BACK: Logic to toggle advanced panels ---
             if (target.classList.contains('grid-style-btn')) {
                 const newGridStyle = target.dataset.grid;
                 const isGridEnabled = newGridStyle !== 'none';
@@ -901,19 +916,20 @@
                     document.getElementById('gap-controls').classList.toggle('hidden', currentBlendMode !== 'multiply');
                 }
             }
-
             if (target.classList.contains('border-style-btn')) {
                 const newBorderStyle = target.dataset.border;
                 document.getElementById('border-controls-section').classList.toggle('hidden', newBorderStyle === 'none');
             }
-
             if (target.classList.contains('blend-mode-btn')) {
                 const newBlendMode = target.dataset.blend;
                 const isGridActive = document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid !== 'none';
                 document.getElementById('gap-controls').classList.toggle('hidden', !(isGridActive && newBlendMode === 'multiply'));
             }
+            if (target.classList.contains('text-style-btn')) {
+                const newTextStyle = target.dataset.style;
+                document.getElementById('outline-color-section').classList.toggle('hidden', newTextStyle !== 'outline');
+            }
             
-            // --- Update session ---
             updateSession();
         });
     });
@@ -1021,10 +1037,47 @@
   function updatePreview(settings){
     applySettings({ textEl: document.getElementById('preview-marquee-text'), containerEl: document.getElementById('controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') }, settings, true);
   }
+  
+  function createCustomColorInput(pickerId, settingsKey, stateKey = null) {
+      const picker = document.getElementById(pickerId);
+      const inputWrap = document.createElement('div');
+      inputWrap.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-600 overflow-hidden cursor-pointer";
+      const colorInput = document.createElement('input');
+      colorInput.type = "color";
+      colorInput.className = "w-12 h-12 cursor-pointer border-none -translate-x-2 -translate-y-2";
+      colorInput.value = "#5588dd";
+      colorInput.title = "自選色碼";
+
+      colorInput.addEventListener('input', e => {
+          inputWrap.dataset.color = e.target.value;
+          picker.querySelectorAll('div').forEach(div => div.classList.remove('control-btn-active'));
+          inputWrap.classList.add('control-btn-active');
+          if (stateKey) {
+            controllerState[stateKey] = 'solid'; // Assuming custom color implies solid mode
+          }
+          updateSession();
+      });
+      inputWrap.appendChild(colorInput);
+      return inputWrap;
+  }
 
   function createPickers(){
-    const create = (id, palette, isGradient=false)=>{
+    const create = (id, palette, isGradient=false, hasCustomPicker=false)=>{
       const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
+      
+      if(hasCustomPicker) {
+        let settingsKey, stateKey = null;
+        if(id.includes('text-color')) { settingsKey = 'textColor'; stateKey = 'textColorMode'; }
+        if(id.includes('bg-color')) { settingsKey = 'backgroundColor'; stateKey = 'bgColorMode'; }
+        if(id.includes('grid-color')) { settingsKey = 'gridColor'; stateKey = 'gridColorMode'; }
+        if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
+        if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
+        if (id.includes('char-color')) { /* Special handling */ }
+        else if (settingsKey) {
+            picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
+        }
+      }
+
       palette.forEach((value)=>{
         const el = document.createElement('div');
         el.className = 'w-8 h-8 rounded-full cursor-pointer border-2 border-gray-600';
@@ -1033,39 +1086,36 @@
         picker.appendChild(el);
       });
     };
-    create('text-color-picker', solid16);
-    const textPicker = document.getElementById('text-color-picker');
-    const inputWrap = document.createElement('div');
-    inputWrap.className = "w-8 h-8 rounded-full flex items-center justify-center border-2 border-gray-600 overflow-hidden";
-    const colorInput = document.createElement('input');
-    colorInput.type = "color";
-    colorInput.className = "w-12 h-12 cursor-pointer border-none -translate-x-2 -translate-y-2";
-    colorInput.value = "#5588dd";
-    colorInput.title = "自選色碼";
-    colorInput.addEventListener('input', e=>{
-      inputWrap.dataset.color = e.target.value;
-      textPicker.querySelectorAll('div').forEach(div=>div.classList.remove('control-btn-active'));
-      inputWrap.classList.add('control-btn-active');
-      controllerState.textColorMode='solid';
-      updateSession();
-    });
-    inputWrap.appendChild(colorInput);
-    textPicker.appendChild(inputWrap);
-
-    create('bg-color-picker', bgSolid16);
-    create('grid-color-picker', gridSolid16);
-    create('gap-color-picker', gapSolid16);
-    create('outline-color-picker', ['#FF3B30','#FFFFFF','#000000','#22C55E','#3B82F6','#F59E0B','#A855F7','#EF4444']);
+    
+    create('text-color-picker', solid16, false, true);
+    create('bg-color-picker', bgSolid16, false, true);
+    create('grid-color-picker', gridSolid16, false, true);
+    create('gap-color-picker', gapSolid16, false, true);
+    create('outline-color-picker', outlineSolid, false, true);
+    
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
-    create('char-color-picker', solid16); // Create the new picker
+    create('char-color-picker', solid16, false, true); 
   }
 
   function updatePickerState(id, activeValue, prop){
+    let found = false;
     document.querySelectorAll(`#${id} > div`).forEach(div=>{
-      div.classList.toggle('control-btn-active', div.dataset[(prop||'color')]===activeValue);
+      const isActive = div.dataset[(prop||'color')] === activeValue;
+      div.classList.toggle('control-btn-active', isActive);
+      if(isActive) found = true;
     });
+
+    // If activeValue not in swatches, maybe it's a custom color
+    if (!found) {
+        const customPickerInput = document.querySelector(`#${id} input[type=color]`);
+        if (customPickerInput) {
+            customPickerInput.value = activeValue;
+            customPickerInput.parentElement.classList.add('control-btn-active');
+            customPickerInput.parentElement.dataset.color = activeValue;
+        }
+    }
   }
   function updateButtonGroupState(selector, dataAttr, value){
     document.querySelectorAll(selector).forEach(btn=>{
@@ -1093,5 +1143,4 @@
 </script>
 </body>
 </html>
-" and what I want to do is to "新增 彩虹漸層字 選項".
 
