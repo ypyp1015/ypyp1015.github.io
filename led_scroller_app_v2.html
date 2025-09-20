@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.12 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.13 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -849,6 +849,23 @@
       }
   }
 
+  function updateControlsVisibility(settings) {
+    // Jump controls
+    const showJumpControls = (settings.textEffect === 'jump' && !settings.isCharEffecting) || settings.isCharEffecting;
+    document.getElementById('jump-controls-section').classList.toggle('hidden', !showJumpControls);
+
+    // Outline color section
+    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+
+    // Grid controls
+    const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
+    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
+    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode === 'multiply'));
+
+    // Border controls
+    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
+  }
+
 
   function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
@@ -866,12 +883,6 @@
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
     document.getElementById('border-radius-value').textContent = settings.borderRadius;
-    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
-   
-    const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
-    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
-    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
-    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline');
    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
@@ -893,8 +904,7 @@
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     updateButtonGroupState('.text-effect-btn', 'effect', settings.textEffect || 'none');
-
-    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffect !== 'jump');
+    
     document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
     document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
     document.getElementById('jump-frequency-slider').value = settings.jumpFrequency;
@@ -902,6 +912,7 @@
    
     toggleCharColoringUI(settings.isCharColoring, settings.text);
     toggleCharEffectUI(settings.isCharEffecting, settings.text);
+    updateControlsVisibility(settings);
   }
 
   function toggleCharColoringUI(isActive, text) {
@@ -922,7 +933,7 @@
 
   function toggleCharEffectUI(isActive, text) {
       document.getElementById('char-effect-wrapper').classList.toggle('hidden', !isActive);
-      document.querySelector('.text-effect-btn[data-effect="none"]').parentElement.classList.toggle('control-disabled', isActive);
+      document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
       
       if (isActive) {
           renderCharEffectSelector(text);
@@ -1087,36 +1098,6 @@
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-
-            if (target.classList.contains('grid-style-btn')) {
-                const newGridStyle = target.dataset.grid;
-                const isGridEnabled = newGridStyle !== 'none';
-                document.getElementById('grid-advanced-section').classList.toggle('hidden', !isGridEnabled);
-                
-                if (!isGridEnabled) {
-                     document.getElementById('gap-controls').classList.add('hidden');
-                } else {
-                    const currentBlendMode = document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend;
-                    document.getElementById('gap-controls').classList.toggle('hidden', currentBlendMode !== 'multiply');
-                }
-            }
-            if (target.classList.contains('border-style-btn')) {
-                const newBorderStyle = target.dataset.border;
-                document.getElementById('border-controls-section').classList.toggle('hidden', newBorderStyle === 'none');
-            }
-            if (target.classList.contains('blend-mode-btn')) {
-                const newBlendMode = target.dataset.blend;
-                const isGridActive = document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid !== 'none';
-                document.getElementById('gap-controls').classList.toggle('hidden', !(isGridActive && newBlendMode === 'multiply'));
-            }
-            if (target.classList.contains('text-style-btn')) {
-                const newTextStyle = target.dataset.style;
-                document.getElementById('outline-color-section').classList.toggle('hidden', newTextStyle !== 'outline');
-            }
-            if (target.classList.contains('text-effect-btn')) {
-                const newEffect = target.dataset.effect;
-                document.getElementById('jump-controls-section').classList.toggle('hidden', newEffect !== 'jump');
-            }
             
             updateSession();
         });
@@ -1232,6 +1213,7 @@
   function updateSession() { 
       clearTimeout(updateTimeout);
       const settings = getSettings();
+      updateControlsVisibility(settings);
       updatePreview(settings);
       if (currentSessionId) { 
           setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
