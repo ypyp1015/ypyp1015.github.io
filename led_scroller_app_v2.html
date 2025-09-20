@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.11 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.12 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -382,23 +382,48 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      <div class="mb-6">
+      
+      <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label>
-        <div class="flex flex-wrap gap-3">
-          <button data-effect="none" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-          <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
-          <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+        <div id="global-text-effect-wrapper">
+            <div class="flex flex-wrap gap-3">
+                <button data-effect="none" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+            </div>
         </div>
-      </div>
-      <div id="jump-controls-section" class="mb-6 space-y-4 hidden p-4 bg-gray-900/50 rounded-lg">
-          <div>
-              <label for="jump-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍幅度: <span id="jump-amplitude-value">20</span>px</label>
-              <input id="jump-amplitude-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-          </div>
-          <div>
-              <label for="jump-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍頻率: <span id="jump-frequency-value">1.5</span>s</label>
-              <input id="jump-frequency-slider" type="range" min="0.5" max="5" step="0.1" value="1.5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-          </div>
+        <div id="jump-controls-section" class="mt-4 space-y-4 hidden">
+            <div>
+                <label for="jump-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍幅度: <span id="jump-amplitude-value">20</span>px</label>
+                <input id="jump-amplitude-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="jump-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍頻率: <span id="jump-frequency-value">1.5</span>s</label>
+                <input id="jump-frequency-slider" type="range" min="0.5" max="5" step="0.1" value="1.5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+        <div class="border-t border-gray-700 my-4"></div>
+        <div class="flex items-center justify-between">
+            <label class="block text-sm font-medium text-gray-300">個性化文字特效</label>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="char-effect-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+        </div>
+        <div id="char-effect-wrapper" class="hidden space-y-4 mt-4">
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
+                <div id="char-effect-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center"></div>
+            </div>
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字套用特效</label>
+                <div id="char-effect-picker" class="flex flex-wrap gap-3">
+                    <button data-effect="none" class="char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="blink" class="char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                    <button data-effect="jump" class="char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                </div>
+            </div>
+        </div>
       </div>
 
 
