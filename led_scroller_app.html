@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.8 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.20 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +20,14 @@
   @keyframes marquee-up { from{ transform:translateY(100vh);} to{ transform:translateY(-100%);} }
   @keyframes marquee-down { from{ transform:translateY(-100%);} to{ transform:translateY(100vh);} }
   @keyframes blink-effect { 50%{ opacity:0; } }
+  @keyframes jump-effect {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(calc(-1 * var(--jump-amplitude, 20px))); }
+  }
+  @keyframes wave-effect {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(calc(-1 * var(--wave-amplitude, 20px))); }
+  }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
   @keyframes rainbow-border-anim { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
@@ -141,12 +149,23 @@
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
+    position: relative;
   }
   .char-btn-active {
     border-color: #6366f1; /* Indigo */
     transform: scale(1.1);
     background-color: #4f46e5 !important;
     color: white !important;
+  }
+  .effect-indicator {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 1px solid #1e293b;
   }
 </style>
 </head>
@@ -211,31 +230,6 @@
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
      
-      <!-- 【新增】個別文字上色功能 -->
-      <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
-        <div class="flex items-center justify-between mb-4">
-            <label class="block text-sm font-medium text-gray-300">個性化文字顏色</label>
-            <label class="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" id="char-color-toggle" class="sr-only peer">
-              <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
-        </div>
-        <div id="char-colorizer-wrapper" class="hidden space-y-4">
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
-            <div id="char-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center">
-              <!-- Character buttons will be generated here -->
-            </div>
-          </div>
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字上色</label>
-            <div class="flex flex-wrap gap-3" id="char-color-picker">
-              <!-- Compact color picker for characters -->
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
@@ -367,16 +361,73 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      <div class="mb-6">
-        <label class="block mb-2 text-sm font-medium text-gray-300">文字特效</label>
-        <div class="flex flex-wrap gap-4">
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="blink-toggle" class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-            <span class="ml-3 text-sm font-medium text-gray-300">文字閃爍</span>
-          </label>
+      
+      <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
+        <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
+        <div id="global-text-effect-wrapper">
+            <div class="flex flex-wrap gap-3">
+                <button data-effect="none" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                <button data-effect="wave" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+            </div>
+        </div>
+        <div id="jump-controls-section" class="mt-4 space-y-4 hidden">
+            <div>
+                <label for="jump-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍幅度: <span id="jump-amplitude-value">20</span>px</label>
+                <input id="jump-amplitude-slider" type="range" min="5" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="jump-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍頻率: <span id="jump-frequency-value">1.5</span>s</label>
+                <input id="jump-frequency-slider" type="range" min="0.5" max="5" step="0.1" value="1.5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+             <div>
+                <label for="jump-wavelength-slider" class="block mb-2 text-sm font-medium text-gray-300">跳躍波長: <span id="jump-wavelength-value">0.10</span>s</label>
+                <input id="jump-wavelength-slider" type="range" min="0.05" max="0.5" step="0.01" value="0.10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+         <div id="wave-controls-section" class="mt-4 space-y-4 hidden">
+            <div>
+                <label for="wave-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">波浪幅度: <span id="wave-amplitude-value">10</span>px</label>
+                <input id="wave-amplitude-slider" type="range" min="2" max="50" value="10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="wave-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">波浪頻率: <span id="wave-frequency-value">2.0</span>s</label>
+                <input id="wave-frequency-slider" type="range" min="0.5" max="10" step="0.1" value="2.0" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+             <div>
+                <label for="wave-wavelength-slider" class="block mb-2 text-sm font-medium text-gray-300">波長: <span id="wave-wavelength-value">0.15</span>s</label>
+                <input id="wave-wavelength-slider" type="range" min="0.05" max="0.5" step="0.01" value="0.15" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
+        <div class="border-t border-gray-700 my-4"></div>
+        <div class="flex items-center justify-between">
+            <label class="block text-sm font-medium text-gray-300">個性化設定</label>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="char-personalization-toggle" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+        </div>
+        <div id="char-editor-wrapper" class="hidden space-y-4 mt-4">
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-400">1. 點選下方文字以選取</label>
+                <div id="char-personalization-selector" class="flex flex-wrap gap-2 p-2 bg-gray-700 rounded-md min-h-[44px] items-center"></div>
+            </div>
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-400">2. 為選取的文字上色</label>
+                 <div class="flex flex-wrap gap-3" id="personal-char-color-picker"></div>
+            </div>
+            <div>
+                <label class="block mb-2 text-sm font-medium text-gray-400">3. 為選取的文字套用特效</label>
+                <div id="personal-char-effect-picker" class="flex flex-wrap gap-3">
+                    <button data-effect="none" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="blink" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                    <button data-effect="jump" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                </div>
+            </div>
         </div>
       </div>
+
 
       <div id="border-style-wrapper" class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">背景邊框</label>
@@ -435,7 +486,7 @@
         controllerView = document.getElementById('controller-view');
 
   let currentSessionId = null, unsubscribe = null;
-  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [] };
+  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [], charEffects: [] };
   let gridSizeState = 20;
   let selectedCharIndices = new Set();
   // 為不同模式建立獨立的字體大小狀態
@@ -454,7 +505,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", isBlinking: false, textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", isCharColoring: false, charColors: [], updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -485,6 +536,8 @@
     root.style.setProperty('--inner-border-radius', `${innerRadius}px`);
     root.style.setProperty('--text-color', settings.textColor);
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
+    root.style.setProperty('--jump-amplitude', `${settings.jumpAmplitude}px`);
+    root.style.setProperty('--wave-amplitude', `${settings.waveAmplitude}px`);
    
     const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
     root.style.setProperty('--bg-color', backgroundValue);
@@ -496,31 +549,32 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
     const chars = Array.from(settings.text);
-    const hasValidCharColors = settings.charColors && settings.charColors.length > 0 && settings.charColors.length === chars.length;
+    const hasValidCharSettings = settings.isCharPersonalizing && settings.charColors && settings.charEffects && settings.charColors.length === chars.length && settings.charEffects.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
     textEl.style.color = '';
     textEl.style.backgroundImage = '';
     textEl.style.fontSize = ''; // 清除殘留的 inline font-size 以避免鎖定
+    textEl.style.animation = ''; // Clear parent animation before rebuilding
 
-    // 步驟 1: 將全域文字樣式套用至容器元件
+    // Global Styles that apply to the container
     textEl.classList.remove('text-style-dotted', 'text-style-outline', 'text-style-glow', 'text-style-rainbow', 'gradient-text');
 
-    if (settings.textStyle === 'rainbow') {
+    if (settings.textStyle === 'rainbow' && !settings.isCharPersonalizing) {
         textEl.classList.add('gradient-text', 'text-style-rainbow');
-    } else if (settings.textStyle === 'dotted') {
+    } else if (settings.textStyle === 'dotted' && !settings.isCharPersonalizing) {
         textEl.classList.add('text-style-dotted');
     } else if (settings.textStyle === 'outline') {
         textEl.classList.add('text-style-outline');
-        if (settings.textColorMode === 'gradient') {
+        if (settings.textColorMode === 'gradient' && !settings.isCharPersonalizing) {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
             textEl.style.color = settings.textColor;
         }
     } else { // Normal or Glow
-        if (settings.textColorMode === 'gradient') {
+        if (settings.textColorMode === 'gradient' && !settings.isCharPersonalizing) {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
@@ -531,25 +585,49 @@
         }
     }
 
-    // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (hasValidCharColors) {
-        textEl.innerHTML = ''; // Clear text to rebuild with spans
-        chars.forEach((char, index) => {
-            const span = document.createElement('span');
-            span.textContent = char;
-            const color = settings.charColors[index];
-            if (color) {
-                span.style.color = color; // This will become the 'currentColor' for the outline fill
+    // Always render with spans to handle effects and colors robustly
+    chars.forEach((char, index) => {
+        const span = document.createElement('span');
+        span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space
+        span.style.display = 'inline-block';
+
+        if (hasValidCharSettings) {
+            if (settings.charColors[index]) {
+                span.style.color = settings.charColors[index];
                 if (settings.textStyle === 'glow') {
-                    // Individual glow needs individual text-shadow
-                    span.style.textShadow = `0 0 8px ${color}, 0 0 12px ${color}`;
+                    span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
                 }
             }
-            textEl.appendChild(span);
-        });
-    } else {
-        textEl.textContent = settings.text;
-    }
+            const charEffect = settings.charEffects[index];
+            if (charEffect && charEffect !== 'none') {
+                if (charEffect === 'blink') {
+                    span.style.animation = 'blink-effect 1s step-end infinite';
+                } else if (charEffect === 'jump') {
+                    span.style.animation = `jump-effect ${settings.jumpFrequency}s ease-in-out infinite`;
+                } else if (charEffect === 'wave') {
+                    span.style.animation = `wave-effect ${settings.waveFrequency}s ease-in-out infinite`;
+                    span.style.animationDelay = `${index * settings.waveWavelength}s`;
+                }
+            }
+        } else {
+             // Apply global effect if not in personalization mode
+            let effectAnimation = '';
+            if (settings.textEffect !== 'none') {
+                if (settings.textEffect === 'blink') {
+                    effectAnimation = 'blink-effect 1s step-end infinite';
+                } else if (settings.textEffect === 'jump') {
+                    const delay = index * settings.jumpWavelength;
+                    effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
+                } else if (settings.textEffect === 'wave') {
+                    const delay = index * settings.waveWavelength;
+                    effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
+                }
+            }
+            span.style.animation = effectAnimation;
+        }
+        
+        textEl.appendChild(span);
+    });
    
     let finalFontSize = 100;
     const isVertical = ['marquee-up', 'marquee-down'].includes(settings.scrollDirection);
@@ -557,27 +635,23 @@
     switch(settings.fontSizeMode){
       case 'fitHeight': {
         const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = (isVertical || hasNewline) ? 'pre-wrap' : 'nowrap';
+        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
         
-        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
-        
-        if (isVertical || hasNewline) {
-            textEl.style.fontSize = finalFontSize + 'px';
-            if (textEl.scrollWidth > containerEl.clientWidth) {
-                let low = 1, high = finalFontSize, bestSize = 10;
-                for(let i=0; i<8; i++){
-                    let mid = Math.floor((low + high) / 2);
-                    textEl.style.fontSize = mid + 'px';
-                    if (textEl.scrollWidth <= containerEl.clientWidth) {
-                        bestSize = mid;
-                        low = mid + 1;
-                    } else {
-                        high = mid - 1;
-                    }
-                }
-                finalFontSize = bestSize;
+        let low = 1, high = 2000, bestSize = 10;
+        const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
+
+        for (let i = 0; i < 12; i++) {
+            let mid = Math.floor((low + high) / 2);
+            if (mid === 0) break; 
+            textEl.style.fontSize = mid + 'px';
+            if (textEl.scrollHeight <= targetHeight) {
+                bestSize = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
             }
         }
+        finalFontSize = bestSize;
         break;
       }
      
@@ -630,10 +704,10 @@
    
     root.style.setProperty('--font-size', `${finalFontSize}px`);
    
-    let anims = [];
-    if (settings.scrollDirection !== 'none') anims.push(`${settings.scrollDirection} ${Number(settings.scrollSpeed) || 10}s linear infinite`);
-    if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
-    textEl.style.animation = anims.join(', ');
+    // Scroll animation is applied to the parent container
+    if (settings.scrollDirection !== 'none') {
+      textEl.style.animation = `${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`;
+    }
 
     // --- Layout Logic ---
     // Reset first
@@ -645,15 +719,20 @@
     textEl.style.boxSizing = '';
 
     if (isVertical) {
+        textEl.style.whiteSpace = settings.text.includes('\n') ? 'pre' : 'nowrap'; // Respect newlines, otherwise single line
         wrapperEl.style.top = '0';
         wrapperEl.style.height = '100%';
         wrapperEl.style.transform = 'none';
-        wrapperEl.style.display = 'flex'; // Use flex to easily center the text block for animation start
+        wrapperEl.style.display = 'flex'; 
         wrapperEl.style.justifyContent = 'center';
-        textEl.style.width = '100%'; // Full width to allow wrapping
-        textEl.style.textAlign = 'center';
-        textEl.style.padding = '0 1rem'; // Add some padding so text doesn't touch the edges
-        textEl.style.boxSizing = 'border-box';
+        textEl.style.width = 'auto'; // Let width be natural for single line
+        if (settings.text.includes('\n')) {
+          textEl.style.width = '100%'; // Full width to allow wrapping for multiline
+          textEl.style.textAlign = 'center';
+          textEl.style.padding = '0 1rem'; 
+          textEl.style.boxSizing = 'border-box';
+        }
+
     } else {
         // Restore horizontal/none styles
         wrapperEl.style.top = '50%';
@@ -745,7 +824,8 @@
       textColorMode: settings.textColorMode, 
       bgColorMode: settings.bgColorMode, 
       gridColorMode: settings.gridColorMode,
-      charColors: settings.charColors || []
+      charColors: settings.charColors || [],
+      charEffects: settings.charEffects || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
    
@@ -782,13 +862,33 @@
       }
   }
 
+  function updateControlsVisibility(settings) {
+    // Jump controls
+    const showJumpControls = (settings.textEffect === 'jump' && !settings.isCharPersonalizing);
+    document.getElementById('jump-controls-section').classList.toggle('hidden', !showJumpControls);
+    
+    // Wave controls
+    const showWaveControls = (settings.textEffect === 'wave' && !settings.isCharPersonalizing);
+    document.getElementById('wave-controls-section').classList.toggle('hidden', !showWaveControls);
+
+    // Outline color section
+    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
+
+    // Grid controls
+    const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
+    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
+    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode === 'multiply'));
+
+    // Border controls
+    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
+  }
+
 
   function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
-    document.getElementById('blink-toggle').checked = !!settings.isBlinking;
-    document.getElementById('char-color-toggle').checked = !!settings.isCharColoring;
+    document.getElementById('char-personalization-toggle').checked = !!settings.isCharPersonalizing;
    
     // 初始化時，使用settings的值更新狀態，然後用新的UI函數來設定UI
     fillHeightPercentage = settings.fontSize;
@@ -799,12 +899,6 @@
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
     document.getElementById('border-radius-value').textContent = settings.borderRadius;
-    document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
-   
-    const gridOn = (settings.gridStyle && settings.gridStyle!=='none');
-    document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
-    document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode==='multiply'));
-    document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle!=='outline');
    
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
@@ -825,38 +919,52 @@
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
+    updateButtonGroupState('.text-effect-btn', 'effect', settings.textEffect || 'none');
+    
+    document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
+    document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
+    document.getElementById('jump-frequency-slider').value = settings.jumpFrequency;
+    document.getElementById('jump-frequency-value').textContent = settings.jumpFrequency;
+    document.getElementById('jump-wavelength-slider').value = settings.jumpWavelength;
+    document.getElementById('jump-wavelength-value').textContent = settings.jumpWavelength;
+
+    document.getElementById('wave-amplitude-slider').value = settings.waveAmplitude;
+    document.getElementById('wave-amplitude-value').textContent = settings.waveAmplitude;
+    document.getElementById('wave-frequency-slider').value = settings.waveFrequency;
+    document.getElementById('wave-frequency-value').textContent = settings.waveFrequency;
+    document.getElementById('wave-wavelength-slider').value = settings.waveWavelength;
+    document.getElementById('wave-wavelength-value').textContent = settings.waveWavelength;
    
-    toggleCharColoringUI(settings.isCharColoring, settings.text);
+    togglePersonalizationUI(settings.isCharPersonalizing, settings.text);
+    updateControlsVisibility(settings);
   }
 
-  function toggleCharColoringUI(isActive, text) {
-      document.getElementById('char-colorizer-wrapper').classList.toggle('hidden', !isActive);
-      // 當個性化開啟時，不再禁用全域顏色選擇，而是讓其作為預設/未指定顏色
-      // document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
+  function togglePersonalizationUI(isActive, text) {
+      document.getElementById('char-editor-wrapper').classList.toggle('hidden', !isActive);
       
-      // 更新衝突項目的禁用狀態
+      // Disable global controls when personalizing
+      document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
+      document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="rainbow"]').classList.toggle('control-disabled', isActive);
      
       if (isActive) {
-          renderCharSelector(text);
-          // 如果目前選中的是衝突樣式，則切換回 normal
+          renderPersonalizationSelector(text);
+          // Unset global styles/effects that conflict
           const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
-              // 手動觸發一次更新以確保 UI 同步
-              document.querySelector('.text-style-btn[data-style="normal"]').dispatchEvent(new Event('click'));
+          }
+          const currentGlobalEffect = document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect;
+          if (currentGlobalEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn', 'effect', 'none');
           }
       }
-      // 不再自動清除顏色，讓用戶決定
-      // else {
-      //     selectedCharIndices.clear();
-      // }
   }
 
 
-  function renderCharSelector(text) {
-      const selector = document.getElementById('char-selector');
+  function renderPersonalizationSelector(text) {
+      const selector = document.getElementById('char-personalization-selector');
       selector.innerHTML = '';
       selectedCharIndices.clear();
       const chars = Array.from(text);
@@ -864,15 +972,27 @@
       if (controllerState.charColors.length !== chars.length) {
           controllerState.charColors = new Array(chars.length).fill(null);
       }
+      if (controllerState.charEffects.length !== chars.length) {
+          controllerState.charEffects = new Array(chars.length).fill(null);
+      }
 
       chars.forEach((char, index) => {
           const btn = document.createElement('button');
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
           btn.textContent = char;
           btn.dataset.index = index;
+          
           if (controllerState.charColors[index]) {
             btn.style.backgroundColor = controllerState.charColors[index];
           }
+
+          const effect = controllerState.charEffects[index];
+          if (effect && effect !== 'none') {
+              const indicator = document.createElement('div');
+              indicator.className = 'effect-indicator';
+              btn.appendChild(indicator);
+          }
+          
           btn.addEventListener('click', () => {
               btn.classList.toggle('char-btn-active');
               if (selectedCharIndices.has(index)) {
@@ -884,19 +1004,19 @@
           selector.appendChild(btn);
       });
   }
-
+  
   function setupControllerListeners(){
-    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider'];
+    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider', 'jump-wavelength-slider', 'wave-amplitude-slider', 'wave-frequency-slider', 'wave-wavelength-slider'];
     debouncedInputs.forEach(id => {
         const el = document.getElementById(id);
         el && el.addEventListener('input', (e) => {
             const value = e.target.value;
             switch (id) {
                 case 'text-input':
-                    if (document.getElementById('char-color-toggle').checked) {
-                        // 文字變動時，重設顏色陣列並重新渲染選擇器
+                    if (document.getElementById('char-personalization-toggle').checked) {
                         controllerState.charColors = new Array(value.length).fill(null);
-                        renderCharSelector(value);
+                        controllerState.charEffects = new Array(value.length).fill(null);
+                        renderPersonalizationSelector(value);
                     }
                     break;
                  case 'speed-slider': document.getElementById('speed-value').textContent = value; break;
@@ -904,6 +1024,12 @@
                  case 'border-radius-slider': document.getElementById('border-radius-value').textContent = value; break;
                  case 'grid-size-slider': document.getElementById('grid-size-value').textContent = value; gridSizeState = value; break;
                  case 'gap-alpha-slider': document.getElementById('gap-alpha-value').textContent = parseFloat(value).toFixed(2); break;
+                 case 'jump-amplitude-slider': document.getElementById('jump-amplitude-value').textContent = value; break;
+                 case 'jump-frequency-slider': document.getElementById('jump-frequency-value').textContent = parseFloat(value).toFixed(1); break;
+                 case 'jump-wavelength-slider': document.getElementById('jump-wavelength-value').textContent = parseFloat(value).toFixed(2); break;
+                 case 'wave-amplitude-slider': document.getElementById('wave-amplitude-value').textContent = value; break;
+                 case 'wave-frequency-slider': document.getElementById('wave-frequency-value').textContent = parseFloat(value).toFixed(1); break;
+                 case 'wave-wavelength-slider': document.getElementById('wave-wavelength-value').textContent = parseFloat(value).toFixed(2); break;
             }
             updateSessionDebounced();
         });
@@ -919,13 +1045,13 @@
         document.getElementById('fixed-size-value').textContent = fixedFontSize;
         updateSessionDebounced();
     });
-
-    document.getElementById('blink-toggle').addEventListener('change', updateSession);
    
-    document.getElementById('char-color-toggle').addEventListener('change', (e) => {
-        toggleCharColoringUI(e.target.checked, document.getElementById('text-input').value);
+    document.getElementById('char-personalization-toggle').addEventListener('change', (e) => {
+        const isActive = e.target.checked;
+        togglePersonalizationUI(isActive, document.getElementById('text-input').value);
         updateSession();
     });
+
 
     // --- 字體模式按鈕的專屬事件處理 ---
     document.querySelectorAll('.font-mode-btn').forEach(btn => {
@@ -944,7 +1070,7 @@
     });
 
     // --- 其他一般按鈕群組的事件處理 ---
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-effect-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
@@ -952,32 +1078,6 @@
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-
-            if (target.classList.contains('grid-style-btn')) {
-                const newGridStyle = target.dataset.grid;
-                const isGridEnabled = newGridStyle !== 'none';
-                document.getElementById('grid-advanced-section').classList.toggle('hidden', !isGridEnabled);
-                
-                if (!isGridEnabled) {
-                     document.getElementById('gap-controls').classList.add('hidden');
-                } else {
-                    const currentBlendMode = document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend;
-                    document.getElementById('gap-controls').classList.toggle('hidden', currentBlendMode !== 'multiply');
-                }
-            }
-            if (target.classList.contains('border-style-btn')) {
-                const newBorderStyle = target.dataset.border;
-                document.getElementById('border-controls-section').classList.toggle('hidden', newBorderStyle === 'none');
-            }
-            if (target.classList.contains('blend-mode-btn')) {
-                const newBlendMode = target.dataset.blend;
-                const isGridActive = document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid !== 'none';
-                document.getElementById('gap-controls').classList.toggle('hidden', !(isGridActive && newBlendMode === 'multiply'));
-            }
-            if (target.classList.contains('text-style-btn')) {
-                const newTextStyle = target.dataset.style;
-                document.getElementById('outline-color-section').classList.toggle('hidden', newTextStyle !== 'outline');
-            }
             
             updateSession();
         });
@@ -989,23 +1089,16 @@
           const el = e.target.closest(`[data-${mode}]`);
           if (el) {
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
-                  const toggle = document.getElementById('char-color-toggle');
-                  // 只有當用戶明確選擇新的全域顏色時，才清除個性化顏色
-                  if (controllerState.charColors.length > 0) {
-                      controllerState.charColors = [];
-                  }
-                  if (toggle.checked) {
-                      toggle.checked = false;
-                      toggleCharColoringUI(false, document.getElementById('text-input').value);
-                  }
+                  document.getElementById('char-personalization-toggle').checked = false;
+                  togglePersonalizationUI(false, document.getElementById('text-input').value);
               }
 
-              if (pickerId === 'char-color-picker') {
+              if (pickerId === 'personal-char-color-picker') {
                   const color = el.dataset[mode];
                   selectedCharIndices.forEach(index => {
                       controllerState.charColors[index] = color;
                   });
-                  renderCharSelector(document.getElementById('text-input').value);
+                  renderPersonalizationSelector(document.getElementById('text-input').value);
               } else {
                   if (stateKey) controllerState[stateKey] = stateValue;
                   updatePickerState(pickerId, el.dataset[mode], mode);
@@ -1022,7 +1115,21 @@
     setupPicker('text-gradient-picker', 'gradient', 'textColorMode', 'gradient');
     setupPicker('bg-gradient-picker', 'gradient', 'bgColorMode', 'gradient');
     setupPicker('grid-gradient-picker', 'gradient', 'gridColorMode', 'gradient');
-    setupPicker('char-color-picker', 'color');
+    setupPicker('personal-char-color-picker', 'color');
+
+    document.getElementById('personal-char-effect-picker').addEventListener('click', (e) => {
+        const el = e.target.closest('.personal-char-effect-btn');
+        if(el) {
+            const effect = el.dataset.effect;
+            document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            el.classList.replace('bg-gray-700', 'bg-indigo-600');
+            selectedCharIndices.forEach(index => {
+                controllerState.charEffects[index] = effect;
+            });
+            renderPersonalizationSelector(document.getElementById('text-input').value);
+            updateSession();
+        }
+    });
 
     document.querySelectorAll('#color-tab .tab-btn, #grid-color-tab .grid-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1038,9 +1145,9 @@
       text: document.getElementById('text-input').value,
       fontSizeMode: currentFontSizeMode,
       scrollSpeed: document.getElementById('speed-slider').value,
-      isBlinking: document.getElementById('blink-toggle').checked,
-      isCharColoring: document.getElementById('char-color-toggle').checked,
+      isCharPersonalizing: document.getElementById('char-personalization-toggle').checked,
       charColors: controllerState.charColors,
+      charEffects: controllerState.charEffects,
       borderWidth: document.getElementById('border-width-slider').value,
       borderRadius: document.getElementById('border-radius-slider').value,
       textColorMode: controllerState.textColorMode,
@@ -1065,6 +1172,13 @@
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
+      textEffect: document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
+      jumpAmplitude: document.getElementById('jump-amplitude-slider').value,
+      jumpFrequency: document.getElementById('jump-frequency-slider').value,
+      jumpWavelength: document.getElementById('jump-wavelength-slider').value,
+      waveAmplitude: document.getElementById('wave-amplitude-slider').value,
+      waveFrequency: document.getElementById('wave-frequency-slider').value,
+      waveWavelength: document.getElementById('wave-wavelength-slider').value,
     };
     return settings;
   }
@@ -1075,6 +1189,7 @@
   function updateSession() { 
       clearTimeout(updateTimeout);
       const settings = getSettings();
+      updateControlsVisibility(settings);
       updatePreview(settings);
       if (currentSessionId) { 
           setDoc(doc(db,"sessions",currentSessionId), { ...settings, updatedAt: serverTimestamp() }, { merge:true });
@@ -1101,22 +1216,22 @@
       colorInput.title = "自選色碼";
 
       colorInput.addEventListener('input', e => {
-          inputWrap.dataset.color = e.target.value;
+          const color = e.target.value;
+          inputWrap.dataset.color = color;
           picker.querySelectorAll('div').forEach(div => div.classList.remove('control-btn-active'));
           inputWrap.classList.add('control-btn-active');
-          if (stateKey) {
-            controllerState[stateKey] = 'solid'; // Assuming custom color implies solid mode
-          }
-           // When a custom global color is chosen, it should override individual colors.
-          if (pickerId === 'text-color-picker') {
-              const toggle = document.getElementById('char-color-toggle');
-              if (toggle.checked) {
-                 // Don't clear colors, just deactivate the toggle
-                 toggle.checked = false;
-                 toggleCharColoringUI(false, document.getElementById('text-input').value);
-              } else {
-                 controllerState.charColors = [];
+          
+          if(pickerId === 'personal-char-color-picker'){
+             selectedCharIndices.forEach(index => {
+                controllerState.charColors[index] = color;
+             });
+             renderPersonalizationSelector(document.getElementById('text-input').value);
+          } else {
+              if (stateKey) {
+                controllerState[stateKey] = 'solid';
               }
+              document.getElementById('char-personalization-toggle').checked = false;
+              togglePersonalizationUI(false, document.getElementById('text-input').value);
           }
           updateSession();
       });
@@ -1136,21 +1251,7 @@
         if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
         if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
         
-        if (id.includes('char-color')) { 
-            // Special handling for char-color picker, it does not set a global setting directly.
-            const customColorEl = createCustomColorInput(id, null, null);
-            customColorEl.querySelector('input').addEventListener('input', e => {
-                const color = e.target.value;
-                selectedCharIndices.forEach(index => {
-                    controllerState.charColors[index] = color;
-                });
-                renderCharSelector(document.getElementById('text-input').value);
-                updateSession();
-            });
-            picker.appendChild(customColorEl);
-        } else if (settingsKey) {
-            picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
-        }
+        picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
       }
 
       palette.forEach((value)=>{
@@ -1171,7 +1272,7 @@
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
-    create('char-color-picker', solid16, false, true); 
+    create('personal-char-color-picker', solid16, false, true); 
   }
 
   function updatePickerState(id, activeValue, prop){
