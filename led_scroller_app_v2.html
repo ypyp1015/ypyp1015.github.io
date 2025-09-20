@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.44 (Stable)</title>
+<title>遠端遙控 LED 跑馬燈 v22.1.45 (Stable)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -846,20 +846,44 @@
         updateSession();
     });
 
-    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .font-mode-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
+    // --- 字體模式按鈕的專屬事件處理 ---
+    // 將其獨立出來以確保邏輯清晰，並解決狀態鎖定問題
+    document.querySelectorAll('.font-mode-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const target = e.currentTarget;
+            const newMode = target.dataset.mode;
+
+            // 1. 更新當前的模式狀態
+            currentFontSizeMode = newMode;
+
+            // 2. 處理「填滿高度」的重設邏輯
+            // 根據您的要求，每次點選「填滿高度」時，都將佔比重設回 95%
+            if (newMode === 'fitHeight') {
+                fillHeightPercentage = 95;
+            }
+
+            // 3. "解鎖" 機制：更新UI以反應最新狀態
+            //    此函數會根據當前模式啟用/禁用對應的滑桿，
+            //    並從獨立變數中讀取正確的數值來還原滑桿位置。
+            //    這確保了從自動模式（填滿寬度/自動換行）切換回來時，
+            //    手動設定（高度佔比/字體大小）能夠正確恢復，不會被鎖定。
+            updateFontSizeUI(newMode);
+
+            // 4. 更新按鈕的視覺樣式
+            document.querySelectorAll('.font-mode-btn').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            target.classList.replace('bg-gray-700', 'bg-indigo-600');
+
+            // 5. 保存設定並更新預覽
+            updateSession();
+        });
+    });
+
+    // --- 其他一般按鈕群組的事件處理 ---
+    document.querySelectorAll('.direction-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
             
-            if (target.classList.contains('font-mode-btn')) {
-                const newMode = target.dataset.mode;
-                currentFontSizeMode = newMode;
-                if (newMode === 'fitHeight') {
-                    fillHeightPercentage = 95; // 每次點選都重設為95
-                }
-                updateFontSizeUI(newMode);
-            }
-           
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
@@ -867,6 +891,7 @@
             updateSession();
         });
     });
+
 
     const setupPicker = (pickerId, mode, stateKey, stateValue) => {
       document.getElementById(pickerId).addEventListener('click', (e) => {
