@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.5 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.8 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +17,8 @@
 
   @keyframes marquee-left { from{ transform:translateX(100vw);} to{ transform:translateX(-100%);} }
   @keyframes marquee-right{ from{ transform:translateX(-100%);} to{ transform:translateX(100vw);} }
+  @keyframes marquee-up { from{ transform:translateY(100vh);} to{ transform:translateY(-100%);} }
+  @keyframes marquee-down { from{ transform:translateY(-100%);} to{ transform:translateY(100vh);} }
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
@@ -126,6 +128,7 @@
     outline:1px solid #374151; 
     box-sizing:border-box; 
     isolation: isolate;
+    overflow: hidden; /* Prevent visual overflow */
   }
   .controller-preview .marquee-text{ font-size:var(--font-size,40px); }
 
@@ -270,10 +273,12 @@
       </div>
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">滾動方向</label>
-        <div class="grid grid-cols-3 gap-3">
-          <button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg">← 向左</button>
-          <button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg">❚❚ 靜止</button>
-          <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg">向右 →</button>
+        <div class="grid grid-cols-5 gap-2 text-center">
+          <button data-direction="marquee-left" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">←</button>
+          <button data-direction="marquee-up" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">↑</button>
+          <button data-direction="none" class="direction-btn p-3 bg-indigo-600 rounded-lg text-base">❚❚</button>
+          <button data-direction="marquee-down" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">↓</button>
+          <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">→</button>
         </div>
       </div>
 
@@ -547,27 +552,31 @@
     }
    
     let finalFontSize = 100;
+    const isVertical = ['marquee-up', 'marquee-down'].includes(settings.scrollDirection);
    
     switch(settings.fontSizeMode){
       case 'fitHeight': {
         const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
-        if (hasNewline) {
-            let low = 1, high = 2000, bestSize = 10;
-            const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
-            for(let i=0; i<10; i++){ // Binary search for best font size
-              let mid = Math.floor((low + high) / 2);
-              textEl.style.fontSize = mid + 'px';
-              if(textEl.scrollHeight <= targetHeight) {
-                bestSize = mid;
-                low = mid + 1;
-              } else {
-                high = mid - 1;
-              }
+        textEl.style.whiteSpace = (isVertical || hasNewline) ? 'pre-wrap' : 'nowrap';
+        
+        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
+        
+        if (isVertical || hasNewline) {
+            textEl.style.fontSize = finalFontSize + 'px';
+            if (textEl.scrollWidth > containerEl.clientWidth) {
+                let low = 1, high = finalFontSize, bestSize = 10;
+                for(let i=0; i<8; i++){
+                    let mid = Math.floor((low + high) / 2);
+                    textEl.style.fontSize = mid + 'px';
+                    if (textEl.scrollWidth <= containerEl.clientWidth) {
+                        bestSize = mid;
+                        low = mid + 1;
+                    } else {
+                        high = mid - 1;
+                    }
+                }
+                finalFontSize = bestSize;
             }
-            finalFontSize = bestSize;
-        } else {
-            finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
         }
         break;
       }
@@ -626,13 +635,36 @@
     if (settings.isBlinking) anims.push('blink-effect 1s step-end infinite');
     textEl.style.animation = anims.join(', ');
 
-    wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
-    if (settings.scrollDirection === 'none') {
-        wrapperEl.style.alignItems = 'center';
-        wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
+    // --- Layout Logic ---
+    // Reset first
+    wrapperEl.style.alignItems = '';
+    wrapperEl.style.justifyContent = '';
+    textEl.style.textAlign = '';
+    textEl.style.width = '';
+    textEl.style.padding = '';
+    textEl.style.boxSizing = '';
+
+    if (isVertical) {
+        wrapperEl.style.top = '0';
+        wrapperEl.style.height = '100%';
+        wrapperEl.style.transform = 'none';
+        wrapperEl.style.display = 'flex'; // Use flex to easily center the text block for animation start
+        wrapperEl.style.justifyContent = 'center';
+        textEl.style.width = '100%'; // Full width to allow wrapping
+        textEl.style.textAlign = 'center';
+        textEl.style.padding = '0 1rem'; // Add some padding so text doesn't touch the edges
+        textEl.style.boxSizing = 'border-box';
     } else {
-        wrapperEl.style.alignItems = '';
-        wrapperEl.style.justifyContent = '';
+        // Restore horizontal/none styles
+        wrapperEl.style.top = '50%';
+        wrapperEl.style.height = 'auto';
+        wrapperEl.style.transform = 'translateY(-50%)';
+        
+        wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
+        if (settings.scrollDirection === 'none') {
+            wrapperEl.style.alignItems = 'center';
+            wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
+        }
     }
    
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
