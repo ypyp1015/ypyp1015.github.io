@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.4 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.5 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -549,10 +549,28 @@
     let finalFontSize = 100;
    
     switch(settings.fontSizeMode){
-      case 'fitHeight':
-        textEl.style.whiteSpace = 'nowrap';
-        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
+      case 'fitHeight': {
+        const hasNewline = settings.text.includes('\n');
+        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
+        if (hasNewline) {
+            let low = 1, high = 2000, bestSize = 10;
+            const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
+            for(let i=0; i<10; i++){ // Binary search for best font size
+              let mid = Math.floor((low + high) / 2);
+              textEl.style.fontSize = mid + 'px';
+              if(textEl.scrollHeight <= targetHeight) {
+                bestSize = mid;
+                low = mid + 1;
+              } else {
+                high = mid - 1;
+              }
+            }
+            finalFontSize = bestSize;
+        } else {
+            finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
+        }
         break;
+      }
      
       case 'fitWidth': {
         const hasNewline = settings.text.includes('\n');
@@ -781,7 +799,8 @@
 
   function toggleCharColoringUI(isActive, text) {
       document.getElementById('char-colorizer-wrapper').classList.toggle('hidden', !isActive);
-      document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
+      // 當個性化開啟時，不再禁用全域顏色選擇，而是讓其作為預設/未指定顏色
+      // document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       
       // 更新衝突項目的禁用狀態
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
@@ -796,10 +815,13 @@
               // 手動觸發一次更新以確保 UI 同步
               document.querySelector('.text-style-btn[data-style="normal"]').dispatchEvent(new Event('click'));
           }
-      } else {
-          selectedCharIndices.clear();
       }
+      // 不再自動清除顏色，讓用戶決定
+      // else {
+      //     selectedCharIndices.clear();
+      // }
   }
+
 
   function renderCharSelector(text) {
       const selector = document.getElementById('char-selector');
@@ -840,6 +862,8 @@
             switch (id) {
                 case 'text-input':
                     if (document.getElementById('char-color-toggle').checked) {
+                        // 文字變動時，重設顏色陣列並重新渲染選擇器
+                        controllerState.charColors = new Array(value.length).fill(null);
                         renderCharSelector(value);
                     }
                     break;
@@ -934,8 +958,10 @@
           if (el) {
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
                   const toggle = document.getElementById('char-color-toggle');
-                  // 清除個性化顏色並關閉編輯模式
-                  controllerState.charColors = [];
+                  // 只有當用戶明確選擇新的全域顏色時，才清除個性化顏色
+                  if (controllerState.charColors.length > 0) {
+                      controllerState.charColors = [];
+                  }
                   if (toggle.checked) {
                       toggle.checked = false;
                       toggleCharColoringUI(false, document.getElementById('text-input').value);
@@ -1052,10 +1078,12 @@
            // When a custom global color is chosen, it should override individual colors.
           if (pickerId === 'text-color-picker') {
               const toggle = document.getElementById('char-color-toggle');
-              controllerState.charColors = [];
               if (toggle.checked) {
-                  toggle.checked = false;
-                  toggleCharColoringUI(false, document.getElementById('text-input').value);
+                 // Don't clear colors, just deactivate the toggle
+                 toggle.checked = false;
+                 toggleCharColoringUI(false, document.getElementById('text-input').value);
+              } else {
+                 controllerState.charColors = [];
               }
           }
           updateSession();
@@ -1158,5 +1186,4 @@
 </script>
 </body>
 </html>
-" and what I want to do is to "新增 彩虹漸層字 選項".
 
