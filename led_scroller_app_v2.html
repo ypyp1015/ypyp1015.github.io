@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.3 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.4 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,9 +40,13 @@
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
-    -webkit-text-fill-color: transparent;
+    -webkit-text-fill-color: currentColor; /* 使用 currentColor 讓 span 的 color 生效 */
     paint-order: stroke fill;
     text-shadow: none !important;
+  }
+  /* 當 outline 與 gradient-text 並存時，才讓文字透明 */
+  .gradient-text.text-style-outline {
+     -webkit-text-fill-color: transparent;
   }
   .text-style-dotted {
     background-clip: text; -webkit-background-clip: text;
@@ -498,12 +502,20 @@
     // 步驟 1: 將全域文字樣式套用至容器元件
     textEl.classList.remove('text-style-dotted', 'text-style-outline', 'text-style-glow', 'text-style-rainbow', 'gradient-text');
 
-    if (settings.textStyle === 'rainbow' && !settings.isCharColoring) {
+    if (settings.textStyle === 'rainbow') {
         textEl.classList.add('gradient-text', 'text-style-rainbow');
-    } else if (settings.textStyle === 'dotted' && !settings.isCharColoring) {
+    } else if (settings.textStyle === 'dotted') {
         textEl.classList.add('text-style-dotted');
-    } else {
-        if (settings.textColorMode === 'gradient' && !settings.isCharColoring) {
+    } else if (settings.textStyle === 'outline') {
+        textEl.classList.add('text-style-outline');
+        if (settings.textColorMode === 'gradient') {
+            textEl.classList.add('gradient-text');
+            textEl.style.backgroundImage = settings.gradientText;
+        } else {
+            textEl.style.color = settings.textColor;
+        }
+    } else { // Normal or Glow
+        if (settings.textColorMode === 'gradient') {
             textEl.classList.add('gradient-text');
             textEl.style.backgroundImage = settings.gradientText;
         } else {
@@ -514,42 +526,23 @@
         }
     }
 
-
     // 步驟 2: 填入文字內容，並在需要時套用個別樣式
-    if (settings.isCharColoring) {
+    if (hasValidCharColors) {
+        textEl.innerHTML = ''; // Clear text to rebuild with spans
         chars.forEach((char, index) => {
             const span = document.createElement('span');
             span.textContent = char;
             const color = settings.charColors[index];
             if (color) {
-                // 此字元有自訂顏色
-                span.style.color = color;
-                if(settings.textStyle === 'glow') {
-                  span.style.textShadow = `0 0 8px ${color}, 0 0 12px ${color}`;
-                }
-            } else {
-                // 此字元無自訂顏色，繼承全域樣式
-                if (settings.textStyle === 'outline') {
-                    span.classList.add('gradient-text', 'text-style-outline');
-                    span.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-                } else if (settings.textColorMode === 'gradient') {
-                    span.classList.add('gradient-text');
-                    span.style.backgroundImage = settings.gradientText;
-                } else {
-                    span.style.color = settings.textColor;
+                span.style.color = color; // This will become the 'currentColor' for the outline fill
+                if (settings.textStyle === 'glow') {
+                    // Individual glow needs individual text-shadow
+                    span.style.textShadow = `0 0 8px ${color}, 0 0 12px ${color}`;
                 }
             }
             textEl.appendChild(span);
         });
-        // 如果是邊框模式，全域容器也要套用
-        if (settings.textStyle === 'outline') {
-            textEl.classList.add('text-style-outline');
-        }
     } else {
-        if (settings.textStyle === 'outline') {
-            textEl.classList.add('gradient-text', 'text-style-outline');
-            textEl.style.backgroundImage = (settings.textColorMode === 'gradient') ? settings.gradientText : `linear-gradient(90deg, ${settings.textColor}, ${settings.textColor})`;
-        }
         textEl.textContent = settings.text;
     }
    
@@ -941,11 +934,12 @@
           if (el) {
               if (pickerId === 'text-color-picker' || pickerId === 'text-gradient-picker') {
                   const toggle = document.getElementById('char-color-toggle');
+                  // 清除個性化顏色並關閉編輯模式
+                  controllerState.charColors = [];
                   if (toggle.checked) {
                       toggle.checked = false;
-                      toggle.dispatchEvent(new Event('change'));
+                      toggleCharColoringUI(false, document.getElementById('text-input').value);
                   }
-                  controllerState.charColors = [];
               }
 
               if (pickerId === 'char-color-picker') {
@@ -1055,6 +1049,15 @@
           if (stateKey) {
             controllerState[stateKey] = 'solid'; // Assuming custom color implies solid mode
           }
+           // When a custom global color is chosen, it should override individual colors.
+          if (pickerId === 'text-color-picker') {
+              const toggle = document.getElementById('char-color-toggle');
+              controllerState.charColors = [];
+              if (toggle.checked) {
+                  toggle.checked = false;
+                  toggleCharColoringUI(false, document.getElementById('text-input').value);
+              }
+          }
           updateSession();
       });
       inputWrap.appendChild(colorInput);
@@ -1072,8 +1075,20 @@
         if(id.includes('grid-color')) { settingsKey = 'gridColor'; stateKey = 'gridColorMode'; }
         if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
         if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
-        if (id.includes('char-color')) { /* Special handling */ }
-        else if (settingsKey) {
+        
+        if (id.includes('char-color')) { 
+            // Special handling for char-color picker, it does not set a global setting directly.
+            const customColorEl = createCustomColorInput(id, null, null);
+            customColorEl.querySelector('input').addEventListener('input', e => {
+                const color = e.target.value;
+                selectedCharIndices.forEach(index => {
+                    controllerState.charColors[index] = color;
+                });
+                renderCharSelector(document.getElementById('text-input').value);
+                updateSession();
+            });
+            picker.appendChild(customColorEl);
+        } else if (settingsKey) {
             picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
         }
       }
@@ -1108,7 +1123,7 @@
     });
 
     // If activeValue not in swatches, maybe it's a custom color
-    if (!found) {
+    if (!found && activeValue && !activeValue.startsWith('linear-gradient')) {
         const customPickerInput = document.querySelector(`#${id} input[type=color]`);
         if (customPickerInput) {
             customPickerInput.value = activeValue;
@@ -1143,4 +1158,5 @@
 </script>
 </body>
 </html>
+" and what I want to do is to "新增 彩虹漸層字 選項".
 
