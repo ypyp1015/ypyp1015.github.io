@@ -247,11 +247,11 @@
       <!-- Font Size Controls -->
       <div id="fit-height-controls" class="mb-2 space-y-2 transition-opacity">
           <label for="fit-height-slider" class="block text-sm font-medium text-gray-300">高度佔比: <span id="fit-height-value">95</span>%</label>
-          <input id="fit-height-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:opacity-50">
+          <input id="fit-height-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
       </div>
-      <div id="fixed-size-controls" class="mb-6 space-y-2 transition-opacity">
+      <div id="fixed-size-controls" class="mb-6 space-y-2 transition-opacity hidden">
           <label for="fixed-size-slider" class="block text-sm font-medium text-gray-300">字體大小: <span id="fixed-size-value">100</span>px</label>
-          <input id="fixed-size-slider" type="range" min="10" max="500" value="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer disabled:opacity-50">
+          <input id="fixed-size-slider" type="range" min="10" max="500" value="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
       </div>
 
       <div class="mb-6">
@@ -693,29 +693,25 @@
   function updateFontSizeUI(mode) {
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
-      const fitHeightSlider = document.getElementById('fit-height-slider');
-      const fixedSizeSlider = document.getElementById('fixed-size-slider');
+      
+      // 先全部隱藏
+      fitHeightControls.classList.add('hidden');
+      fixedSizeControls.classList.add('hidden');
 
-      // 根據儲存的狀態更新UI數值
-      document.getElementById('fit-height-value').textContent = fillHeightPercentage;
-      fitHeightSlider.value = fillHeightPercentage;
-      document.getElementById('fixed-size-value').textContent = fixedFontSize;
-      fixedSizeSlider.value = fixedFontSize;
-
-      // 根據當前模式決定哪個滑桿是啟用的
-      fitHeightControls.style.opacity = '0.4';
-      fitHeightSlider.disabled = true;
-      fixedSizeControls.style.opacity = '0.4';
-      fixedSizeSlider.disabled = true;
-
+      // 根據模式顯示對應的選項
       if (mode === 'fitHeight') {
-          fitHeightControls.style.opacity = '1';
-          fitHeightSlider.disabled = false;
+          fitHeightControls.classList.remove('hidden');
+          const slider = document.getElementById('fit-height-slider');
+          slider.value = fillHeightPercentage;
+          document.getElementById('fit-height-value').textContent = fillHeightPercentage;
       } else if (mode === 'fixed') {
-          fixedSizeControls.style.opacity = '1';
-          fixedSizeSlider.disabled = false;
+          fixedSizeControls.classList.remove('hidden');
+          const slider = document.getElementById('fixed-size-slider');
+          slider.value = fixedFontSize;
+          document.getElementById('fixed-size-value').textContent = fixedFontSize;
       }
   }
+
 
   function updateControllerUI(settings){
     document.getElementById('text-input').value = settings.text;
@@ -1097,4 +1093,5 @@
 </script>
 </body>
 </html>
+" and what I want to do is to "新增 彩虹漸層字 選項".
 
