@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.10 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.11 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -681,16 +681,20 @@
     textEl.style.boxSizing = '';
 
     if (isVertical) {
-        textEl.style.whiteSpace = 'pre-wrap'; // Allow wrapping for vertical scroll
+        textEl.style.whiteSpace = settings.text.includes('\n') ? 'pre' : 'nowrap'; // Respect newlines, otherwise single line
         wrapperEl.style.top = '0';
         wrapperEl.style.height = '100%';
         wrapperEl.style.transform = 'none';
         wrapperEl.style.display = 'flex'; 
         wrapperEl.style.justifyContent = 'center';
-        textEl.style.width = '100%'; 
-        textEl.style.textAlign = 'center';
-        textEl.style.padding = '0 1rem'; 
-        textEl.style.boxSizing = 'border-box';
+        textEl.style.width = 'auto'; // Let width be natural for single line
+        if (settings.text.includes('\n')) {
+          textEl.style.width = '100%'; // Full width to allow wrapping for multiline
+          textEl.style.textAlign = 'center';
+          textEl.style.padding = '0 1rem'; 
+          textEl.style.boxSizing = 'border-box';
+        }
+
     } else {
         // Restore horizontal/none styles
         wrapperEl.style.top = '50%';
