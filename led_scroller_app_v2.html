@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.14 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.15 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1030,20 +1030,12 @@
     document.getElementById('char-color-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
         toggleCharColoringUI(isActive, document.getElementById('text-input').value);
-        if (isActive && document.getElementById('char-effect-toggle').checked) {
-            document.getElementById('char-effect-toggle').checked = false;
-            toggleCharEffectUI(false, document.getElementById('text-input').value);
-        }
         updateSession();
     });
 
     document.getElementById('char-effect-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
         toggleCharEffectUI(isActive, document.getElementById('text-input').value);
-        if (isActive && document.getElementById('char-color-toggle').checked) {
-            document.getElementById('char-color-toggle').checked = false;
-            toggleCharColoringUI(false, document.getElementById('text-input').value);
-        }
         updateSession();
     });
 
@@ -1332,5 +1324,4 @@
 </script>
 </body>
 </html>
-" selected. I want you to make the following changes to the selected code: 刪除舊的文字特效區塊
 
