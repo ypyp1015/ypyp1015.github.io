@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.1.50 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.2 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -887,10 +887,37 @@
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
             
+            // --- Update button visual state ---
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
+
+            // --- ADDED BACK: Logic to toggle advanced panels ---
+            if (target.classList.contains('grid-style-btn')) {
+                const newGridStyle = target.dataset.grid;
+                const isGridEnabled = newGridStyle !== 'none';
+                document.getElementById('grid-advanced-section').classList.toggle('hidden', !isGridEnabled);
+                
+                if (!isGridEnabled) {
+                     document.getElementById('gap-controls').classList.add('hidden');
+                } else {
+                    const currentBlendMode = document.querySelector('.blend-mode-btn.bg-indigo-600')?.dataset.blend;
+                    document.getElementById('gap-controls').classList.toggle('hidden', currentBlendMode !== 'multiply');
+                }
+            }
+
+            if (target.classList.contains('border-style-btn')) {
+                const newBorderStyle = target.dataset.border;
+                document.getElementById('border-controls-section').classList.toggle('hidden', newBorderStyle === 'none');
+            }
+
+            if (target.classList.contains('blend-mode-btn')) {
+                const newBlendMode = target.dataset.blend;
+                const isGridActive = document.querySelector('.grid-style-btn.bg-indigo-600')?.dataset.grid !== 'none';
+                document.getElementById('gap-controls').classList.toggle('hidden', !(isGridActive && newBlendMode === 'multiply'));
+            }
             
+            // --- Update session ---
             updateSession();
         });
     });
