@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.7 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.8 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,6 +128,7 @@
     outline:1px solid #374151; 
     box-sizing:border-box; 
     isolation: isolate;
+    overflow: hidden; /* Prevent visual overflow */
   }
   .controller-preview .marquee-text{ font-size:var(--font-size,40px); }
 
@@ -556,25 +557,27 @@
     switch(settings.fontSizeMode){
       case 'fitHeight': {
         const hasNewline = settings.text.includes('\n');
-        // If there's a newline, use 'pre' to respect it. If not, use 'nowrap'.
-        // Vertical scroll should not force wrapping.
-        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
+        textEl.style.whiteSpace = (isVertical || hasNewline) ? 'pre-wrap' : 'nowrap';
         
-        let low = 1, high = 2000, bestSize = 10;
-        const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
-
-        for (let i = 0; i < 12; i++) { // Binary search for precision
-            let mid = Math.floor((low + high) / 2);
-            if (mid === 0) break; 
-            textEl.style.fontSize = mid + 'px';
-            if (textEl.scrollHeight <= targetHeight) {
-                bestSize = mid;
-                low = mid + 1;
-            } else {
-                high = mid - 1;
+        finalFontSize = containerEl.clientHeight * (settings.fontSize / 100);
+        
+        if (isVertical || hasNewline) {
+            textEl.style.fontSize = finalFontSize + 'px';
+            if (textEl.scrollWidth > containerEl.clientWidth) {
+                let low = 1, high = finalFontSize, bestSize = 10;
+                for(let i=0; i<8; i++){
+                    let mid = Math.floor((low + high) / 2);
+                    textEl.style.fontSize = mid + 'px';
+                    if (textEl.scrollWidth <= containerEl.clientWidth) {
+                        bestSize = mid;
+                        low = mid + 1;
+                    } else {
+                        high = mid - 1;
+                    }
+                }
+                finalFontSize = bestSize;
             }
         }
-        finalFontSize = bestSize;
         break;
       }
      
