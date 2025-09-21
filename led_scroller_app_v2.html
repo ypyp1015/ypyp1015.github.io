@@ -655,6 +655,19 @@
         textEl.appendChild(span);
     });
    
+    // [BUG FIX] Reset layout-related styles before calculating font size.
+    // This ensures a consistent measurement environment, preventing incorrect
+    // font sizes when switching between horizontal and vertical scroll modes.
+    wrapperEl.style.top = '50%';
+    wrapperEl.style.height = 'auto';
+    wrapperEl.style.transform = 'translateY(-50%)';
+    wrapperEl.style.display = 'block';
+    wrapperEl.style.alignItems = '';
+    wrapperEl.style.justifyContent = '';
+    textEl.style.width = '';
+    textEl.style.padding = '';
+    textEl.style.boxSizing = '';
+
     let finalFontSize = 100;
     const isVertical = ['marquee-up', 'marquee-down'].includes(settings.scrollDirection);
    
