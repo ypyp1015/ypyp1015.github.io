@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.19 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.20 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -694,7 +694,14 @@
             let mid = Math.floor((low + high) / 2);
             if (mid === 0) break; 
             textEl.style.fontSize = mid + 'px';
-            if (textEl.scrollHeight <= targetHeight) {
+            
+            // 【修改】當文字有手動換行時，除了要符合指定的高度，也要確保其寬度不會超出螢幕。
+            let fits = textEl.scrollHeight <= targetHeight;
+            if (hasNewline) {
+                fits = fits && (textEl.scrollWidth <= containerEl.clientWidth);
+            }
+
+            if (fits) {
                 bestSize = mid;
                 low = mid + 1;
             } else {
@@ -714,6 +721,7 @@
           let mid = Math.floor((low + high) / 2);
           textEl.style.fontSize = mid + 'px';
           
+          // 【優化】此處邏輯已符合需求：當有換行時，會同時檢查寬高是否都符合容器。
           let fits = textEl.scrollWidth <= containerEl.clientWidth;
           if (hasNewline) {
             fits = fits && (textEl.scrollHeight <= containerEl.clientHeight);
@@ -1558,3 +1566,4 @@
 </script>
 </body>
 </html>
+
