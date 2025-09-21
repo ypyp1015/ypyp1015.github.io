@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.22 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.25 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,8 +21,13 @@
   @keyframes marquee-down { from{ transform:translateY(-100%);} to{ transform:translateY(100vh);} }
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes jump-effect {
-    0%, 20%, 40%, 100% { transform: translateY(0); }
-    10%, 30% { transform: translateY(calc(-0.3 * var(--jump-amplitude, 20px))); }
+    /* Grounded states */
+    0%, 20%, 40%, 100% { transform: scaleY(1); }
+    /* First small bounce (squash down) */
+    10% { transform: scaleY(0.8); }
+    /* Second small bounce (squash down) */
+    30% { transform: scaleY(0.8); }
+    /* Big jump up (translate) */
     70% { transform: translateY(calc(-1 * var(--jump-amplitude, 20px))); }
   }
   @keyframes wave-effect {
@@ -805,28 +810,32 @@
         textEffect
     } = settings;
 
+    // Reset transform-origin before applying new effect
+    span.style.transformOrigin = '';
+
     if (hasValidCharSettings) {
-        if (charColors[index]) {
-            span.style.color = charColors[index];
-            if (textStyle === 'glow') {
-                span.style.textShadow = `0 0 8px ${charColors[index]}, 0 0 12px ${charColors[index]}`;
+        if (settings.charColors[index]) {
+            span.style.color = settings.charColors[index];
+            if (settings.textStyle === 'glow') {
+                span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
             }
         }
-        const charEffect = charEffects[index];
+        const charEffect = settings.charEffects[index];
         if (charEffect && charEffect !== 'none') {
             if (charEffect === 'blink') {
                 span.style.animation = 'blink-effect 1s step-end infinite';
             } else if (charEffect === 'jump') {
-                const amp = charAmplitudes[index] != null ? charAmplitudes[index] : jumpAmplitude;
-                const freq = charFrequencies[index] != null ? charFrequencies[index] : jumpFrequency;
-                const wave = charWavelengths[index] != null ? charWavelengths[index] : jumpWavelength;
+                span.style.transformOrigin = 'bottom';
+                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
+                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
+                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
                 span.style.setProperty('--jump-amplitude', `${amp}px`);
                 const delay = index * wave;
                 span.style.animation = `jump-effect ${freq}s ease-in-out ${delay}s infinite`;
             } else if (charEffect === 'wave') {
-                const amp = charAmplitudes[index] != null ? charAmplitudes[index] : waveAmplitude;
-                const freq = charFrequencies[index] != null ? charFrequencies[index] : waveFrequency;
-                const wave = charWavelengths[index] != null ? charWavelengths[index] : waveWavelength;
+                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
+                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
+                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
                 span.style.setProperty('--wave-amplitude', `${amp}px`);
                 const delay = index * wave;
                 span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
@@ -835,15 +844,16 @@
     } else {
          // Apply global effect if not in personalization mode
         let effectAnimation = '';
-        if (textEffect !== 'none') {
-            if (textEffect === 'blink') {
+        if (settings.textEffect !== 'none') {
+            if (settings.textEffect === 'blink') {
                 effectAnimation = 'blink-effect 1s step-end infinite';
-            } else if (textEffect === 'jump') {
-                const delay = index * jumpWavelength;
-                effectAnimation = `jump-effect ${jumpFrequency}s ease-in-out ${delay}s infinite`;
-            } else if (textEffect === 'wave') {
-                const delay = index * waveWavelength;
-                effectAnimation = `wave-effect ${waveFrequency}s ease-in-out ${delay}s infinite`;
+            } else if (settings.textEffect === 'jump') {
+                span.style.transformOrigin = 'bottom';
+                const delay = index * settings.jumpWavelength;
+                effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
+            } else if (settings.textEffect === 'wave') {
+                const delay = index * settings.waveWavelength;
+                effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
             }
         }
         span.style.animation = effectAnimation;
@@ -1579,4 +1589,6 @@
 </html>
 
 
+
+"
 
