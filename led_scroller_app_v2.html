@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.28 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.29 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -389,12 +389,20 @@
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
         <div id="global-text-effect-wrapper">
-            <div class="flex flex-wrap gap-3">
-                <button data-effect="none" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
-                <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                <button data-effect="wave" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                 <button data-effect="heartbeat" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+            <div class="mb-3">
+                <label class="block mb-1 text-xs text-gray-400">可疊加效果</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="blink" data-group="additive" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                </div>
+            </div>
+            <div>
+                <label class="block mb-1 text-xs text-gray-400">主要效果 (擇一)</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="none" data-group="main" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="jump" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                    <button data-effect="wave" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                    <button data-effect="heartbeat" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                </div>
             </div>
         </div>
         <div id="jump-controls-section" class="mt-4 space-y-4 hidden">
@@ -454,12 +462,22 @@
             </div>
             <div>
                 <label class="block mb-2 text-sm font-medium text-gray-400">3. 為選取的文字套用特效</label>
-                <div id="personal-char-effect-picker" class="flex flex-wrap gap-3">
-                    <button data-effect="none" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                    <button data-effect="blink" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
-                    <button data-effect="jump" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                    <button data-effect="wave" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                    <button data-effect="heartbeat" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                <div id="personal-char-effect-picker">
+                    <div class="mb-3">
+                        <label class="block mb-1 text-xs text-gray-400">可疊加效果</label>
+                        <div class="flex flex-wrap gap-3">
+                            <button data-effect="blink" data-group="additive" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-gray-400">主要效果 (擇一)</label>
+                        <div class="flex flex-wrap gap-3">
+                            <button data-effect="none" data-group="main" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                            <button data-effect="jump" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                            <button data-effect="wave" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                            <button data-effect="heartbeat" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="personal-effect-sliders" class="hidden pt-2 space-y-4">
@@ -558,7 +576,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", textEffectBlink: false, jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -823,68 +841,47 @@
   }
 
   function applySpanEffects(span, settings, index, hasValidCharSettings) {
-    const {
-        charColors, textStyle, charEffects, 
-        charAmplitudes, jumpAmplitude, charFrequencies, jumpFrequency,
-        charWavelengths, jumpWavelength, waveAmplitude, waveFrequency, waveWavelength,
-        heartbeatAmplitude, heartbeatFrequency, textEffect
-    } = settings;
-
-    // Reset transform-origin before applying new effect
     span.style.transformOrigin = '';
+    let animationStrings = [];
+    let charEffectSettings = (hasValidCharSettings && settings.charEffects[index]) ? settings.charEffects[index] : null;
 
-    if (hasValidCharSettings) {
-        if (settings.charColors[index]) {
-            span.style.color = settings.charColors[index];
-            if (settings.textStyle === 'glow') {
-                span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
-            }
-        }
-        const charEffect = settings.charEffects[index];
-        if (charEffect && charEffect !== 'none') {
-            if (charEffect === 'blink') {
-                span.style.animation = 'blink-effect 1s step-end infinite';
-            } else if (charEffect === 'jump') {
-                span.style.transformOrigin = 'bottom';
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
-                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
-                span.style.setProperty('--jump-amplitude', `${amp}px`);
-                const delay = index * wave;
-                span.style.animation = `jump-effect ${freq}s ease-in-out ${delay}s infinite`;
-            } else if (charEffect === 'wave') {
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
-                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
-                span.style.setProperty('--wave-amplitude', `${amp}px`);
-                const delay = index * wave;
-                span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
-            } else if (charEffect === 'heartbeat') {
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
-                span.style.setProperty('--heartbeat-amplitude', amp);
-                span.style.animation = `heartbeat-effect ${freq}s ease-in-out infinite`;
-            }
-        }
-    } else {
-         // Apply global effect if not in personalization mode
-        let effectAnimation = '';
-        if (settings.textEffect !== 'none') {
-            if (settings.textEffect === 'blink') {
-                effectAnimation = 'blink-effect 1s step-end infinite';
-            } else if (settings.textEffect === 'jump') {
-                span.style.transformOrigin = 'bottom';
-                const delay = index * settings.jumpWavelength;
-                effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
-            } else if (settings.textEffect === 'wave') {
-                const delay = index * settings.waveWavelength;
-                effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
-            } else if (settings.textEffect === 'heartbeat') {
-                 effectAnimation = `heartbeat-effect ${settings.heartbeatFrequency}s ease-in-out infinite`;
-            }
-        }
-        span.style.animation = effectAnimation;
+    let mainEffectToApply = charEffectSettings ? charEffectSettings.main : settings.textEffect;
+    let blinkToApply = charEffectSettings ? charEffectSettings.blink : settings.textEffectBlink;
+
+    if (blinkToApply) {
+        animationStrings.push('blink-effect 1s step-end infinite');
     }
+
+    if (mainEffectToApply === 'jump') {
+        span.style.transformOrigin = 'bottom';
+        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
+        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
+        const wave = charEffectSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
+        span.style.setProperty('--jump-amplitude', `${amp}px`);
+        const delay = index * wave;
+        animationStrings.push(`jump-effect ${freq}s ease-in-out ${delay}s infinite`);
+    } else if (mainEffectToApply === 'wave') {
+        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
+        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
+        const wave = charEffectSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
+        span.style.setProperty('--wave-amplitude', `${amp}px`);
+        const delay = index * wave;
+        animationStrings.push(`wave-effect ${freq}s ease-in-out ${delay}s infinite`);
+    } else if (mainEffectToApply === 'heartbeat') {
+        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
+        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
+        span.style.setProperty('--heartbeat-amplitude', amp);
+        animationStrings.push(`heartbeat-effect ${freq}s ease-in-out infinite`);
+    }
+
+    if (hasValidCharSettings && settings.charColors[index]) {
+        span.style.color = settings.charColors[index];
+        if (settings.textStyle === 'glow') {
+            span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
+        }
+    }
+    
+    span.style.animation = animationStrings.join(', ');
   }
 
   function setupDisplayListeners(){
@@ -973,9 +970,10 @@
   }
 
   function updateControlsVisibility(settings) {
-    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffect !== 'jump' || settings.isCharPersonalizing);
-    document.getElementById('wave-controls-section').classList.toggle('hidden', settings.textEffect !== 'wave' || settings.isCharPersonalizing);
-    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', settings.textEffect !== 'heartbeat' || settings.isCharPersonalizing);
+    const mainEffect = settings.textEffect;
+    document.getElementById('jump-controls-section').classList.toggle('hidden', mainEffect !== 'jump' || settings.isCharPersonalizing);
+    document.getElementById('wave-controls-section').classList.toggle('hidden', mainEffect !== 'wave' || settings.isCharPersonalizing);
+    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', mainEffect !== 'heartbeat' || settings.isCharPersonalizing);
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
     const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
@@ -1019,7 +1017,13 @@
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-    updateButtonGroupState('.text-effect-btn', 'effect', settings.textEffect || 'none');
+    
+    // Update effect buttons
+    updateButtonGroupState('.text-effect-btn[data-group="main"]', 'effect', settings.textEffect || 'none');
+    const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
+    const isBlinkActive = !!settings.textEffectBlink;
+    blinkBtn.classList.toggle('bg-indigo-600', isBlinkActive);
+    blinkBtn.classList.toggle('bg-gray-700', !isBlinkActive);
     
     document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
     document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
@@ -1060,9 +1064,14 @@
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
           }
-          const currentGlobalEffect = document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect;
+          const currentGlobalEffect = document.querySelector('.text-effect-btn[data-group="main"].bg-indigo-600')?.dataset.effect;
           if (currentGlobalEffect !== 'none') {
-              updateButtonGroupState('.text-effect-btn', 'effect', 'none');
+              updateButtonGroupState('.text-effect-btn[data-group="main"]', 'effect', 'none');
+          }
+          if (document.querySelector('.text-effect-btn[data-group="additive"].bg-indigo-600')) {
+             const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
+             blinkBtn.classList.remove('bg-indigo-600');
+             blinkBtn.classList.add('bg-gray-700');
           }
       } else {
         document.getElementById('personal-effect-sliders').classList.add('hidden');
@@ -1111,7 +1120,8 @@
           // Visual indicator logic (check if any char in the block has an effect)
           let hasEffect = false;
           for (let i = block.startIndex; i <= block.endIndex; i++) {
-              if (controllerState.charEffects[i] && controllerState.charEffects[i] !== 'none') {
+              const effects = controllerState.charEffects[i];
+              if (effects && (effects.main !== 'none' || effects.blink)) {
                   hasEffect = true;
                   break;
               }
@@ -1138,59 +1148,64 @@
   }
 
   function updatePersonalEffectPickerUI() {
-    const buttons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn');
-    buttons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    const mainButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="main"]');
+    const blinkButton = document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="blink"]');
+    
+    mainButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    blinkButton.classList.replace('bg-indigo-600', 'bg-gray-700');
 
     if (selectedBlockIndices.size === 0) {
         document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
         return;
     }
 
-    const firstBlockIndex = selectedBlockIndices.values().next().value;
+    const firstBlockIndex = Array.from(selectedBlockIndices)[0];
     const firstBlock = textBlocks[firstBlockIndex];
     if (!firstBlock) return;
+    
+    const firstCharEffects = controllerState.charEffects[firstBlock.startIndex] || { main: 'none', blink: false };
+    let isMainConsistent = true;
+    let isBlinkConsistent = true;
 
-    const firstEffect = controllerState.charEffects[firstBlock.startIndex] || 'none';
-
-    let isConsistent = true;
     for (const blockIndex of selectedBlockIndices) {
         const block = textBlocks[blockIndex];
-        if (block && (controllerState.charEffects[block.startIndex] || 'none') !== firstEffect) {
-            isConsistent = false;
-            break;
+        for (let i = block.startIndex; i <= block.endIndex; i++) {
+            const currentEffects = controllerState.charEffects[i] || { main: 'none', blink: false };
+            if (currentEffects.main !== firstCharEffects.main) isMainConsistent = false;
+            if (currentEffects.blink !== firstCharEffects.blink) isBlinkConsistent = false;
         }
     }
 
-    const effectToActivate = isConsistent ? firstEffect : 'none';
-    const activeButton = document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="${effectToActivate}"]`);
-    if (activeButton) {
-        activeButton.classList.replace('bg-gray-700', 'bg-indigo-600');
+    if (isMainConsistent) {
+        document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="${firstCharEffects.main}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
+    } else {
+         document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="none"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
+    }
+
+    if (isBlinkConsistent && firstCharEffects.blink) {
+        blinkButton.classList.replace('bg-gray-700', 'bg-indigo-600');
     }
   }
 
   function updatePersonalEffectSlidersUI() {
     const controls = document.getElementById('personal-effect-sliders');
-    let showSliders = false;
     let effectType = '';
 
     if (selectedBlockIndices.size > 0) {
-        const firstBlockIndex = selectedBlockIndices.values().next().value;
+        const firstBlockIndex = Array.from(selectedBlockIndices)[0];
         const block = textBlocks[firstBlockIndex];
         if (block) {
-            const firstCharEffect = controllerState.charEffects[block.startIndex];
-            if (['jump', 'wave', 'heartbeat'].includes(firstCharEffect)) {
-                showSliders = true;
-                effectType = firstCharEffect;
-            }
+            effectType = (controllerState.charEffects[block.startIndex] || {}).main || 'none';
         }
     }
-    controls.classList.toggle('hidden', !showSliders);
+    
+    controls.classList.toggle('hidden', !['jump', 'wave', 'heartbeat'].includes(effectType));
 
-    if (showSliders) {
+    if (['jump', 'wave', 'heartbeat'].includes(effectType)) {
         document.getElementById('personal-wavelength-wrapper').style.display = (effectType === 'heartbeat') ? 'none' : 'block';
         const ampUnit = (effectType === 'heartbeat') ? '' : 'px';
 
-        const firstBlockIndex = selectedBlockIndices.values().next().value;
+        const firstBlockIndex = Array.from(selectedBlockIndices)[0];
         const firstBlock = textBlocks[firstBlockIndex];
         const startIndex = firstBlock.startIndex;
 
@@ -1351,7 +1366,7 @@
     });
 
     // --- 其他一般按鈕群組的事件處理 ---
-    document.querySelectorAll('.direction-btn, .orientation-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-effect-btn').forEach(btn => {
+    document.querySelectorAll('.direction-btn, .orientation-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
@@ -1360,6 +1375,25 @@
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
             
+            updateSession();
+        });
+    });
+
+    // --- 特效按鈕群組的專屬事件處理 ---
+    document.querySelectorAll('.text-effect-btn[data-group="main"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.currentTarget.classList.contains('control-disabled')) return;
+            document.querySelectorAll('.text-effect-btn[data-group="main"]').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+            updateSession();
+        });
+    });
+
+    document.querySelectorAll('.text-effect-btn[data-group="additive"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.currentTarget.classList.contains('control-disabled')) return;
+            e.currentTarget.classList.toggle('bg-indigo-600');
+            e.currentTarget.classList.toggle('bg-gray-700');
             updateSession();
         });
     });
@@ -1407,15 +1441,18 @@
         const el = e.target.closest('.personal-char-effect-btn');
         if(el) {
             const effect = el.dataset.effect;
+            const group = el.dataset.group;
+
             selectedBlockIndices.forEach(blockIndex => {
                 const block = textBlocks[blockIndex];
                 if (block) {
                     for (let i = block.startIndex; i <= block.endIndex; i++) {
-                        controllerState.charEffects[i] = effect;
-                        if (effect === 'none' || effect === 'blink') {
-                            controllerState.charAmplitudes[i] = null;
-                            controllerState.charFrequencies[i] = null;
-                            controllerState.charWavelengths[i] = null;
+                        if (!controllerState.charEffects[i]) controllerState.charEffects[i] = {main: 'none', blink: false};
+                        
+                        if (group === 'main') {
+                           controllerState.charEffects[i].main = effect;
+                        } else if (group === 'additive') {
+                           controllerState.charEffects[i].blink = !controllerState.charEffects[i].blink;
                         }
                     }
                 }
@@ -1437,6 +1474,9 @@
   }
 
   function getSettings(){
+    const mainEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="main"].bg-indigo-600')?.dataset.effect || 'none';
+    const blinkEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-effect="blink"].bg-indigo-600') != null;
+
     const settings = {
       text: document.getElementById('text-input').value,
       fontSizeMode: currentFontSizeMode,
@@ -1472,7 +1512,8 @@
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
-      textEffect: document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
+      textEffect: mainEffect,
+      textEffectBlink: blinkEffect,
       jumpAmplitude: document.getElementById('jump-amplitude-slider').value,
       jumpFrequency: document.getElementById('jump-frequency-slider').value,
       jumpWavelength: document.getElementById('jump-wavelength-slider').value,
