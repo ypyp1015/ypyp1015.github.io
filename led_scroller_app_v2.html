@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.21 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.22 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -533,7 +533,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -613,62 +613,43 @@
         }
     }
 
-    // Always render with spans to handle effects and colors robustly
-    chars.forEach((char, index) => {
-        const span = document.createElement('span');
-        span.textContent = char === ' ' ? '\u00A0' : char; // Use non-breaking space
-        span.style.display = 'inline-block';
+    // 【修正】重構文字渲染邏輯以正確處理換行
+    if (settings.fontSizeMode === 'multiline') {
+        // 對於「自動換行」模式，使用舊方法搭配 pre-wrap 讓瀏覽器自動處理換行
+        textEl.style.whiteSpace = 'pre-wrap';
+        chars.forEach((char, index) => {
+            const span = document.createElement('span');
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            span.style.display = 'inline-block';
+            applySpanEffects(span, settings, index, hasValidCharSettings);
+            textEl.appendChild(span);
+        });
+    } else {
+        // 對於其他模式，我們手動為每一行建立一個 div 容器來確保換行符 `\n` 生效
+        textEl.style.whiteSpace = 'normal'; // 重設容器的 whiteSpace
+        let currentLine = document.createElement('div');
+        currentLine.style.whiteSpace = 'nowrap'; // 確保單行內不自動換行
+        textEl.appendChild(currentLine);
 
-        if (hasValidCharSettings) {
-            if (settings.charColors[index]) {
-                span.style.color = settings.charColors[index];
-                if (settings.textStyle === 'glow') {
-                    span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
-                }
+        chars.forEach((char, index) => {
+            if (char === '\n') {
+                currentLine = document.createElement('div');
+                currentLine.style.whiteSpace = 'nowrap';
+                textEl.appendChild(currentLine);
+                return; // 換行後處理下一個字元
             }
-            const charEffect = settings.charEffects[index];
-            if (charEffect && charEffect !== 'none') {
-                if (charEffect === 'blink') {
-                    span.style.animation = 'blink-effect 1s step-end infinite';
-                } else if (charEffect === 'jump') {
-                    const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
-                    const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
-                    const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
-                    span.style.setProperty('--jump-amplitude', `${amp}px`);
-                    const delay = index * wave;
-                    span.style.animation = `jump-effect ${freq}s ease-in-out ${delay}s infinite`;
-                } else if (charEffect === 'wave') {
-                    const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
-                    const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
-                    const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
-                    span.style.setProperty('--wave-amplitude', `${amp}px`);
-                    const delay = index * wave;
-                    span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
-                }
-            }
-        } else {
-             // Apply global effect if not in personalization mode
-            let effectAnimation = '';
-            if (settings.textEffect !== 'none') {
-                if (settings.textEffect === 'blink') {
-                    effectAnimation = 'blink-effect 1s step-end infinite';
-                } else if (settings.textEffect === 'jump') {
-                    const delay = index * settings.jumpWavelength;
-                    effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
-                } else if (settings.textEffect === 'wave') {
-                    const delay = index * settings.waveWavelength;
-                    effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
-                }
-            }
-            span.style.animation = effectAnimation;
-        }
-        
-        textEl.appendChild(span);
-    });
+
+            const span = document.createElement('span');
+            span.textContent = char === ' ' ? '\u00A0' : char;
+            span.style.display = 'inline-block';
+            
+            applySpanEffects(span, settings, index, hasValidCharSettings);
+            
+            currentLine.appendChild(span);
+        });
+    }
     
     // [BUG FIX] Reset layout-related styles before calculating font size.
-    // This ensures a consistent measurement environment, preventing incorrect
-    // font sizes when switching between horizontal and vertical scroll modes.
     wrapperEl.style.top = '50%';
     wrapperEl.style.height = 'auto';
     wrapperEl.style.transform = 'translateY(-50%)';
@@ -684,19 +665,12 @@
     
     switch(settings.fontSizeMode){
       case 'fitHeight': {
-        const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
-        
         let low = 1, high = 2000, bestSize = 10;
         const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
-
         for (let i = 0; i < 12; i++) {
             let mid = Math.floor((low + high) / 2);
             if (mid === 0) break; 
             textEl.style.fontSize = mid + 'px';
-            
-            // 【修正】無論是否有換行，「填滿高度」模式都只應考慮高度限制，
-            // 寬度超出螢幕的部分會由滾動效果處理。
             if (textEl.scrollHeight <= targetHeight) {
                 bestSize = mid;
                 low = mid + 1;
@@ -709,20 +683,14 @@
       }
       
       case 'fitWidth': {
-        const hasNewline = settings.text.includes('\n');
-        textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
-        
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
           let mid = Math.floor((low + high) / 2);
           textEl.style.fontSize = mid + 'px';
-          
-          // 【優化】此處邏輯已符合需求：當有換行時，會同時檢查寬高是否都符合容器。
           let fits = textEl.scrollWidth <= containerEl.clientWidth;
-          if (hasNewline) {
+          if (settings.text.includes('\n')) {
             fits = fits && (textEl.scrollHeight <= containerEl.clientHeight);
           }
-          
           if(fits) {
             bestSize = mid;
             low = mid + 1;
@@ -734,7 +702,6 @@
         break;
       }
       case 'multiline': {
-        textEl.style.whiteSpace = 'pre-wrap';
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
           let mid = Math.floor((low + high) / 2);
@@ -751,21 +718,17 @@
       }
 
       default: // 'fixed' mode
-        textEl.style.whiteSpace = 'pre';
         finalFontSize = isPreview ? Math.min(Number(settings.fixedFontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fixedFontSize) || 80);
         break;
     }
     
     root.style.setProperty('--font-size', `${finalFontSize}px`);
     
-    // Scroll animation is applied to the parent container
     if (settings.scrollDirection !== 'none') {
       textEl.style.animation = `${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`;
     }
 
-    // --- Layout Logic ---
     const orientation = settings.textOrientation || '0deg';
-    // Reset first
     wrapperEl.style.alignItems = '';
     wrapperEl.style.justifyContent = '';
     textEl.style.textAlign = '';
@@ -774,29 +737,27 @@
     textEl.style.boxSizing = '';
 
     if (isVertical) {
-        textEl.style.whiteSpace = settings.text.includes('\n') ? 'pre' : 'nowrap'; // Respect newlines, otherwise single line
         wrapperEl.style.top = '0';
         wrapperEl.style.height = '100%';
         wrapperEl.style.transform = `rotate(${orientation})`;
         wrapperEl.style.display = 'flex'; 
         wrapperEl.style.justifyContent = 'center';
-        textEl.style.width = 'auto'; // Let width be natural for single line
         if (settings.text.includes('\n')) {
-          textEl.style.width = '100%'; // Full width to allow wrapping for multiline
+          textEl.style.width = '100%'; 
           textEl.style.textAlign = 'center';
           textEl.style.padding = '0 1rem'; 
           textEl.style.boxSizing = 'border-box';
         }
-
     } else {
-        // Restore horizontal/none styles
         wrapperEl.style.top = '50%';
         wrapperEl.style.height = 'auto';
         wrapperEl.style.transform = `translateY(-50%) rotate(${orientation})`;
-        
         wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
         if (settings.scrollDirection === 'none') {
             wrapperEl.style.alignItems = 'center';
+            if (settings.text.includes('\n')) {
+                textEl.style.textAlign = 'center';
+            }
             wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
         }
     }
@@ -833,6 +794,59 @@
         } else { gap.style.display = 'none'; }
     }
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
+  }
+
+  function applySpanEffects(span, settings, index, hasValidCharSettings) {
+    const {
+        charColors, textStyle, charEffects, 
+        charAmplitudes, jumpAmplitude, charFrequencies, jumpFrequency,
+        charWavelengths, jumpWavelength, waveAmplitude, waveFrequency, waveWavelength,
+        textEffect
+    } = settings;
+
+    if (hasValidCharSettings) {
+        if (charColors[index]) {
+            span.style.color = charColors[index];
+            if (textStyle === 'glow') {
+                span.style.textShadow = `0 0 8px ${charColors[index]}, 0 0 12px ${charColors[index]}`;
+            }
+        }
+        const charEffect = charEffects[index];
+        if (charEffect && charEffect !== 'none') {
+            if (charEffect === 'blink') {
+                span.style.animation = 'blink-effect 1s step-end infinite';
+            } else if (charEffect === 'jump') {
+                const amp = charAmplitudes[index] != null ? charAmplitudes[index] : jumpAmplitude;
+                const freq = charFrequencies[index] != null ? charFrequencies[index] : jumpFrequency;
+                const wave = charWavelengths[index] != null ? charWavelengths[index] : jumpWavelength;
+                span.style.setProperty('--jump-amplitude', `${amp}px`);
+                const delay = index * wave;
+                span.style.animation = `jump-effect ${freq}s ease-in-out ${delay}s infinite`;
+            } else if (charEffect === 'wave') {
+                const amp = charAmplitudes[index] != null ? charAmplitudes[index] : waveAmplitude;
+                const freq = charFrequencies[index] != null ? charFrequencies[index] : waveFrequency;
+                const wave = charWavelengths[index] != null ? charWavelengths[index] : waveWavelength;
+                span.style.setProperty('--wave-amplitude', `${amp}px`);
+                const delay = index * wave;
+                span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
+            }
+        }
+    } else {
+         // Apply global effect if not in personalization mode
+        let effectAnimation = '';
+        if (textEffect !== 'none') {
+            if (textEffect === 'blink') {
+                effectAnimation = 'blink-effect 1s step-end infinite';
+            } else if (textEffect === 'jump') {
+                const delay = index * jumpWavelength;
+                effectAnimation = `jump-effect ${jumpFrequency}s ease-in-out ${delay}s infinite`;
+            } else if (textEffect === 'wave') {
+                const delay = index * waveWavelength;
+                effectAnimation = `wave-effect ${waveFrequency}s ease-in-out ${delay}s infinite`;
+            }
+        }
+        span.style.animation = effectAnimation;
+    }
   }
 
   function setupDisplayListeners(){
