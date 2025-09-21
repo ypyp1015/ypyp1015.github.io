@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.15 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.16 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -978,9 +978,9 @@
               textBlocks.push({
                   text: word,
                   startIndex: charCount,
-                  endIndex: charCount + word.length -1
+                  endIndex: charCount + Array.from(word).length - 1
               });
-              charCount += word.length;
+              charCount += Array.from(word).length;
           }
       });
 
@@ -1033,8 +1033,10 @@
             switch (id) {
                 case 'text-input':
                     if (document.getElementById('char-personalization-toggle').checked) {
-                        controllerState.charColors = new Array(value.length).fill(null);
-                        controllerState.charEffects = new Array(value.length).fill(null);
+                        // [FIXED] Use Array.from(value).length to correctly handle emojis and special characters.
+                        const correctLength = Array.from(value).length;
+                        controllerState.charColors = new Array(correctLength).fill(null);
+                        controllerState.charEffects = new Array(correctLength).fill(null);
                         renderPersonalizationSelector(value);
                     }
                     break;
@@ -1065,18 +1067,17 @@
         updateSessionDebounced();
     });
    
-    // [FIXED] Initialize char color/effect arrays when toggling personalization on.
     document.getElementById('char-personalization-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
         const text = document.getElementById('text-input').value;
         if (isActive) {
-            // Ensure arrays are initialized or resized to match the current text length.
-            // This is crucial for the `hasValidCharSettings` check in applySettings.
-            if (controllerState.charColors.length !== text.length) {
-                controllerState.charColors = new Array(text.length).fill(null);
+            // [FIXED] Use Array.from(text).length to correctly handle emojis and special characters.
+            const correctLength = Array.from(text).length;
+            if (controllerState.charColors.length !== correctLength) {
+                controllerState.charColors = new Array(correctLength).fill(null);
             }
-            if (controllerState.charEffects.length !== text.length) {
-                controllerState.charEffects = new Array(text.length).fill(null);
+            if (controllerState.charEffects.length !== correctLength) {
+                controllerState.charEffects = new Array(correctLength).fill(null);
             }
         }
         togglePersonalizationUI(isActive, text);
@@ -1365,3 +1366,4 @@
 </script>
 </body>
 </html>
+
