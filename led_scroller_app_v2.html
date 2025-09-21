@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.16 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.14 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -967,28 +967,46 @@
   function renderPersonalizationSelector(text) {
       const selector = document.getElementById('char-personalization-selector');
       selector.innerHTML = '';
-      selectedCharIndices.clear();
-      const chars = Array.from(text);
+      selectedBlockIndices.clear();
+      textBlocks = []; // Reset blocks
 
-      if (controllerState.charColors.length !== chars.length) {
-          controllerState.charColors = new Array(chars.length).fill(null);
-      }
-      if (controllerState.charEffects.length !== chars.length) {
-          controllerState.charEffects = new Array(chars.length).fill(null);
-      }
+      // Create blocks of text, separating by whitespace
+      const words = text.split(/(\s+)/);
+      let charCount = 0;
+      words.forEach(word => {
+          if (word.length > 0) {
+              textBlocks.push({
+                  text: word,
+                  startIndex: charCount,
+                  endIndex: charCount + word.length -1
+              });
+              charCount += word.length;
+          }
+      });
 
-      chars.forEach((char, index) => {
+      // Create buttons for non-space blocks
+      textBlocks.forEach((block, index) => {
+          if (block.text.trim().length === 0) return; // Skip whitespace blocks
+
           const btn = document.createElement('button');
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
-          btn.textContent = char;
-          btn.dataset.index = index;
+          btn.textContent = block.text;
+          btn.dataset.blockIndex = index;
           
-          if (controllerState.charColors[index]) {
-            btn.style.backgroundColor = controllerState.charColors[index];
+          // Use first char's color as representative color for the block button
+          if (controllerState.charColors[block.startIndex]) {
+             btn.style.backgroundColor = controllerState.charColors[block.startIndex];
           }
 
-          const effect = controllerState.charEffects[index];
-          if (effect && effect !== 'none') {
+          // Visual indicator logic (check if any char in the block has an effect)
+          let hasEffect = false;
+          for (let i = block.startIndex; i <= block.endIndex; i++) {
+              if (controllerState.charEffects[i] && controllerState.charEffects[i] !== 'none') {
+                  hasEffect = true;
+                  break;
+              }
+          }
+          if (hasEffect) {
               const indicator = document.createElement('div');
               indicator.className = 'effect-indicator';
               btn.appendChild(indicator);
@@ -996,10 +1014,10 @@
           
           btn.addEventListener('click', () => {
               btn.classList.toggle('char-btn-active');
-              if (selectedCharIndices.has(index)) {
-                  selectedCharIndices.delete(index);
+              if (selectedBlockIndices.has(index)) {
+                  selectedBlockIndices.delete(index);
               } else {
-                  selectedCharIndices.add(index);
+                  selectedBlockIndices.add(index);
               }
           });
           selector.appendChild(btn);
@@ -1096,8 +1114,13 @@
 
               if (pickerId === 'personal-char-color-picker') {
                   const color = el.dataset[mode];
-                  selectedCharIndices.forEach(index => {
-                      controllerState.charColors[index] = color;
+                  selectedBlockIndices.forEach(blockIndex => {
+                      const block = textBlocks[blockIndex];
+                      if (block) {
+                          for (let i = block.startIndex; i <= block.endIndex; i++) {
+                              controllerState.charColors[i] = color;
+                          }
+                      }
                   });
                   renderPersonalizationSelector(document.getElementById('text-input').value);
               } else {
@@ -1124,8 +1147,13 @@
             const effect = el.dataset.effect;
             document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             el.classList.replace('bg-gray-700', 'bg-indigo-600');
-            selectedCharIndices.forEach(index => {
-                controllerState.charEffects[index] = effect;
+            selectedBlockIndices.forEach(blockIndex => {
+                const block = textBlocks[blockIndex];
+                if (block) {
+                    for (let i = block.startIndex; i <= block.endIndex; i++) {
+                        controllerState.charEffects[i] = effect;
+                    }
+                }
             });
             renderPersonalizationSelector(document.getElementById('text-input').value);
             updateSession();
@@ -1223,8 +1251,13 @@
           inputWrap.classList.add('control-btn-active');
           
           if(pickerId === 'personal-char-color-picker'){
-             selectedCharIndices.forEach(index => {
-                controllerState.charColors[index] = color;
+             selectedBlockIndices.forEach(blockIndex => {
+                const block = textBlocks[blockIndex];
+                if(block) {
+                  for (let i = block.startIndex; i <= block.endIndex; i++) {
+                      controllerState.charColors[i] = color;
+                  }
+                }
              });
              renderPersonalizationSelector(document.getElementById('text-input').value);
           } else {
