@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.16 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.17 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -423,6 +423,7 @@
                     <button data-effect="none" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
                     <button data-effect="blink" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
                     <button data-effect="jump" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                    <button data-effect="wave" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
                 </div>
             </div>
         </div>
@@ -604,7 +605,8 @@
                 if (charEffect === 'blink') {
                     span.style.animation = 'blink-effect 1s step-end infinite';
                 } else if (charEffect === 'jump') {
-                    span.style.animation = `jump-effect ${settings.jumpFrequency}s ease-in-out infinite`;
+                    const delay = index * settings.jumpWavelength;
+                    span.style.animation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
                 } else if (charEffect === 'wave') {
                     span.style.animation = `wave-effect ${settings.waveFrequency}s ease-in-out infinite`;
                     span.style.animationDelay = `${index * settings.waveWavelength}s`;
