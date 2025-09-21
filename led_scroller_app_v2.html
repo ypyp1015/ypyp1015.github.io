@@ -56,7 +56,7 @@
   }
   /* 當 outline 與 gradient-text 並存時，才讓文字透明 */
   .gradient-text.text-style-outline {
-     -webkit-text-fill-color: transparent;
+      -webkit-text-fill-color: transparent;
   }
   .text-style-dotted {
     background-clip: text; -webkit-background-clip: text;
@@ -361,7 +361,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      
+     
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
         <div id="global-text-effect-wrapper">
@@ -626,7 +626,7 @@
             }
             span.style.animation = effectAnimation;
         }
-        
+       
         textEl.appendChild(span);
     });
    
@@ -637,7 +637,7 @@
       case 'fitHeight': {
         const hasNewline = settings.text.includes('\n');
         textEl.style.whiteSpace = hasNewline ? 'pre' : 'nowrap';
-        
+       
         let low = 1, high = 2000, bestSize = 10;
         const targetHeight = containerEl.clientHeight * (settings.fontSize / 100);
 
@@ -739,7 +739,7 @@
         wrapperEl.style.top = '50%';
         wrapperEl.style.height = 'auto';
         wrapperEl.style.transform = 'translateY(-50%)';
-        
+       
         wrapperEl.style.display = settings.scrollDirection === 'none' ? 'flex' : 'block';
         if (settings.scrollDirection === 'none') {
             wrapperEl.style.alignItems = 'center';
@@ -840,11 +840,11 @@
     updateColorTab('grid-color-tab', 'solid');
     setupControllerListeners();
   }
-  
+ 
   function updateFontSizeUI(mode) {
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
-      
+     
       // 先全部隱藏
       fitHeightControls.classList.add('hidden');
       fixedSizeControls.classList.add('hidden');
@@ -867,7 +867,7 @@
     // Jump controls
     const showJumpControls = (settings.textEffect === 'jump' && !settings.isCharPersonalizing);
     document.getElementById('jump-controls-section').classList.toggle('hidden', !showJumpControls);
-    
+   
     // Wave controls
     const showWaveControls = (settings.textEffect === 'wave' && !settings.isCharPersonalizing);
     document.getElementById('wave-controls-section').classList.toggle('hidden', !showWaveControls);
@@ -921,7 +921,7 @@
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     updateButtonGroupState('.text-effect-btn', 'effect', settings.textEffect || 'none');
-    
+   
     document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
     document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
     document.getElementById('jump-frequency-slider').value = settings.jumpFrequency;
@@ -942,7 +942,7 @@
 
   function togglePersonalizationUI(isActive, text) {
       document.getElementById('char-editor-wrapper').classList.toggle('hidden', !isActive);
-      
+     
       // Disable global controls when personalizing
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
@@ -992,7 +992,7 @@
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
           btn.textContent = block.text;
           btn.dataset.blockIndex = index;
-          
+         
           // Use first char's color as representative color for the block button
           if (controllerState.charColors[block.startIndex]) {
              btn.style.backgroundColor = controllerState.charColors[block.startIndex];
@@ -1011,7 +1011,7 @@
               indicator.className = 'effect-indicator';
               btn.appendChild(indicator);
           }
-          
+         
           btn.addEventListener('click', () => {
               btn.classList.toggle('char-btn-active');
               if (selectedBlockIndices.has(index)) {
@@ -1023,7 +1023,7 @@
           selector.appendChild(btn);
       });
   }
-  
+ 
   function setupControllerListeners(){
     const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider', 'jump-wavelength-slider', 'wave-amplitude-slider', 'wave-frequency-slider', 'wave-wavelength-slider'];
     debouncedInputs.forEach(id => {
@@ -1065,9 +1065,21 @@
         updateSessionDebounced();
     });
    
+    // [FIXED] Initialize char color/effect arrays when toggling personalization on.
     document.getElementById('char-personalization-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
-        togglePersonalizationUI(isActive, document.getElementById('text-input').value);
+        const text = document.getElementById('text-input').value;
+        if (isActive) {
+            // Ensure arrays are initialized or resized to match the current text length.
+            // This is crucial for the `hasValidCharSettings` check in applySettings.
+            if (controllerState.charColors.length !== text.length) {
+                controllerState.charColors = new Array(text.length).fill(null);
+            }
+            if (controllerState.charEffects.length !== text.length) {
+                controllerState.charEffects = new Array(text.length).fill(null);
+            }
+        }
+        togglePersonalizationUI(isActive, text);
         updateSession();
     });
 
@@ -1093,11 +1105,11 @@
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
-            
+           
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-            
+           
             updateSession();
         });
     });
@@ -1233,7 +1245,7 @@
   function updatePreview(settings){
     applySettings({ textEl: document.getElementById('preview-marquee-text'), containerEl: document.getElementById('controller-preview'), wrapperEl: document.getElementById('preview-marquee-container-wrapper') }, settings, true);
   }
-  
+ 
   function createCustomColorInput(pickerId, settingsKey, stateKey = null) {
       const picker = document.getElementById(pickerId);
       const inputWrap = document.createElement('div');
@@ -1249,20 +1261,20 @@
           inputWrap.dataset.color = color;
           picker.querySelectorAll('div').forEach(div => div.classList.remove('control-btn-active'));
           inputWrap.classList.add('control-btn-active');
-          
+         
           if(pickerId === 'personal-char-color-picker'){
              selectedBlockIndices.forEach(blockIndex => {
-                const block = textBlocks[blockIndex];
-                if(block) {
-                  for (let i = block.startIndex; i <= block.endIndex; i++) {
-                      controllerState.charColors[i] = color;
-                  }
-                }
+                 const block = textBlocks[blockIndex];
+                 if(block) {
+                   for (let i = block.startIndex; i <= block.endIndex; i++) {
+                       controllerState.charColors[i] = color;
+                   }
+                 }
              });
              renderPersonalizationSelector(document.getElementById('text-input').value);
           } else {
               if (stateKey) {
-                controllerState[stateKey] = 'solid';
+                  controllerState[stateKey] = 'solid';
               }
               document.getElementById('char-personalization-toggle').checked = false;
               togglePersonalizationUI(false, document.getElementById('text-input').value);
@@ -1276,7 +1288,7 @@
   function createPickers(){
     const create = (id, palette, isGradient=false, hasCustomPicker=false)=>{
       const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
-      
+     
       if(hasCustomPicker) {
         let settingsKey, stateKey = null;
         if(id.includes('text-color')) { settingsKey = 'textColor'; stateKey = 'textColorMode'; }
@@ -1284,7 +1296,7 @@
         if(id.includes('grid-color')) { settingsKey = 'gridColor'; stateKey = 'gridColorMode'; }
         if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
         if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
-        
+       
         picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
       }
 
@@ -1296,13 +1308,13 @@
         picker.appendChild(el);
       });
     };
-    
+   
     create('text-color-picker', solid16, false, true);
     create('bg-color-picker', bgSolid16, false, true);
     create('grid-color-picker', gridSolid16, false, true);
     create('gap-color-picker', gapSolid16, false, true);
     create('outline-color-picker', outlineSolid, false, true);
-    
+   
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
@@ -1353,4 +1365,3 @@
 </script>
 </body>
 </html>
-
