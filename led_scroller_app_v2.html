@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.20 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.21 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -695,13 +695,9 @@
             if (mid === 0) break; 
             textEl.style.fontSize = mid + 'px';
             
-            // 【修改】當文字有手動換行時，除了要符合指定的高度，也要確保其寬度不會超出螢幕。
-            let fits = textEl.scrollHeight <= targetHeight;
-            if (hasNewline) {
-                fits = fits && (textEl.scrollWidth <= containerEl.clientWidth);
-            }
-
-            if (fits) {
+            // 【修正】無論是否有換行，「填滿高度」模式都只應考慮高度限制，
+            // 寬度超出螢幕的部分會由滾動效果處理。
+            if (textEl.scrollHeight <= targetHeight) {
                 bestSize = mid;
                 low = mid + 1;
             } else {
