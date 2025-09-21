@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.25 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.26 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +33,10 @@
   @keyframes wave-effect {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(calc(-1 * var(--wave-amplitude, 20px))); }
+  }
+  @keyframes heartbeat-effect {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(var(--heartbeat-amplitude, 1.2)); }
   }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
   @keyframes eye-move-anim { 0%,20%{ transform:translateX(0);} 30%,50%{ transform:translateX(-10px);} 60%,80%{ transform:translateX(10px);} 90%,100%{ transform:translateX(0);} }
@@ -387,6 +391,7 @@
                 <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
                 <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
                 <button data-effect="wave" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                 <button data-effect="heartbeat" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
             </div>
         </div>
         <div id="jump-controls-section" class="mt-4 space-y-4 hidden">
@@ -417,6 +422,16 @@
                 <input id="wave-wavelength-slider" type="range" min="0.05" max="0.5" step="0.01" value="0.15" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
             </div>
         </div>
+        <div id="heartbeat-controls-section" class="mt-4 space-y-4 hidden">
+            <div>
+                <label for="heartbeat-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">心跳幅度: <span id="heartbeat-amplitude-value">1.2</span></label>
+                <input id="heartbeat-amplitude-slider" type="range" min="1.1" max="2" step="0.1" value="1.2" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="heartbeat-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">心跳頻率: <span id="heartbeat-frequency-value">1.0</span>s</label>
+                <input id="heartbeat-frequency-slider" type="range" min="0.3" max="3" step="0.1" value="1.0" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
+        </div>
         <div class="border-t border-gray-700 my-4"></div>
         <div class="flex items-center justify-between">
             <label class="block text-sm font-medium text-gray-300">個性化設定</label>
@@ -441,19 +456,20 @@
                     <button data-effect="blink" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
                     <button data-effect="jump" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
                     <button data-effect="wave" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                    <button data-effect="heartbeat" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
                 </div>
             </div>
             <div id="personal-effect-sliders" class="hidden pt-2 space-y-4">
                 <label class="block text-sm font-medium text-gray-400">4. 調整效果參數</label>
-                <div>
-                    <label for="personal-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">幅度: <span id="personal-amplitude-value">20</span>px</label>
+                <div id="personal-amplitude-wrapper">
+                    <label for="personal-amplitude-slider" class="block mb-2 text-sm font-medium text-gray-300">幅度: <span id="personal-amplitude-value">20</span></label>
                     <input id="personal-amplitude-slider" type="range" min="2" max="100" value="20" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
                 </div>
-                <div>
+                <div id="personal-frequency-wrapper">
                     <label for="personal-frequency-slider" class="block mb-2 text-sm font-medium text-gray-300">頻率: <span id="personal-frequency-value">1.5</span>s</label>
                     <input id="personal-frequency-slider" type="range" min="0.5" max="5" step="0.1" value="1.5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
                 </div>
-                <div>
+                <div id="personal-wavelength-wrapper">
                     <label for="personal-wavelength-slider" class="block mb-2 text-sm font-medium text-gray-300">波長: <span id="personal-wavelength-value">0.10</span>s</label>
                     <input id="personal-wavelength-slider" type="range" min="0.05" max="0.5" step="0.01" value="0.10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
                 </div>
@@ -539,7 +555,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -572,6 +588,7 @@
     root.style.setProperty('--outline-color', settings.outlineColor || '#FF3B30');
     root.style.setProperty('--jump-amplitude', `${settings.jumpAmplitude}px`);
     root.style.setProperty('--wave-amplitude', `${settings.waveAmplitude}px`);
+    root.style.setProperty('--heartbeat-amplitude', settings.heartbeatAmplitude);
     
     const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
     root.style.setProperty('--bg-color', backgroundValue);
@@ -807,7 +824,7 @@
         charColors, textStyle, charEffects, 
         charAmplitudes, jumpAmplitude, charFrequencies, jumpFrequency,
         charWavelengths, jumpWavelength, waveAmplitude, waveFrequency, waveWavelength,
-        textEffect
+        heartbeatAmplitude, heartbeatFrequency, textEffect
     } = settings;
 
     // Reset transform-origin before applying new effect
@@ -839,6 +856,11 @@
                 span.style.setProperty('--wave-amplitude', `${amp}px`);
                 const delay = index * wave;
                 span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
+            } else if (charEffect === 'heartbeat') {
+                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
+                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
+                span.style.setProperty('--heartbeat-amplitude', amp);
+                span.style.animation = `heartbeat-effect ${freq}s ease-in-out infinite`;
             }
         }
     } else {
@@ -854,6 +876,8 @@
             } else if (settings.textEffect === 'wave') {
                 const delay = index * settings.waveWavelength;
                 effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
+            } else if (settings.textEffect === 'heartbeat') {
+                 effectAnimation = `heartbeat-effect ${settings.heartbeatFrequency}s ease-in-out infinite`;
             }
         }
         span.style.animation = effectAnimation;
@@ -946,23 +970,13 @@
   }
 
   function updateControlsVisibility(settings) {
-    // Jump controls
-    const showJumpControls = (settings.textEffect === 'jump' && !settings.isCharPersonalizing);
-    document.getElementById('jump-controls-section').classList.toggle('hidden', !showJumpControls);
-    
-    // Wave controls
-    const showWaveControls = (settings.textEffect === 'wave' && !settings.isCharPersonalizing);
-    document.getElementById('wave-controls-section').classList.toggle('hidden', !showWaveControls);
-
-    // Outline color section
+    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffect !== 'jump' || settings.isCharPersonalizing);
+    document.getElementById('wave-controls-section').classList.toggle('hidden', settings.textEffect !== 'wave' || settings.isCharPersonalizing);
+    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', settings.textEffect !== 'heartbeat' || settings.isCharPersonalizing);
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
-
-    // Grid controls
     const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
     document.getElementById('gap-controls').classList.toggle('hidden', !(gridOn && settings.textBlendMode === 'multiply'));
-
-    // Border controls
     document.getElementById('border-controls-section').classList.toggle('hidden', !(settings.backgroundBorder && settings.backgroundBorder !== 'none'));
   }
 
@@ -973,7 +987,6 @@
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('char-personalization-toggle').checked = !!settings.isCharPersonalizing;
     
-    // 初始化時，使用settings的值更新狀態，然後用新的UI函數來設定UI
     fillHeightPercentage = settings.fontSize;
     fixedFontSize = settings.fixedFontSize;
     updateFontSizeUI(settings.fontSizeMode);
@@ -1018,6 +1031,11 @@
     document.getElementById('wave-frequency-value').textContent = settings.waveFrequency;
     document.getElementById('wave-wavelength-slider').value = settings.waveWavelength;
     document.getElementById('wave-wavelength-value').textContent = settings.waveWavelength;
+
+    document.getElementById('heartbeat-amplitude-slider').value = settings.heartbeatAmplitude;
+    document.getElementById('heartbeat-amplitude-value').textContent = settings.heartbeatAmplitude;
+    document.getElementById('heartbeat-frequency-slider').value = settings.heartbeatFrequency;
+    document.getElementById('heartbeat-frequency-value').textContent = settings.heartbeatFrequency;
     
     togglePersonalizationUI(settings.isCharPersonalizing, settings.text);
     updateControlsVisibility(settings);
@@ -1157,7 +1175,7 @@
         const block = textBlocks[firstBlockIndex];
         if (block) {
             const firstCharEffect = controllerState.charEffects[block.startIndex];
-            if (firstCharEffect === 'jump' || firstCharEffect === 'wave') {
+            if (['jump', 'wave', 'heartbeat'].includes(firstCharEffect)) {
                 showSliders = true;
                 effectType = firstCharEffect;
             }
@@ -1166,6 +1184,9 @@
     controls.classList.toggle('hidden', !showSliders);
 
     if (showSliders) {
+        document.getElementById('personal-wavelength-wrapper').style.display = (effectType === 'heartbeat') ? 'none' : 'block';
+        const ampUnit = (effectType === 'heartbeat') ? '' : 'px';
+
         const firstBlockIndex = selectedBlockIndices.values().next().value;
         const firstBlock = textBlocks[firstBlockIndex];
         const startIndex = firstBlock.startIndex;
@@ -1173,31 +1194,42 @@
         // Amplitude
         const ampSlider = document.getElementById('personal-amplitude-slider');
         const ampValueSpan = document.getElementById('personal-amplitude-value');
-        const defaultAmp = document.getElementById(`${effectType}-amplitude-slider`).value;
+        const globalAmpSlider = document.getElementById(`${effectType}-amplitude-slider`);
+        ampSlider.min = globalAmpSlider.min;
+        ampSlider.max = globalAmpSlider.max;
+        ampSlider.step = globalAmpSlider.step;
+        const defaultAmp = globalAmpSlider.value;
         const currentAmp = controllerState.charAmplitudes[startIndex] != null ? controllerState.charAmplitudes[startIndex] : defaultAmp;
         ampSlider.value = currentAmp;
-        ampValueSpan.textContent = currentAmp;
+        ampValueSpan.textContent = `${parseFloat(currentAmp).toFixed(1)}${ampUnit}`;
 
         // Frequency
         const freqSlider = document.getElementById('personal-frequency-slider');
         const freqValueSpan = document.getElementById('personal-frequency-value');
-        const defaultFreq = document.getElementById(`${effectType}-frequency-slider`).value;
+        const globalFreqSlider = document.getElementById(`${effectType}-frequency-slider`);
+        freqSlider.min = globalFreqSlider.min;
+        freqSlider.max = globalFreqSlider.max;
+        freqSlider.step = globalFreqSlider.step;
+        const defaultFreq = globalFreqSlider.value;
         const currentFreq = controllerState.charFrequencies[startIndex] != null ? controllerState.charFrequencies[startIndex] : defaultFreq;
         freqSlider.value = currentFreq;
-        freqValueSpan.textContent = parseFloat(currentFreq).toFixed(1);
+        freqValueSpan.textContent = `${parseFloat(currentFreq).toFixed(1)}s`;
 
         // Wavelength
-        const waveSlider = document.getElementById('personal-wavelength-slider');
-        const waveValueSpan = document.getElementById('personal-wavelength-value');
-        const defaultWave = document.getElementById(`${effectType}-wavelength-slider`).value;
-        const currentWave = controllerState.charWavelengths[startIndex] != null ? controllerState.charWavelengths[startIndex] : defaultWave;
-        waveSlider.value = currentWave;
-        waveValueSpan.textContent = parseFloat(currentWave).toFixed(2);
+        if (effectType !== 'heartbeat') {
+            const waveSlider = document.getElementById('personal-wavelength-slider');
+            const waveValueSpan = document.getElementById('personal-wavelength-value');
+            const globalWaveSlider = document.getElementById(`${effectType}-wavelength-slider`);
+            const defaultWave = globalWaveSlider.value;
+            const currentWave = controllerState.charWavelengths[startIndex] != null ? controllerState.charWavelengths[startIndex] : defaultWave;
+            waveSlider.value = currentWave;
+            waveValueSpan.textContent = `${parseFloat(currentWave).toFixed(2)}s`;
+        }
     }
 }
  
   function setupControllerListeners(){
-    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider', 'jump-wavelength-slider', 'wave-amplitude-slider', 'wave-frequency-slider', 'wave-wavelength-slider'];
+    const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider', 'jump-wavelength-slider', 'wave-amplitude-slider', 'wave-frequency-slider', 'wave-wavelength-slider', 'heartbeat-amplitude-slider', 'heartbeat-frequency-slider'];
     debouncedInputs.forEach(id => {
         const el = document.getElementById(id);
         el && el.addEventListener('input', (e) => {
@@ -1225,6 +1257,8 @@
                  case 'wave-amplitude-slider': document.getElementById('wave-amplitude-value').textContent = value; break;
                  case 'wave-frequency-slider': document.getElementById('wave-frequency-value').textContent = parseFloat(value).toFixed(1); break;
                  case 'wave-wavelength-slider': document.getElementById('wave-wavelength-value').textContent = parseFloat(value).toFixed(2); break;
+                 case 'heartbeat-amplitude-slider': document.getElementById('heartbeat-amplitude-value').textContent = parseFloat(value).toFixed(1); break;
+                 case 'heartbeat-frequency-slider': document.getElementById('heartbeat-frequency-value').textContent = parseFloat(value).toFixed(1); break;
             }
             updateSessionDebounced();
         });
@@ -1442,6 +1476,8 @@
       waveAmplitude: document.getElementById('wave-amplitude-slider').value,
       waveFrequency: document.getElementById('wave-frequency-slider').value,
       waveWavelength: document.getElementById('wave-wavelength-slider').value,
+      heartbeatAmplitude: document.getElementById('heartbeat-amplitude-slider').value,
+      heartbeatFrequency: document.getElementById('heartbeat-frequency-slider').value,
     };
     return settings;
   }
@@ -1587,8 +1623,4 @@
 </script>
 </body>
 </html>
-
-
-
-"
 
