@@ -426,6 +426,10 @@
                     <button data-effect="wave" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
                 </div>
             </div>
+            <div id="personal-wavelength-controls" class="hidden pt-2 space-y-2">
+                <label for="personal-wavelength-slider" class="block text-sm font-medium text-gray-400">4. 調整所選文字的波長: <span id="personal-wavelength-value">0.10</span>s</label>
+                <input id="personal-wavelength-slider" type="range" min="0.05" max="0.5" step="0.01" value="0.10" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+            </div>
         </div>
       </div>
 
@@ -487,7 +491,7 @@
         controllerView = document.getElementById('controller-view');
 
   let currentSessionId = null, unsubscribe = null;
-  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [], charEffects: [] };
+  const controllerState = { textColorMode:'solid', bgColorMode:'solid', gridColorMode:'solid', charColors: [], charEffects: [], charWavelengths: [] };
   let gridSizeState = 20;
   let selectedBlockIndices = new Set();
   let textBlocks = [];
@@ -507,7 +511,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello 👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -551,7 +555,7 @@
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
    
     const chars = Array.from(settings.text);
-    const hasValidCharSettings = settings.isCharPersonalizing && settings.charColors && settings.charEffects && settings.charColors.length === chars.length && settings.charEffects.length === chars.length;
+    const hasValidCharSettings = settings.isCharPersonalizing && settings.charColors && settings.charEffects && settings.charWavelengths && settings.charColors.length === chars.length && settings.charEffects.length === chars.length && settings.charWavelengths.length === chars.length;
 
     textEl.innerHTML = '';
     textEl.className = 'marquee-text';
@@ -605,11 +609,13 @@
                 if (charEffect === 'blink') {
                     span.style.animation = 'blink-effect 1s step-end infinite';
                 } else if (charEffect === 'jump') {
-                    const delay = index * settings.jumpWavelength;
+                    const wavelength = (settings.charWavelengths[index] != null) ? settings.charWavelengths[index] : settings.jumpWavelength;
+                    const delay = index * wavelength;
                     span.style.animation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
                 } else if (charEffect === 'wave') {
-                    span.style.animation = `wave-effect ${settings.waveFrequency}s ease-in-out infinite`;
-                    span.style.animationDelay = `${index * settings.waveWavelength}s`;
+                    const wavelength = (settings.charWavelengths[index] != null) ? settings.charWavelengths[index] : settings.waveWavelength;
+                    const delay = index * wavelength;
+                    span.style.animation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
                 }
             }
         } else {
@@ -828,7 +834,8 @@
       bgColorMode: settings.bgColorMode, 
       gridColorMode: settings.gridColorMode,
       charColors: settings.charColors || [],
-      charEffects: settings.charEffects || []
+      charEffects: settings.charEffects || [],
+      charWavelengths: settings.charWavelengths || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
    
@@ -1021,10 +1028,42 @@
               } else {
                   selectedBlockIndices.add(index);
               }
+              updatePersonalWavelengthUI();
           });
           selector.appendChild(btn);
       });
   }
+
+  function updatePersonalWavelengthUI() {
+    const controls = document.getElementById('personal-wavelength-controls');
+    let showSlider = false;
+    if (selectedBlockIndices.size > 0) {
+        for (const blockIndex of selectedBlockIndices) {
+            const block = textBlocks[blockIndex];
+            if (block) {
+                const firstCharEffect = controllerState.charEffects[block.startIndex];
+                if (firstCharEffect === 'jump' || firstCharEffect === 'wave') {
+                    showSlider = true;
+                    break;
+                }
+            }
+        }
+    }
+    controls.classList.toggle('hidden', !showSlider);
+
+    if (showSlider) {
+        const firstBlockIndex = selectedBlockIndices.values().next().value;
+        const firstBlock = textBlocks[firstBlockIndex];
+        const firstCharWavelength = controllerState.charWavelengths[firstBlock.startIndex];
+        const slider = document.getElementById('personal-wavelength-slider');
+        const valueSpan = document.getElementById('personal-wavelength-value');
+        const defaultWavelength = document.getElementById('jump-wavelength-slider').value; 
+
+        const currentValue = firstCharWavelength != null ? firstCharWavelength : defaultWavelength;
+        slider.value = currentValue;
+        valueSpan.textContent = parseFloat(currentValue).toFixed(2);
+    }
+}
  
   function setupControllerListeners(){
     const debouncedInputs = ['text-input', 'speed-slider', 'gap-alpha-slider', 'border-width-slider', 'border-radius-slider', 'grid-size-slider', 'jump-amplitude-slider', 'jump-frequency-slider', 'jump-wavelength-slider', 'wave-amplitude-slider', 'wave-frequency-slider', 'wave-wavelength-slider'];
@@ -1035,10 +1074,10 @@
             switch (id) {
                 case 'text-input':
                     if (document.getElementById('char-personalization-toggle').checked) {
-                        // [FIXED] Use Array.from(value).length to correctly handle emojis and special characters.
                         const correctLength = Array.from(value).length;
                         controllerState.charColors = new Array(correctLength).fill(null);
                         controllerState.charEffects = new Array(correctLength).fill(null);
+                        controllerState.charWavelengths = new Array(correctLength).fill(null);
                         renderPersonalizationSelector(value);
                     }
                     break;
@@ -1073,7 +1112,6 @@
         const isActive = e.target.checked;
         const text = document.getElementById('text-input').value;
         if (isActive) {
-            // [FIXED] Use Array.from(text).length to correctly handle emojis and special characters.
             const correctLength = Array.from(text).length;
             if (controllerState.charColors.length !== correctLength) {
                 controllerState.charColors = new Array(correctLength).fill(null);
@@ -1081,9 +1119,26 @@
             if (controllerState.charEffects.length !== correctLength) {
                 controllerState.charEffects = new Array(correctLength).fill(null);
             }
+            if (controllerState.charWavelengths.length !== correctLength) {
+                controllerState.charWavelengths = new Array(correctLength).fill(null);
+            }
         }
         togglePersonalizationUI(isActive, text);
         updateSession();
+    });
+
+    document.getElementById('personal-wavelength-slider').addEventListener('input', (e) => {
+        const value = e.target.value;
+        document.getElementById('personal-wavelength-value').textContent = parseFloat(value).toFixed(2);
+        selectedBlockIndices.forEach(blockIndex => {
+            const block = textBlocks[blockIndex];
+            if (block) {
+                for (let i = block.startIndex; i <= block.endIndex; i++) {
+                    controllerState.charWavelengths[i] = value;
+                }
+            }
+        });
+        updateSessionDebounced();
     });
 
 
@@ -1171,6 +1226,7 @@
                 }
             });
             renderPersonalizationSelector(document.getElementById('text-input').value);
+            updatePersonalWavelengthUI();
             updateSession();
         }
     });
@@ -1192,6 +1248,7 @@
       isCharPersonalizing: document.getElementById('char-personalization-toggle').checked,
       charColors: controllerState.charColors,
       charEffects: controllerState.charEffects,
+      charWavelengths: controllerState.charWavelengths,
       borderWidth: document.getElementById('border-width-slider').value,
       borderRadius: document.getElementById('border-radius-slider').value,
       textColorMode: controllerState.textColorMode,
