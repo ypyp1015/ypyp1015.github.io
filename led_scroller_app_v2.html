@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.29 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.30 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,13 +21,9 @@
   @keyframes marquee-down { from{ transform:translateY(-100%);} to{ transform:translateY(100vh);} }
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes jump-effect {
-    /* Grounded states */
     0%, 20%, 40%, 100% { transform: scaleY(1); }
-    /* First small bounce (squash down) */
     10% { transform: scaleY(0.8); }
-    /* Second small bounce (squash down) */
     30% { transform: scaleY(0.8); }
-    /* Big jump up (translate) */
     70% { transform: translateY(calc(-1 * var(--jump-amplitude, 20px))); }
   }
   @keyframes wave-effect {
@@ -37,8 +33,8 @@
   @keyframes heartbeat-effect {
     0%, 100% { transform: scale(1); }
     30% { transform: scale(var(--heartbeat-amplitude)); }
-    35% { transform: scale(calc(var(--heartbeat-amplitude) * 0.9)); } /* Quick dip */
-    40% { transform: scale(var(--heartbeat-amplitude)); } /* Back to peak */
+    35% { transform: scale(calc(var(--heartbeat-amplitude) * 0.9)); }
+    40% { transform: scale(var(--heartbeat-amplitude)); }
     70% { transform: scale(1); }
   }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
@@ -63,11 +59,10 @@
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
-    -webkit-text-fill-color: currentColor; /* 使用 currentColor 讓 span 的 color 生效 */
+    -webkit-text-fill-color: currentColor;
     paint-order: stroke fill;
     text-shadow: none !important;
   }
-  /* 當 outline 與 gradient-text 並存時，才讓文字透明 */
   .gradient-text.text-style-outline {
      -webkit-text-fill-color: transparent;
   }
@@ -96,23 +91,23 @@
     position:absolute; inset:0; z-index:1; pointer-events:none;
     background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
+    mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top;
+    mask-repeat: repeat;
     border-radius: var(--inner-border-radius, 0px);
-    mask-mode: alpha; -webkit-mask-mode: alpha;
+    mask-mode: alpha;
   }
 
   .gap-overlay{
     position:absolute; inset:0; z-index:3; pointer-events:none;
     background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
-    mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
+    mask-image: var(--gap-mask-image);
+    mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top;
+    mask-repeat: repeat;
     display:none;
     border-radius: var(--inner-border-radius, 0px);
-    mask-mode: alpha; -webkit-mask-mode: alpha;
+    mask-mode: alpha;
   }
 
   .border-style-solid {
@@ -158,7 +153,6 @@
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
  
-  /* 【新增】個別文字上色 UI 樣式 */
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
@@ -657,22 +651,22 @@
         }
     }
 
-    // 【修正】重構文字渲染邏輯以正確處理換行
     if (settings.fontSizeMode === 'multiline') {
-        // 對於「自動換行」模式，使用舊方法搭配 pre-wrap 讓瀏覽器自動處理換行
         textEl.style.whiteSpace = 'pre-wrap';
         chars.forEach((char, index) => {
-            const span = document.createElement('span');
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            span.style.display = 'inline-block';
-            applySpanEffects(span, settings, index, hasValidCharSettings);
-            textEl.appendChild(span);
+            const outerSpan = document.createElement('span');
+            outerSpan.style.display = 'inline-block';
+            const innerSpan = document.createElement('span');
+            innerSpan.style.display = 'inline-block';
+            innerSpan.textContent = char === ' ' ? '\u00A0' : char;
+            outerSpan.appendChild(innerSpan);
+            applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings);
+            textEl.appendChild(outerSpan);
         });
     } else {
-        // 對於其他模式，我們手動為每一行建立一個 div 容器來確保換行符 `\n` 生效
-        textEl.style.whiteSpace = 'normal'; // 重設容器的 whiteSpace
+        textEl.style.whiteSpace = 'normal';
         let currentLine = document.createElement('div');
-        currentLine.style.whiteSpace = 'nowrap'; // 確保單行內不自動換行
+        currentLine.style.whiteSpace = 'nowrap';
         textEl.appendChild(currentLine);
 
         chars.forEach((char, index) => {
@@ -680,20 +674,22 @@
                 currentLine = document.createElement('div');
                 currentLine.style.whiteSpace = 'nowrap';
                 textEl.appendChild(currentLine);
-                return; // 換行後處理下一個字元
+                return;
             }
 
-            const span = document.createElement('span');
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            span.style.display = 'inline-block';
+            const outerSpan = document.createElement('span');
+            outerSpan.style.display = 'inline-block';
+            const innerSpan = document.createElement('span');
+            innerSpan.style.display = 'inline-block';
+            innerSpan.textContent = char === ' ' ? '\u00A0' : char;
             
-            applySpanEffects(span, settings, index, hasValidCharSettings);
+            outerSpan.appendChild(innerSpan);
+            applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings);
             
-            currentLine.appendChild(span);
+            currentLine.appendChild(outerSpan);
         });
     }
     
-    // [BUG FIX] Reset layout-related styles before calculating font size.
     wrapperEl.style.top = '50%';
     wrapperEl.style.height = 'auto';
     wrapperEl.style.transform = 'translateY(-50%)';
@@ -840,48 +836,59 @@
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
-  function applySpanEffects(span, settings, index, hasValidCharSettings) {
-    span.style.transformOrigin = '';
-    let animationStrings = [];
-    let charEffectSettings = (hasValidCharSettings && settings.charEffects[index]) ? settings.charEffects[index] : null;
+  function applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings) {
+    const { textEffectMove, textEffectScale, textEffectBlink } = settings;
+    let outerAnimations = [];
+    let innerAnimations = [];
 
-    let mainEffectToApply = charEffectSettings ? charEffectSettings.main : settings.textEffect;
-    let blinkToApply = charEffectSettings ? charEffectSettings.blink : settings.textEffectBlink;
+    let moveEffect = textEffectMove, 
+        scaleEffect = textEffectScale, 
+        blinkEffect = textEffectBlink;
 
-    if (blinkToApply) {
-        animationStrings.push('blink-effect 1s step-end infinite');
+    if (hasValidCharSettings && settings.charEffects[index]) {
+        const charFX = settings.charEffects[index];
+        moveEffect = charFX.move || 'none';
+        scaleEffect = charFX.scale || 'none';
+        blinkEffect = charFX.blink || false;
     }
 
-    if (mainEffectToApply === 'jump') {
-        span.style.transformOrigin = 'bottom';
-        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
-        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
-        const wave = charEffectSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
-        span.style.setProperty('--jump-amplitude', `${amp}px`);
+    if (blinkEffect) {
+        innerAnimations.push('blink-effect 1s step-end infinite');
+    }
+    
+    if (scaleEffect === 'heartbeat') {
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
+        innerSpan.style.setProperty('--heartbeat-amplitude', amp);
+        innerAnimations.push(`heartbeat-effect ${freq}s ease-in-out infinite`);
+    }
+
+    if (moveEffect === 'jump') {
+        outerSpan.style.transformOrigin = 'bottom';
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
+        const wave = hasValidCharSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
+        outerSpan.style.setProperty('--jump-amplitude', `${amp}px`);
         const delay = index * wave;
-        animationStrings.push(`jump-effect ${freq}s ease-in-out ${delay}s infinite`);
-    } else if (mainEffectToApply === 'wave') {
-        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
-        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
-        const wave = charEffectSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
-        span.style.setProperty('--wave-amplitude', `${amp}px`);
+        outerAnimations.push(`jump-effect ${freq}s ease-in-out ${delay}s infinite`);
+    } else if (moveEffect === 'wave') {
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
+        const wave = hasValidCharSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
+        outerSpan.style.setProperty('--wave-amplitude', `${amp}px`);
         const delay = index * wave;
-        animationStrings.push(`wave-effect ${freq}s ease-in-out ${delay}s infinite`);
-    } else if (mainEffectToApply === 'heartbeat') {
-        const amp = charEffectSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
-        const freq = charEffectSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
-        span.style.setProperty('--heartbeat-amplitude', amp);
-        animationStrings.push(`heartbeat-effect ${freq}s ease-in-out infinite`);
+        outerAnimations.push(`wave-effect ${freq}s ease-in-out ${delay}s infinite`);
     }
 
     if (hasValidCharSettings && settings.charColors[index]) {
-        span.style.color = settings.charColors[index];
+        innerSpan.style.color = settings.charColors[index];
         if (settings.textStyle === 'glow') {
-            span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
+            innerSpan.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
         }
     }
     
-    span.style.animation = animationStrings.join(', ');
+    outerSpan.style.animation = outerAnimations.join(', ');
+    innerSpan.style.animation = innerAnimations.join(', ');
   }
 
   function setupDisplayListeners(){
@@ -951,11 +958,9 @@
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
       
-      // 先全部隱藏
       fitHeightControls.classList.add('hidden');
       fixedSizeControls.classList.add('hidden');
 
-      // 根據模式顯示對應的選項
       if (mode === 'fitHeight') {
           fitHeightControls.classList.remove('hidden');
           const slider = document.getElementById('fit-height-slider');
@@ -1051,7 +1056,6 @@
   function togglePersonalizationUI(isActive, text) {
       document.getElementById('char-editor-wrapper').classList.toggle('hidden', !isActive);
       
-      // Disable global controls when personalizing
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
@@ -1059,7 +1063,6 @@
       
       if (isActive) {
           renderPersonalizationSelector(text);
-          // Unset global styles/effects that conflict
           const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
@@ -1085,7 +1088,6 @@
       selector.innerHTML = '';
       textBlocks = []; // Reset blocks
 
-      // Create blocks of text, separating by whitespace
       const words = text.split(/(\s+)/);
       let charCount = 0;
       words.forEach(word => {
@@ -1099,9 +1101,8 @@
           }
       });
 
-      // Create buttons for non-space blocks
       textBlocks.forEach((block, index) => {
-          if (block.text.trim().length === 0) return; // Skip whitespace blocks
+          if (block.text.trim().length === 0) return;
 
           const btn = document.createElement('button');
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
@@ -1112,12 +1113,10 @@
             btn.classList.add('char-btn-active');
           }
 
-          // Use first char's color as representative color for the block button
           if (controllerState.charColors[block.startIndex]) {
              btn.style.backgroundColor = controllerState.charColors[block.startIndex];
           }
 
-          // Visual indicator logic (check if any char in the block has an effect)
           let hasEffect = false;
           for (let i = block.startIndex; i <= block.endIndex; i++) {
               const effects = controllerState.charEffects[i];
