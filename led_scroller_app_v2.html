@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.31 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.32 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -576,7 +576,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", textEffectBlink: false, jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffectMove: "none", textEffectScale: "none", textEffectBlink: false, jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -981,10 +981,9 @@
   }
 
   function updateControlsVisibility(settings) {
-    const mainEffect = settings.textEffect;
-    document.getElementById('jump-controls-section').classList.toggle('hidden', mainEffect !== 'jump' || settings.isCharPersonalizing);
-    document.getElementById('wave-controls-section').classList.toggle('hidden', mainEffect !== 'wave' || settings.isCharPersonalizing);
-    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', mainEffect !== 'heartbeat' || settings.isCharPersonalizing);
+    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffectMove !== 'jump' || settings.isCharPersonalizing);
+    document.getElementById('wave-controls-section').classList.toggle('hidden', settings.textEffectMove !== 'wave' || settings.isCharPersonalizing);
+    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', settings.textEffectScale !== 'heartbeat' || settings.isCharPersonalizing);
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
     const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
@@ -1030,7 +1029,8 @@
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
     
     // Update effect buttons
-    updateButtonGroupState('.text-effect-btn[data-group="main"]', 'effect', settings.textEffect || 'none');
+    updateButtonGroupState('.text-effect-btn[data-group="move"]', 'effect', settings.textEffectMove || 'none');
+    updateButtonGroupState('.text-effect-btn[data-group="scale"]', 'effect', settings.textEffectScale || 'none');
     const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
     const isBlinkActive = !!settings.textEffectBlink;
     blinkBtn.classList.toggle('bg-indigo-600', isBlinkActive);
@@ -1073,11 +1073,15 @@
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
           }
-          const currentGlobalEffect = document.querySelector('.text-effect-btn[data-group="main"].bg-indigo-600')?.dataset.effect;
-          if (currentGlobalEffect !== 'none') {
-              updateButtonGroupState('.text-effect-btn[data-group="main"]', 'effect', 'none');
+          const currentGlobalMoveEffect = document.querySelector('.text-effect-btn[data-group="move"].bg-indigo-600')?.dataset.effect;
+          if (currentGlobalMoveEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn[data-group="move"]', 'effect', 'none');
           }
-          if (document.querySelector('.text-effect-btn[data-group="additive"].bg-indigo-600')) {
+           const currentGlobalScaleEffect = document.querySelector('.text-effect-btn[data-group="scale"].bg-indigo-600')?.dataset.effect;
+          if (currentGlobalScaleEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn[data-group="scale"]', 'effect', 'none');
+          }
+          if (document.querySelector('.text-effect-btn[data-group="other"].bg-indigo-600')) {
              const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
              blinkBtn.classList.remove('bg-indigo-600');
              blinkBtn.classList.add('bg-gray-700');
@@ -1385,16 +1389,17 @@
     });
 
     // --- 特效按鈕群組的專屬事件處理 ---
-    document.querySelectorAll('.text-effect-btn[data-group="main"]').forEach(btn => {
+    document.querySelectorAll('.text-effect-btn[data-group="move"], .text-effect-btn[data-group="scale"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             if (e.currentTarget.classList.contains('control-disabled')) return;
-            document.querySelectorAll('.text-effect-btn[data-group="main"]').forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            const group = e.currentTarget.dataset.group;
+            document.querySelectorAll(`.text-effect-btn[data-group="${group}"]`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
             updateSession();
         });
     });
 
-    document.querySelectorAll('.text-effect-btn[data-group="additive"]').forEach(btn => {
+    document.querySelectorAll('.text-effect-btn[data-group="other"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             if (e.currentTarget.classList.contains('control-disabled')) return;
             e.currentTarget.classList.toggle('bg-indigo-600');
@@ -1479,8 +1484,9 @@
   }
 
   function getSettings(){
-    const mainEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="main"].bg-indigo-600')?.dataset.effect || 'none';
-    const blinkEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-effect="blink"].bg-indigo-600') != null;
+    const moveEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="move"].bg-indigo-600')?.dataset.effect || 'none';
+    const scaleEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="scale"].bg-indigo-600')?.dataset.effect || 'none';
+    const blinkEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="other"].bg-indigo-600') != null;
 
     const settings = {
       text: document.getElementById('text-input').value,
@@ -1517,7 +1523,8 @@
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
-      textEffect: mainEffect,
+      textEffectMove: moveEffect,
+      textEffectScale: scaleEffect,
       textEffectBlink: blinkEffect,
       jumpAmplitude: document.getElementById('jump-amplitude-slider').value,
       jumpFrequency: document.getElementById('jump-frequency-slider').value,
@@ -1672,4 +1679,5 @@
 </script>
 </body>
 </html>
+" selected in the current Canvas "遠端遙控 LED 跑馬燈 v22.31 (Gemini)".
 
