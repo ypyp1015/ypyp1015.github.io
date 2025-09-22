@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.30 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.31 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,18 +384,24 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
         <div id="global-text-effect-wrapper">
             <div class="mb-3">
-                <label class="block mb-1 text-xs text-gray-400">可疊加效果</label>
+                <label class="block mb-1 text-xs text-gray-400">位移效果 (擇一)</label>
                 <div class="flex flex-wrap gap-3">
-                    <button data-effect="blink" data-group="additive" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                    <button data-effect="none" data-group="move" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="jump" data-group="move" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                    <button data-effect="wave" data-group="move" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                </div>
+            </div>
+             <div class="mb-3">
+                <label class="block mb-1 text-xs text-gray-400">縮放效果 (擇一)</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="none" data-group="scale" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="heartbeat" data-group="scale" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
                 </div>
             </div>
             <div>
-                <label class="block mb-1 text-xs text-gray-400">主要效果 (擇一)</label>
+                <label class="block mb-1 text-xs text-gray-400">其他效果 (可複選)</label>
                 <div class="flex flex-wrap gap-3">
-                    <button data-effect="none" data-group="main" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                    <button data-effect="jump" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                    <button data-effect="wave" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                    <button data-effect="heartbeat" data-group="main" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                    <button data-effect="blink" data-group="other" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
                 </div>
             </div>
         </div>
