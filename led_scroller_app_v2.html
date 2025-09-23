@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- 引入所有需要的字體 -->
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -64,7 +63,7 @@
     text-shadow: none !important;
   }
   .gradient-text.text-style-outline {
-     -webkit-text-fill-color: transparent;
+      -webkit-text-fill-color: transparent;
   }
   .text-style-dotted {
     background-clip: text; -webkit-background-clip: text;
@@ -178,7 +177,6 @@
 </head>
 <body class="text-white">
 <div id="app-container" class="h-full w-full">
-  <!-- 首頁 -->
   <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
     <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
     <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
@@ -193,7 +191,6 @@
     <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
   </div>
 
-  <!-- 顯示面板 -->
   <div id="display-view" class="hidden h-full w-full">
     <div class="display-screen" id="display-screen">
       <div class="grid-bg"></div>
@@ -213,7 +210,6 @@
     </button>
   </div>
 
-  <!-- 控制台 -->
   <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
     <div class="p-6 max-w-md mx-auto">
       <div class="flex items-center justify-between mb-4">
@@ -236,7 +232,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
-      
+     
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
@@ -258,7 +254,6 @@
         </div>
       </div>
 
-      <!-- Font Size Controls -->
       <div id="fit-height-controls" class="mb-2 space-y-2 transition-opacity">
           <label for="fit-height-slider" class="block text-sm font-medium text-gray-300">高度佔比: <span id="fit-height-value">95</span>%</label>
           <input id="fit-height-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
@@ -282,8 +277,7 @@
           <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">→</button>
         </div>
       </div>
-      
-      <!-- 【新增】文字方向 -->
+     
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字方向</label>
         <div class="grid grid-cols-4 gap-2 text-center">
@@ -347,7 +341,7 @@
             <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
           </div>
         </div>
-        
+       
         <div class="p-4 bg-gray-900 rounded-lg">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
           <div class="flex flex-wrap gap-3">
@@ -379,7 +373,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      
+     
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
         <div id="global-text-effect-wrapper">
@@ -507,7 +501,7 @@
           <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
         </div>
       </div>
-      
+     
       <div id="border-controls-section" class="mb-6 space-y-6 hidden">
         <div>
             <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
@@ -610,16 +604,17 @@
     root.style.setProperty('--jump-amplitude', `${settings.jumpAmplitude}px`);
     root.style.setProperty('--wave-amplitude', `${settings.waveAmplitude}px`);
     root.style.setProperty('--heartbeat-amplitude', settings.heartbeatAmplitude);
-    
+   
     const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
+   
     root.style.setProperty('--bg-color', backgroundValue);
-    
+   
     root.style.setProperty('--grid-color', ((settings.gridColorMode === 'gradient') ? settings.gradientGrid : settings.gridColor));
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-    
+   
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
-    
+   
     const chars = Array.from(settings.text);
     const hasValidCharSettings = settings.isCharPersonalizing && settings.charColors && settings.charEffects && settings.charWavelengths && settings.charAmplitudes && settings.charFrequencies && settings.charColors.length === chars.length && settings.charEffects.length === chars.length && settings.charWavelengths.length === chars.length && settings.charAmplitudes.length === chars.length && settings.charFrequencies.length === chars.length;
 
@@ -688,14 +683,14 @@
             const innerSpan = document.createElement('span');
             innerSpan.style.display = 'inline-block';
             innerSpan.textContent = char === ' ' ? '\u00A0' : char;
-            
+           
             outerSpan.appendChild(innerSpan);
             applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings);
-            
+           
             currentLine.appendChild(outerSpan);
         });
     }
-    
+   
     wrapperEl.style.top = '50%';
     wrapperEl.style.height = 'auto';
     wrapperEl.style.transform = 'translateY(-50%)';
@@ -708,7 +703,7 @@
 
     let finalFontSize = 100;
     const isVertical = ['marquee-up', 'marquee-down'].includes(settings.scrollDirection);
-    
+   
     switch(settings.fontSizeMode){
       case 'fitHeight': {
         let low = 1, high = 2000, bestSize = 10;
@@ -727,7 +722,7 @@
         finalFontSize = bestSize;
         break;
       }
-      
+     
       case 'fitWidth': {
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
@@ -767,9 +762,9 @@
         finalFontSize = isPreview ? Math.min(Number(settings.fixedFontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fixedFontSize) || 80);
         break;
     }
-    
+   
     root.style.setProperty('--font-size', `${finalFontSize}px`);
-    
+   
     if (settings.scrollDirection !== 'none') {
       textEl.style.animation = `${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`;
     }
@@ -807,10 +802,10 @@
             wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
         }
     }
-    
+   
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = ''; containerEl.style.backgroundSize = ''; containerEl.style.border = '';
-    
+   
     const borderWidthPx = `${borderWidth}px`;
     if (gridBg) gridBg.style.inset = '0px'; if (gap) gap.style.inset = '0px';
 
@@ -824,7 +819,7 @@
     const effSize = Number.isFinite(Number(settings.gridSize)) ? Number(settings.gridSize) : 20;
     const gridSizePx = (isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize))) + 'px';
     root.style.setProperty('--grid-size', gridSizePx);
-    
+   
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     if (gridBg) {
         if (isGridEnabled) {
@@ -842,26 +837,38 @@
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
+  // ==================== FIX START ====================
   function applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings) {
     const { textEffectMove, textEffectScale, textEffectBlink } = settings;
     let outerAnimations = [];
     let innerAnimations = [];
 
-    let moveEffect = textEffectMove, 
-        scaleEffect = textEffectScale, 
-        blinkEffect = textEffectBlink;
+    let moveEffect = textEffectMove;
+    let scaleEffect = textEffectScale;
+    let blinkEffect = textEffectBlink;
 
     if (hasValidCharSettings && settings.charEffects[index]) {
         const charFX = settings.charEffects[index];
-        moveEffect = charFX.move || 'none';
-        scaleEffect = charFX.scale || 'none';
+        const mainEffect = charFX.main || 'none';
+        
+        // When a per-character effect is set, it should override the global one.
+        // So, reset global move/scale effects for this character first.
+        moveEffect = 'none';
+        scaleEffect = 'none';
+
+        if (['jump', 'wave'].includes(mainEffect)) {
+            moveEffect = mainEffect;
+        } else if (['heartbeat'].includes(mainEffect)) {
+            scaleEffect = mainEffect;
+        }
+        
         blinkEffect = charFX.blink || false;
     }
 
     if (blinkEffect) {
         innerAnimations.push('blink-effect 1s step-end infinite');
     }
-    
+   
     if (scaleEffect === 'heartbeat') {
         const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
         const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
@@ -892,10 +899,11 @@
             innerSpan.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
         }
     }
-    
+   
     outerSpan.style.animation = outerAnimations.join(', ');
     innerSpan.style.animation = innerAnimations.join(', ');
   }
+  // ===================== FIX END =====================
 
   function setupDisplayListeners(){
     const info = document.getElementById('info-overlay');
@@ -948,7 +956,7 @@
       charFrequencies: settings.charFrequencies || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
-    
+   
     fillHeightPercentage = settings.fontSize || 95;
     fixedFontSize = settings.fixedFontSize || 100;
     currentFontSizeMode = settings.fontSizeMode || 'fitHeight';
@@ -963,7 +971,7 @@
   function updateFontSizeUI(mode) {
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
-      
+     
       fitHeightControls.classList.add('hidden');
       fixedSizeControls.classList.add('hidden');
 
@@ -997,16 +1005,16 @@
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('char-personalization-toggle').checked = !!settings.isCharPersonalizing;
-    
+   
     fillHeightPercentage = settings.fontSize;
     fixedFontSize = settings.fixedFontSize;
     updateFontSizeUI(settings.fontSizeMode);
-    
+   
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
     document.getElementById('border-radius-value').textContent = settings.borderRadius;
-    
+   
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
 
@@ -1027,7 +1035,7 @@
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-    
+   
     // Update effect buttons
     updateButtonGroupState('.text-effect-btn[data-group="move"]', 'effect', settings.textEffectMove || 'none');
     updateButtonGroupState('.text-effect-btn[data-group="scale"]', 'effect', settings.textEffectScale || 'none');
@@ -1035,7 +1043,7 @@
     const isBlinkActive = !!settings.textEffectBlink;
     blinkBtn.classList.toggle('bg-indigo-600', isBlinkActive);
     blinkBtn.classList.toggle('bg-gray-700', !isBlinkActive);
-    
+   
     document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
     document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
     document.getElementById('jump-frequency-slider').value = settings.jumpFrequency;
@@ -1054,19 +1062,19 @@
     document.getElementById('heartbeat-amplitude-value').textContent = settings.heartbeatAmplitude;
     document.getElementById('heartbeat-frequency-slider').value = settings.heartbeatFrequency;
     document.getElementById('heartbeat-frequency-value').textContent = settings.heartbeatFrequency;
-    
+   
     togglePersonalizationUI(settings.isCharPersonalizing, settings.text);
     updateControlsVisibility(settings);
   }
 
   function togglePersonalizationUI(isActive, text) {
       document.getElementById('char-editor-wrapper').classList.toggle('hidden', !isActive);
-      
+     
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="rainbow"]').classList.toggle('control-disabled', isActive);
-      
+     
       if (isActive) {
           renderPersonalizationSelector(text);
           const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
@@ -1118,7 +1126,7 @@
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
           btn.textContent = block.text;
           btn.dataset.blockIndex = index;
-          
+         
           if (selectedBlockIndices.has(index)) {
             btn.classList.add('char-btn-active');
           }
@@ -1140,7 +1148,7 @@
               indicator.className = 'effect-indicator';
               btn.appendChild(indicator);
           }
-          
+         
           btn.addEventListener('click', () => {
               btn.classList.toggle('char-btn-active');
               if (selectedBlockIndices.has(index)) {
@@ -1159,7 +1167,7 @@
   function updatePersonalEffectPickerUI() {
     const mainButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="main"]');
     const blinkButton = document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="blink"]');
-    
+   
     mainButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
     blinkButton.classList.replace('bg-indigo-600', 'bg-gray-700');
 
@@ -1171,7 +1179,7 @@
     const firstBlockIndex = Array.from(selectedBlockIndices)[0];
     const firstBlock = textBlocks[firstBlockIndex];
     if (!firstBlock) return;
-    
+   
     const firstCharEffects = controllerState.charEffects[firstBlock.startIndex] || { main: 'none', blink: false };
     let isMainConsistent = true;
     let isBlinkConsistent = true;
@@ -1207,7 +1215,7 @@
             effectType = (controllerState.charEffects[block.startIndex] || {}).main || 'none';
         }
     }
-    
+   
     controls.classList.toggle('hidden', !['jump', 'wave', 'heartbeat'].includes(effectType));
 
     if (['jump', 'wave', 'heartbeat'].includes(effectType)) {
@@ -1301,7 +1309,7 @@
         document.getElementById('fixed-size-value').textContent = fixedFontSize;
         updateSessionDebounced();
     });
-    
+   
     document.getElementById('char-personalization-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
         const text = document.getElementById('text-input').value;
@@ -1379,11 +1387,11 @@
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
-            
+           
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-            
+           
             updateSession();
         });
     });
@@ -1458,7 +1466,7 @@
                 if (block) {
                     for (let i = block.startIndex; i <= block.endIndex; i++) {
                         if (!controllerState.charEffects[i]) controllerState.charEffects[i] = {main: 'none', blink: false};
-                        
+                       
                         if (group === 'main') {
                            controllerState.charEffects[i].main = effect;
                         } else if (group === 'additive') {
@@ -1575,7 +1583,7 @@
           inputWrap.dataset.color = color;
           picker.querySelectorAll('div').forEach(div => div.classList.remove('control-btn-active'));
           inputWrap.classList.add('control-btn-active');
-          
+         
           if(pickerId === 'personal-char-color-picker'){
              selectedBlockIndices.forEach(blockIndex => {
                  const block = textBlocks[blockIndex];
@@ -1602,7 +1610,7 @@
   function createPickers(){
     const create = (id, palette, isGradient=false, hasCustomPicker=false)=>{
       const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
-      
+     
       if(hasCustomPicker) {
         let settingsKey, stateKey = null;
         if(id.includes('text-color')) { settingsKey = 'textColor'; stateKey = 'textColorMode'; }
@@ -1610,7 +1618,7 @@
         if(id.includes('grid-color')) { settingsKey = 'gridColor'; stateKey = 'gridColorMode'; }
         if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
         if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
-        
+       
         picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
       }
 
@@ -1622,13 +1630,13 @@
         picker.appendChild(el);
       });
     };
-    
+   
     create('text-color-picker', solid16, false, true);
     create('bg-color-picker', bgSolid16, false, true);
     create('grid-color-picker', gridSolid16, false, true);
     create('gap-color-picker', gapSolid16, false, true);
     create('outline-color-picker', outlineSolid, false, true);
-    
+   
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
@@ -1679,4 +1687,3 @@
 </script>
 </body>
 </html>
-
