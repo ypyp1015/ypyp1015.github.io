@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.33 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.34 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 引入所有需要的字體 -->
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Serif+TC:wght@400;700&family=ZCOOL+KuaiLe&family=Cutive+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -177,6 +178,7 @@
 </head>
 <body class="text-white">
 <div id="app-container" class="h-full w-full">
+  <!-- 首頁 -->
   <div id="home-view" class="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-900">
     <h1 class="text-5xl font-bold mb-4 led-font">LED Scroller</h1>
     <p class="text-gray-400 mb-12">數位跑馬燈・遠端遙控</p>
@@ -191,6 +193,7 @@
     <p class="text-gray-600 mt-12 text-sm">提示：在設備 A 建立顯示面板，<br>然後在設備 B 輸入面板 ID 進行遙控。</p>
   </div>
 
+  <!-- 顯示面板 -->
   <div id="display-view" class="hidden h-full w-full">
     <div class="display-screen" id="display-screen">
       <div class="grid-bg"></div>
@@ -210,6 +213,7 @@
     </button>
   </div>
 
+  <!-- 控制台 -->
   <div id="controller-view" class="hidden h-full w-full bg-gray-800 overflow-y-auto no-scrollbar">
     <div class="p-6 max-w-md mx-auto">
       <div class="flex items-center justify-between mb-4">
@@ -254,6 +258,7 @@
         </div>
       </div>
 
+      <!-- Font Size Controls -->
       <div id="fit-height-controls" class="mb-2 space-y-2 transition-opacity">
           <label for="fit-height-slider" class="block text-sm font-medium text-gray-300">高度佔比: <span id="fit-height-value">95</span>%</label>
           <input id="fit-height-slider" type="range" min="10" max="100" value="95" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
@@ -278,6 +283,7 @@
         </div>
       </div>
      
+      <!-- 【新增】文字方向 -->
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字方向</label>
         <div class="grid grid-cols-4 gap-2 text-center">
@@ -463,13 +469,19 @@
                             <button data-effect="blink" data-group="additive" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
                         </div>
                     </div>
-                    <div>
-                        <label class="block mb-1 text-xs text-gray-400">主要效果 (擇一)</label>
+                    <div class="mb-3">
+                        <label class="block mb-1 text-xs text-gray-400">位移效果 (擇一)</label>
                         <div class="flex flex-wrap gap-3">
-                            <button data-effect="none" data-group="main" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                            <button data-effect="jump" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                            <button data-effect="wave" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                            <button data-effect="heartbeat" data-group="main" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                            <button data-effect="none" data-group="personal-move" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                            <button data-effect="jump" data-group="personal-move" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                            <button data-effect="wave" data-group="personal-move" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-gray-400">縮放效果 (擇一)</label>
+                        <div class="flex flex-wrap gap-3">
+                           <button data-effect="none" data-group="personal-scale" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                           <button data-effect="heartbeat" data-group="personal-scale" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
                         </div>
                     </div>
                 </div>
@@ -837,7 +849,6 @@
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
-  // ==================== FIX START ====================
   function applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings) {
     const { textEffectMove, textEffectScale, textEffectBlink } = settings;
     let outerAnimations = [];
@@ -849,19 +860,8 @@
 
     if (hasValidCharSettings && settings.charEffects[index]) {
         const charFX = settings.charEffects[index];
-        const mainEffect = charFX.main || 'none';
-        
-        // When a per-character effect is set, it should override the global one.
-        // So, reset global move/scale effects for this character first.
-        moveEffect = 'none';
-        scaleEffect = 'none';
-
-        if (['jump', 'wave'].includes(mainEffect)) {
-            moveEffect = mainEffect;
-        } else if (['heartbeat'].includes(mainEffect)) {
-            scaleEffect = mainEffect;
-        }
-        
+        moveEffect = charFX.move || 'none';
+        scaleEffect = charFX.scale || 'none';
         blinkEffect = charFX.blink || false;
     }
 
@@ -903,7 +903,6 @@
     outerSpan.style.animation = outerAnimations.join(', ');
     innerSpan.style.animation = innerAnimations.join(', ');
   }
-  // ===================== FIX END =====================
 
   function setupDisplayListeners(){
     const info = document.getElementById('info-overlay');
@@ -1138,7 +1137,7 @@
           let hasEffect = false;
           for (let i = block.startIndex; i <= block.endIndex; i++) {
               const effects = controllerState.charEffects[i];
-              if (effects && (effects.main !== 'none' || effects.blink)) {
+              if (effects && (effects.move !== 'none' || effects.scale !== 'none' || effects.blink)) {
                   hasEffect = true;
                   break;
               }
@@ -1165,39 +1164,43 @@
   }
 
   function updatePersonalEffectPickerUI() {
-    const mainButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="main"]');
+    const moveButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"]');
+    const scaleButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"]');
     const blinkButton = document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="blink"]');
-   
-    mainButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    
+    moveButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    scaleButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
     blinkButton.classList.replace('bg-indigo-600', 'bg-gray-700');
 
     if (selectedBlockIndices.size === 0) {
-        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
+        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"][data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
+        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"][data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
         return;
     }
 
     const firstBlockIndex = Array.from(selectedBlockIndices)[0];
     const firstBlock = textBlocks[firstBlockIndex];
     if (!firstBlock) return;
-   
-    const firstCharEffects = controllerState.charEffects[firstBlock.startIndex] || { main: 'none', blink: false };
-    let isMainConsistent = true;
-    let isBlinkConsistent = true;
+    
+    const defaultEffect = { move: 'none', scale: 'none', blink: false };
+    const firstCharEffects = controllerState.charEffects[firstBlock.startIndex] || defaultEffect;
+    let isMoveConsistent = true, isScaleConsistent = true, isBlinkConsistent = true;
 
     for (const blockIndex of selectedBlockIndices) {
         const block = textBlocks[blockIndex];
         for (let i = block.startIndex; i <= block.endIndex; i++) {
-            const currentEffects = controllerState.charEffects[i] || { main: 'none', blink: false };
-            if (currentEffects.main !== firstCharEffects.main) isMainConsistent = false;
+            const currentEffects = controllerState.charEffects[i] || defaultEffect;
+            if (currentEffects.move !== firstCharEffects.move) isMoveConsistent = false;
+            if (currentEffects.scale !== firstCharEffects.scale) isScaleConsistent = false;
             if (currentEffects.blink !== firstCharEffects.blink) isBlinkConsistent = false;
         }
     }
 
-    if (isMainConsistent) {
-        document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="${firstCharEffects.main}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
-    } else {
-         document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="none"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
-    }
+    const moveEffectToShow = isMoveConsistent ? firstCharEffects.move : 'none';
+    document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"][data-effect="${moveEffectToShow}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
+
+    const scaleEffectToShow = isScaleConsistent ? firstCharEffects.scale : 'none';
+    document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"][data-effect="${scaleEffectToShow}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
 
     if (isBlinkConsistent && firstCharEffects.blink) {
         blinkButton.classList.replace('bg-gray-700', 'bg-indigo-600');
@@ -1212,7 +1215,13 @@
         const firstBlockIndex = Array.from(selectedBlockIndices)[0];
         const block = textBlocks[firstBlockIndex];
         if (block) {
-            effectType = (controllerState.charEffects[block.startIndex] || {}).main || 'none';
+            const effects = controllerState.charEffects[block.startIndex] || {};
+            // 優先顯示位移效果的滑桿
+            if (effects.move && effects.move !== 'none') {
+                effectType = effects.move;
+            } else if (effects.scale && effects.scale !== 'none') {
+                effectType = effects.scale;
+            }
         }
     }
    
@@ -1274,7 +1283,7 @@
                     if (document.getElementById('char-personalization-toggle').checked) {
                         const correctLength = Array.from(value).length;
                         controllerState.charColors = new Array(correctLength).fill(null);
-                        controllerState.charEffects = new Array(correctLength).fill(null);
+                        controllerState.charEffects = new Array(correctLength).fill(null).map(() => ({move: 'none', scale: 'none', blink: false}));
                         controllerState.charWavelengths = new Array(correctLength).fill(null);
                         controllerState.charAmplitudes = new Array(correctLength).fill(null);
                         controllerState.charFrequencies = new Array(correctLength).fill(null);
@@ -1316,7 +1325,7 @@
         if (isActive) {
             const correctLength = Array.from(text).length;
             if (controllerState.charColors.length !== correctLength) controllerState.charColors = new Array(correctLength).fill(null);
-            if (controllerState.charEffects.length !== correctLength) controllerState.charEffects = new Array(correctLength).fill(null);
+            if (controllerState.charEffects.length !== correctLength) controllerState.charEffects = new Array(correctLength).fill(null).map(() => ({move: 'none', scale: 'none', blink: false}));
             if (controllerState.charWavelengths.length !== correctLength) controllerState.charWavelengths = new Array(correctLength).fill(null);
             if (controllerState.charAmplitudes.length !== correctLength) controllerState.charAmplitudes = new Array(correctLength).fill(null);
             if (controllerState.charFrequencies.length !== correctLength) controllerState.charFrequencies = new Array(correctLength).fill(null);
@@ -1465,10 +1474,12 @@
                 const block = textBlocks[blockIndex];
                 if (block) {
                     for (let i = block.startIndex; i <= block.endIndex; i++) {
-                        if (!controllerState.charEffects[i]) controllerState.charEffects[i] = {main: 'none', blink: false};
+                        if (!controllerState.charEffects[i]) controllerState.charEffects[i] = {move: 'none', scale: 'none', blink: false};
                        
-                        if (group === 'main') {
-                           controllerState.charEffects[i].main = effect;
+                        if (group === 'personal-move') {
+                           controllerState.charEffects[i].move = effect;
+                        } else if (group === 'personal-scale') {
+                           controllerState.charEffects[i].scale = effect;
                         } else if (group === 'additive') {
                            controllerState.charEffects[i].blink = !controllerState.charEffects[i].blink;
                         }
