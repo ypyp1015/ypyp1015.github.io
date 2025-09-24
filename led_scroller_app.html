@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>遠端遙控 LED 跑馬燈 v22.28 (Gemini)</title>
+<title>遠端遙控 LED 跑馬燈 v22.34 (Gemini)</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,13 +21,9 @@
   @keyframes marquee-down { from{ transform:translateY(-100%);} to{ transform:translateY(100vh);} }
   @keyframes blink-effect { 50%{ opacity:0; } }
   @keyframes jump-effect {
-    /* Grounded states */
     0%, 20%, 40%, 100% { transform: scaleY(1); }
-    /* First small bounce (squash down) */
     10% { transform: scaleY(0.8); }
-    /* Second small bounce (squash down) */
     30% { transform: scaleY(0.8); }
-    /* Big jump up (translate) */
     70% { transform: translateY(calc(-1 * var(--jump-amplitude, 20px))); }
   }
   @keyframes wave-effect {
@@ -37,8 +33,8 @@
   @keyframes heartbeat-effect {
     0%, 100% { transform: scale(1); }
     30% { transform: scale(var(--heartbeat-amplitude)); }
-    35% { transform: scale(calc(var(--heartbeat-amplitude) * 0.9)); } /* Quick dip */
-    40% { transform: scale(var(--heartbeat-amplitude)); } /* Back to peak */
+    35% { transform: scale(calc(var(--heartbeat-amplitude) * 0.9)); }
+    40% { transform: scale(var(--heartbeat-amplitude)); }
     70% { transform: scale(1); }
   }
   @keyframes eye-blink-anim { 0%,40%,100%{ transform:scaleY(1);} 42%{ transform:scaleY(0.1);} }
@@ -63,13 +59,12 @@
   .text-style-glow{ text-shadow:0 0 8px var(--text-color,#fff), 0 0 12px var(--text-color,#fff); }
   .text-style-outline{
     -webkit-text-stroke: 1.5px var(--outline-color);
-    -webkit-text-fill-color: currentColor; /* 使用 currentColor 讓 span 的 color 生效 */
+    -webkit-text-fill-color: currentColor;
     paint-order: stroke fill;
     text-shadow: none !important;
   }
-  /* 當 outline 與 gradient-text 並存時，才讓文字透明 */
   .gradient-text.text-style-outline {
-     -webkit-text-fill-color: transparent;
+      -webkit-text-fill-color: transparent;
   }
   .text-style-dotted {
     background-clip: text; -webkit-background-clip: text;
@@ -96,23 +91,23 @@
     position:absolute; inset:0; z-index:1; pointer-events:none;
     background: var(--grid-color);
     mask-image: var(--grid-mask-image); -webkit-mask-image: var(--grid-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
+    mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top;
+    mask-repeat: repeat;
     border-radius: var(--inner-border-radius, 0px);
-    mask-mode: alpha; -webkit-mask-mode: alpha;
+    mask-mode: alpha;
   }
 
   .gap-overlay{
     position:absolute; inset:0; z-index:3; pointer-events:none;
     background: var(--gap-color,#000); opacity: var(--gap-alpha,1);
-    mask-image: var(--gap-mask-image); -webkit-mask-image: var(--gap-mask-image);
-    mask-size: var(--grid-size) var(--grid-size); -webkit-mask-size: var(--grid-size) var(--grid-size);
-    mask-position: left top; -webkit-mask-position: left top;
-    mask-repeat: repeat; -webkit-mask-repeat: repeat;
+    mask-image: var(--gap-mask-image);
+    mask-size: var(--grid-size) var(--grid-size);
+    mask-position: left top;
+    mask-repeat: repeat;
     display:none;
     border-radius: var(--inner-border-radius, 0px);
-    mask-mode: alpha; -webkit-mask-mode: alpha;
+    mask-mode: alpha;
   }
 
   .border-style-solid {
@@ -158,7 +153,6 @@
   .control-btn-active{ box-shadow:0 0 0 3px #4f46e5; }
   .control-disabled{ opacity:.4; pointer-events:none; cursor:not-allowed; }
  
-  /* 【新增】個別文字上色 UI 樣式 */
   .char-btn {
     transition: all 0.2s;
     border: 2px solid transparent;
@@ -242,7 +236,7 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">顯示文字</label>
         <textarea id="text-input" rows="3" class="w-full bg-gray-700 border border-gray-600 text-white text-lg p-2.5 rounded-lg" placeholder="在此輸入文字..."></textarea>
       </div>
-      
+     
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">字體選擇</label>
         <div class="grid grid-cols-3 gap-3">
@@ -288,7 +282,7 @@
           <button data-direction="marquee-right" class="direction-btn p-3 bg-gray-700 rounded-lg text-lg">→</button>
         </div>
       </div>
-      
+     
       <!-- 【新增】文字方向 -->
       <div class="mb-6">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字方向</label>
@@ -353,7 +347,7 @@
             <div class="flex flex-wrap gap-2" id="grid-gradient-picker"></div>
           </div>
         </div>
-        
+       
         <div class="p-4 bg-gray-900 rounded-lg">
           <label class="block mb-2 text-sm font-medium text-gray-300">LED穿孔</label>
           <div class="flex flex-wrap gap-3">
@@ -385,16 +379,30 @@
         <label class="block mb-2 text-sm font-medium text-gray-300">邊框顏色</label>
         <div class="flex flex-wrap gap-3" id="outline-color-picker"></div>
       </div>
-      
+     
       <div class="mb-6 p-4 bg-gray-900/50 rounded-lg">
         <label class="block mb-2 text-sm font-medium text-gray-300">文字效果與個性化</label>
         <div id="global-text-effect-wrapper">
-            <div class="flex flex-wrap gap-3">
-                <button data-effect="none" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                <button data-effect="blink" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
-                <button data-effect="jump" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                <button data-effect="wave" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                 <button data-effect="heartbeat" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+            <div class="mb-3">
+                <label class="block mb-1 text-xs text-gray-400">位移效果 (擇一)</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="none" data-group="move" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="jump" data-group="move" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                    <button data-effect="wave" data-group="move" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                </div>
+            </div>
+             <div class="mb-3">
+                <label class="block mb-1 text-xs text-gray-400">縮放效果 (擇一)</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="none" data-group="scale" class="text-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                    <button data-effect="heartbeat" data-group="scale" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                </div>
+            </div>
+            <div>
+                <label class="block mb-1 text-xs text-gray-400">其他效果 (可複選)</label>
+                <div class="flex flex-wrap gap-3">
+                    <button data-effect="blink" data-group="other" class="text-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                </div>
             </div>
         </div>
         <div id="jump-controls-section" class="mt-4 space-y-4 hidden">
@@ -454,12 +462,28 @@
             </div>
             <div>
                 <label class="block mb-2 text-sm font-medium text-gray-400">3. 為選取的文字套用特效</label>
-                <div id="personal-char-effect-picker" class="flex flex-wrap gap-3">
-                    <button data-effect="none" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
-                    <button data-effect="blink" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
-                    <button data-effect="jump" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
-                    <button data-effect="wave" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
-                    <button data-effect="heartbeat" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                <div id="personal-char-effect-picker">
+                    <div class="mb-3">
+                        <label class="block mb-1 text-xs text-gray-400">可疊加效果</label>
+                        <div class="flex flex-wrap gap-3">
+                            <button data-effect="blink" data-group="additive" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">✨ 閃爍</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block mb-1 text-xs text-gray-400">位移效果 (擇一)</label>
+                        <div class="flex flex-wrap gap-3">
+                            <button data-effect="none" data-group="personal-move" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                            <button data-effect="jump" data-group="personal-move" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🤸‍♀️ 跳躍</button>
+                            <button data-effect="wave" data-group="personal-move" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">🌊 波浪</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-gray-400">縮放效果 (擇一)</label>
+                        <div class="flex flex-wrap gap-3">
+                           <button data-effect="none" data-group="personal-scale" class="personal-char-effect-btn p-3 bg-indigo-600 rounded-lg text-sm">無</button>
+                           <button data-effect="heartbeat" data-group="personal-scale" class="personal-char-effect-btn p-3 bg-gray-700 rounded-lg text-sm">❤️ 心跳</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="personal-effect-sliders" class="hidden pt-2 space-y-4">
@@ -489,7 +513,7 @@
           <button data-border="rainbow" class="border-style-btn p-3 bg-gray-700 rounded-lg text-sm">🌈 彩虹邊框</button>
         </div>
       </div>
-      
+     
       <div id="border-controls-section" class="mb-6 space-y-6 hidden">
         <div>
             <label for="border-width-slider" class="block mb-2 text-sm font-medium text-gray-300">邊框寬度: <span id="border-width-value">8</span>px</label>
@@ -558,7 +582,7 @@
   const bgGradients16 = [ 'linear-gradient(90deg,#0f2027,#203a43,#2c5364)','linear-gradient(90deg,#111827,#000000)', 'linear-gradient(90deg,#141E30,#243B55)','linear-gradient(90deg,#1e3c72,#2a5298)', 'linear-gradient(90deg,#4b6cb7,#182848)','linear-gradient(90deg,#000428,#004e92)', 'linear-gradient(90deg,#3E5151,#DECBA4)','linear-gradient(90deg,#232526,#414345)', 'linear-gradient(90deg,#5614B0,#DBD65C)','linear-gradient(90deg,#1f4037,#99f2c8)', 'linear-gradient(90deg,#136a8a,#267871)','linear-gradient(90deg,#373B44,#4286f4)', 'linear-gradient(90deg,#485563,#29323c)','linear-gradient(90deg,#2C3E50,#4CA1AF)', 'linear-gradient(90deg,#41295a,#2F0743)','linear-gradient(90deg,#000000,#434343)' ];
   const gridGradients16 = [ 'linear-gradient(90deg,#F8D24E,#FFD84A)','linear-gradient(90deg,#ffd166,#fca311)', 'linear-gradient(90deg,#f6d365,#fda085)','linear-gradient(90deg,#a1ffce,#faffd1)', 'linear-gradient(90deg,#d4fc79,#96e6a1)','linear-gradient(90deg,#fbd3e9,#bb377d)', 'linear-gradient(90deg,#84fab0,#8fd3f4)','linear-gradient(90deg,#a18cd1,#fbc2eb)', 'linear-gradient(90deg,#f093fb,#f5576c)','linear-gradient(90deg,#4facfe,#00f2fe)', 'linear-gradient(90deg,#fad0c4,#ffd1ff)','linear-gradient(90deg,#ffecd2,#fcb69f)', 'linear-gradient(90deg,#cfd9df,#e2ebf0)','linear-gradient(90deg,#fddb92,#d1fdff)', 'linear-gradient(90deg,#fbc2eb,#a6c1ee)','linear-gradient(90deg,#7F7FD5,#86A8E7)' ];
 
-  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffect: "none", jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
+  const defaultSettings = { text: "Hello\n👋", textColor: "#FFFFFF", backgroundColor: "#000000", fontSize: 95, fixedFontSize: 100, fontSizeMode: 'fitHeight', scrollSpeed: 10, scrollDirection: "none", textOrientation: '0deg', textEffectMove: "none", textEffectScale: "none", textEffectBlink: false, jumpAmplitude: 20, jumpFrequency: 1.5, jumpWavelength: 0.1, waveAmplitude: 10, waveFrequency: 2.0, waveWavelength: 0.15, heartbeatAmplitude: 1.2, heartbeatFrequency: 1.0, isCharPersonalizing: false, charColors: [], charEffects: [], charWavelengths: [], charAmplitudes: [], charFrequencies: [], textColorMode: 'solid', bgColorMode: 'solid', gridColorMode: 'solid', gradientText: gradients16[0], gradientBg: bgGradients16[0], gradientGrid: gridGradients16[0], textBlendMode: 'normal', gapColor: "#000000", gapAlpha: 1.0, backgroundBorder: "none", backgroundEffect: "none", gridStyle: "none", gridSize: 20, gridColor: "#374151", textStyle: "normal", outlineColor: "#FF3B30", borderWidth: 8, borderRadius: 16, fontFamily: "'Inter','微軟正黑體',sans-serif", updatedAt: serverTimestamp() };
 
   window.addEventListener('load', ()=>{
     const params = new URLSearchParams(window.location.search);
@@ -592,16 +616,17 @@
     root.style.setProperty('--jump-amplitude', `${settings.jumpAmplitude}px`);
     root.style.setProperty('--wave-amplitude', `${settings.waveAmplitude}px`);
     root.style.setProperty('--heartbeat-amplitude', settings.heartbeatAmplitude);
-    
+   
     const backgroundValue = (settings.bgColorMode === 'gradient') ? settings.gradientBg : settings.backgroundColor;
+   
     root.style.setProperty('--bg-color', backgroundValue);
-    
+   
     root.style.setProperty('--grid-color', ((settings.gridColorMode === 'gradient') ? settings.gradientGrid : settings.gridColor));
     root.style.setProperty('--gap-color', settings.gapColor || '#000000');
     root.style.setProperty('--gap-alpha', settings.gapAlpha != null ? settings.gapAlpha : 1);
-    
+   
     textEl.style.fontFamily = settings.fontFamily || defaultSettings.fontFamily;
-    
+   
     const chars = Array.from(settings.text);
     const hasValidCharSettings = settings.isCharPersonalizing && settings.charColors && settings.charEffects && settings.charWavelengths && settings.charAmplitudes && settings.charFrequencies && settings.charColors.length === chars.length && settings.charEffects.length === chars.length && settings.charWavelengths.length === chars.length && settings.charAmplitudes.length === chars.length && settings.charFrequencies.length === chars.length;
 
@@ -639,22 +664,22 @@
         }
     }
 
-    // 【修正】重構文字渲染邏輯以正確處理換行
     if (settings.fontSizeMode === 'multiline') {
-        // 對於「自動換行」模式，使用舊方法搭配 pre-wrap 讓瀏覽器自動處理換行
         textEl.style.whiteSpace = 'pre-wrap';
         chars.forEach((char, index) => {
-            const span = document.createElement('span');
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            span.style.display = 'inline-block';
-            applySpanEffects(span, settings, index, hasValidCharSettings);
-            textEl.appendChild(span);
+            const outerSpan = document.createElement('span');
+            outerSpan.style.display = 'inline-block';
+            const innerSpan = document.createElement('span');
+            innerSpan.style.display = 'inline-block';
+            innerSpan.textContent = char === ' ' ? '\u00A0' : char;
+            outerSpan.appendChild(innerSpan);
+            applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings);
+            textEl.appendChild(outerSpan);
         });
     } else {
-        // 對於其他模式，我們手動為每一行建立一個 div 容器來確保換行符 `\n` 生效
-        textEl.style.whiteSpace = 'normal'; // 重設容器的 whiteSpace
+        textEl.style.whiteSpace = 'normal';
         let currentLine = document.createElement('div');
-        currentLine.style.whiteSpace = 'nowrap'; // 確保單行內不自動換行
+        currentLine.style.whiteSpace = 'nowrap';
         textEl.appendChild(currentLine);
 
         chars.forEach((char, index) => {
@@ -662,20 +687,22 @@
                 currentLine = document.createElement('div');
                 currentLine.style.whiteSpace = 'nowrap';
                 textEl.appendChild(currentLine);
-                return; // 換行後處理下一個字元
+                return;
             }
 
-            const span = document.createElement('span');
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            span.style.display = 'inline-block';
-            
-            applySpanEffects(span, settings, index, hasValidCharSettings);
-            
-            currentLine.appendChild(span);
+            const outerSpan = document.createElement('span');
+            outerSpan.style.display = 'inline-block';
+            const innerSpan = document.createElement('span');
+            innerSpan.style.display = 'inline-block';
+            innerSpan.textContent = char === ' ' ? '\u00A0' : char;
+           
+            outerSpan.appendChild(innerSpan);
+            applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings);
+           
+            currentLine.appendChild(outerSpan);
         });
     }
-    
-    // [BUG FIX] Reset layout-related styles before calculating font size.
+   
     wrapperEl.style.top = '50%';
     wrapperEl.style.height = 'auto';
     wrapperEl.style.transform = 'translateY(-50%)';
@@ -688,7 +715,7 @@
 
     let finalFontSize = 100;
     const isVertical = ['marquee-up', 'marquee-down'].includes(settings.scrollDirection);
-    
+   
     switch(settings.fontSizeMode){
       case 'fitHeight': {
         let low = 1, high = 2000, bestSize = 10;
@@ -707,7 +734,7 @@
         finalFontSize = bestSize;
         break;
       }
-      
+     
       case 'fitWidth': {
         let low = 1, high = 2000, bestSize = 10;
         for(let i=0; i<10; i++){
@@ -747,9 +774,9 @@
         finalFontSize = isPreview ? Math.min(Number(settings.fixedFontSize) || 80, containerEl.clientHeight * 0.8) : (Number(settings.fixedFontSize) || 80);
         break;
     }
-    
+   
     root.style.setProperty('--font-size', `${finalFontSize}px`);
-    
+   
     if (settings.scrollDirection !== 'none') {
       textEl.style.animation = `${settings.scrollDirection} ${settings.scrollSpeed}s linear infinite`;
     }
@@ -787,10 +814,10 @@
             wrapperEl.style.justifyContent = (settings.fontSizeMode === 'fitHeight' && !settings.text.includes('\n')) ? 'flex-start' : 'center';
         }
     }
-    
+   
     containerEl.className = containerEl.id === 'display-screen' ? 'display-screen' : 'controller-preview';
     containerEl.style.animation = ''; containerEl.style.backgroundSize = ''; containerEl.style.border = '';
-    
+   
     const borderWidthPx = `${borderWidth}px`;
     if (gridBg) gridBg.style.inset = '0px'; if (gap) gap.style.inset = '0px';
 
@@ -804,7 +831,7 @@
     const effSize = Number.isFinite(Number(settings.gridSize)) ? Number(settings.gridSize) : 20;
     const gridSizePx = (isPreview ? Math.max(4, Math.min(120, Math.round(effSize / 2))) : Math.max(4, Math.min(120, effSize))) + 'px';
     root.style.setProperty('--grid-size', gridSizePx);
-    
+   
     const isGridEnabled = settings.gridStyle && settings.gridStyle !== 'none';
     if (gridBg) {
         if (isGridEnabled) {
@@ -822,69 +849,59 @@
     if (bgEffectEl) { bgEffectEl.innerHTML = (settings.backgroundEffect === 'eyes') ? `<div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div>` : ''; }
   }
 
-  function applySpanEffects(span, settings, index, hasValidCharSettings) {
-    const {
-        charColors, textStyle, charEffects, 
-        charAmplitudes, jumpAmplitude, charFrequencies, jumpFrequency,
-        charWavelengths, jumpWavelength, waveAmplitude, waveFrequency, waveWavelength,
-        heartbeatAmplitude, heartbeatFrequency, textEffect
-    } = settings;
+  function applySpanEffects(outerSpan, innerSpan, settings, index, hasValidCharSettings) {
+    const { textEffectMove, textEffectScale, textEffectBlink } = settings;
+    let outerAnimations = [];
+    let innerAnimations = [];
 
-    // Reset transform-origin before applying new effect
-    span.style.transformOrigin = '';
+    let moveEffect = textEffectMove;
+    let scaleEffect = textEffectScale;
+    let blinkEffect = textEffectBlink;
 
-    if (hasValidCharSettings) {
-        if (settings.charColors[index]) {
-            span.style.color = settings.charColors[index];
-            if (settings.textStyle === 'glow') {
-                span.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
-            }
-        }
-        const charEffect = settings.charEffects[index];
-        if (charEffect && charEffect !== 'none') {
-            if (charEffect === 'blink') {
-                span.style.animation = 'blink-effect 1s step-end infinite';
-            } else if (charEffect === 'jump') {
-                span.style.transformOrigin = 'bottom';
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
-                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
-                span.style.setProperty('--jump-amplitude', `${amp}px`);
-                const delay = index * wave;
-                span.style.animation = `jump-effect ${freq}s ease-in-out ${delay}s infinite`;
-            } else if (charEffect === 'wave') {
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
-                const wave = settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
-                span.style.setProperty('--wave-amplitude', `${amp}px`);
-                const delay = index * wave;
-                span.style.animation = `wave-effect ${freq}s ease-in-out ${delay}s infinite`;
-            } else if (charEffect === 'heartbeat') {
-                const amp = settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
-                const freq = settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
-                span.style.setProperty('--heartbeat-amplitude', amp);
-                span.style.animation = `heartbeat-effect ${freq}s ease-in-out infinite`;
-            }
-        }
-    } else {
-         // Apply global effect if not in personalization mode
-        let effectAnimation = '';
-        if (settings.textEffect !== 'none') {
-            if (settings.textEffect === 'blink') {
-                effectAnimation = 'blink-effect 1s step-end infinite';
-            } else if (settings.textEffect === 'jump') {
-                span.style.transformOrigin = 'bottom';
-                const delay = index * settings.jumpWavelength;
-                effectAnimation = `jump-effect ${settings.jumpFrequency}s ease-in-out ${delay}s infinite`;
-            } else if (settings.textEffect === 'wave') {
-                const delay = index * settings.waveWavelength;
-                effectAnimation = `wave-effect ${settings.waveFrequency}s ease-in-out ${delay}s infinite`;
-            } else if (settings.textEffect === 'heartbeat') {
-                 effectAnimation = `heartbeat-effect ${settings.heartbeatFrequency}s ease-in-out infinite`;
-            }
-        }
-        span.style.animation = effectAnimation;
+    if (hasValidCharSettings && settings.charEffects[index]) {
+        const charFX = settings.charEffects[index];
+        moveEffect = charFX.move || 'none';
+        scaleEffect = charFX.scale || 'none';
+        blinkEffect = charFX.blink || false;
     }
+
+    if (blinkEffect) {
+        innerAnimations.push('blink-effect 1s step-end infinite');
+    }
+   
+    if (scaleEffect === 'heartbeat') {
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.heartbeatAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.heartbeatFrequency;
+        innerSpan.style.setProperty('--heartbeat-amplitude', amp);
+        innerAnimations.push(`heartbeat-effect ${freq}s ease-in-out infinite`);
+    }
+
+    if (moveEffect === 'jump') {
+        outerSpan.style.transformOrigin = 'bottom';
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.jumpAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.jumpFrequency;
+        const wave = hasValidCharSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.jumpWavelength;
+        outerSpan.style.setProperty('--jump-amplitude', `${amp}px`);
+        const delay = index * wave;
+        outerAnimations.push(`jump-effect ${freq}s ease-in-out ${delay}s infinite`);
+    } else if (moveEffect === 'wave') {
+        const amp = hasValidCharSettings && settings.charAmplitudes[index] != null ? settings.charAmplitudes[index] : settings.waveAmplitude;
+        const freq = hasValidCharSettings && settings.charFrequencies[index] != null ? settings.charFrequencies[index] : settings.waveFrequency;
+        const wave = hasValidCharSettings && settings.charWavelengths[index] != null ? settings.charWavelengths[index] : settings.waveWavelength;
+        outerSpan.style.setProperty('--wave-amplitude', `${amp}px`);
+        const delay = index * wave;
+        outerAnimations.push(`wave-effect ${freq}s ease-in-out ${delay}s infinite`);
+    }
+
+    if (hasValidCharSettings && settings.charColors[index]) {
+        innerSpan.style.color = settings.charColors[index];
+        if (settings.textStyle === 'glow') {
+            innerSpan.style.textShadow = `0 0 8px ${settings.charColors[index]}, 0 0 12px ${settings.charColors[index]}`;
+        }
+    }
+   
+    outerSpan.style.animation = outerAnimations.join(', ');
+    innerSpan.style.animation = innerAnimations.join(', ');
   }
 
   function setupDisplayListeners(){
@@ -938,7 +955,7 @@
       charFrequencies: settings.charFrequencies || []
     });
     gridSizeState = Number(settings.gridSize) || 20;
-    
+   
     fillHeightPercentage = settings.fontSize || 95;
     fixedFontSize = settings.fixedFontSize || 100;
     currentFontSizeMode = settings.fontSizeMode || 'fitHeight';
@@ -953,12 +970,10 @@
   function updateFontSizeUI(mode) {
       const fitHeightControls = document.getElementById('fit-height-controls');
       const fixedSizeControls = document.getElementById('fixed-size-controls');
-      
-      // 先全部隱藏
+     
       fitHeightControls.classList.add('hidden');
       fixedSizeControls.classList.add('hidden');
 
-      // 根據模式顯示對應的選項
       if (mode === 'fitHeight') {
           fitHeightControls.classList.remove('hidden');
           const slider = document.getElementById('fit-height-slider');
@@ -973,9 +988,9 @@
   }
 
   function updateControlsVisibility(settings) {
-    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffect !== 'jump' || settings.isCharPersonalizing);
-    document.getElementById('wave-controls-section').classList.toggle('hidden', settings.textEffect !== 'wave' || settings.isCharPersonalizing);
-    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', settings.textEffect !== 'heartbeat' || settings.isCharPersonalizing);
+    document.getElementById('jump-controls-section').classList.toggle('hidden', settings.textEffectMove !== 'jump' || settings.isCharPersonalizing);
+    document.getElementById('wave-controls-section').classList.toggle('hidden', settings.textEffectMove !== 'wave' || settings.isCharPersonalizing);
+    document.getElementById('heartbeat-controls-section').classList.toggle('hidden', settings.textEffectScale !== 'heartbeat' || settings.isCharPersonalizing);
     document.getElementById('outline-color-section').classList.toggle('hidden', settings.textStyle !== 'outline');
     const gridOn = settings.gridStyle && settings.gridStyle !== 'none';
     document.getElementById('grid-advanced-section').classList.toggle('hidden', !gridOn);
@@ -989,16 +1004,16 @@
     document.getElementById('speed-slider').value = settings.scrollSpeed;
     document.getElementById('speed-value').textContent = settings.scrollSpeed;
     document.getElementById('char-personalization-toggle').checked = !!settings.isCharPersonalizing;
-    
+   
     fillHeightPercentage = settings.fontSize;
     fixedFontSize = settings.fixedFontSize;
     updateFontSizeUI(settings.fontSizeMode);
-    
+   
     document.getElementById('border-width-slider').value = settings.borderWidth;
     document.getElementById('border-width-value').textContent = settings.borderWidth;
     document.getElementById('border-radius-slider').value = settings.borderRadius;
     document.getElementById('border-radius-value').textContent = settings.borderRadius;
-    
+   
     document.getElementById('grid-size-slider').value = gridSizeState;
     document.getElementById('grid-size-value').textContent = gridSizeState;
 
@@ -1019,8 +1034,15 @@
     updateButtonGroupState('.font-btn', 'font', settings.fontFamily);
     updateButtonGroupState('.bg-effect-btn','effect', settings.backgroundEffect);
     updateButtonGroupState('.blend-mode-btn','blend', settings.textBlendMode);
-    updateButtonGroupState('.text-effect-btn', 'effect', settings.textEffect || 'none');
-    
+   
+    // Update effect buttons
+    updateButtonGroupState('.text-effect-btn[data-group="move"]', 'effect', settings.textEffectMove || 'none');
+    updateButtonGroupState('.text-effect-btn[data-group="scale"]', 'effect', settings.textEffectScale || 'none');
+    const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
+    const isBlinkActive = !!settings.textEffectBlink;
+    blinkBtn.classList.toggle('bg-indigo-600', isBlinkActive);
+    blinkBtn.classList.toggle('bg-gray-700', !isBlinkActive);
+   
     document.getElementById('jump-amplitude-slider').value = settings.jumpAmplitude;
     document.getElementById('jump-amplitude-value').textContent = settings.jumpAmplitude;
     document.getElementById('jump-frequency-slider').value = settings.jumpFrequency;
@@ -1039,30 +1061,37 @@
     document.getElementById('heartbeat-amplitude-value').textContent = settings.heartbeatAmplitude;
     document.getElementById('heartbeat-frequency-slider').value = settings.heartbeatFrequency;
     document.getElementById('heartbeat-frequency-value').textContent = settings.heartbeatFrequency;
-    
+   
     togglePersonalizationUI(settings.isCharPersonalizing, settings.text);
     updateControlsVisibility(settings);
   }
 
   function togglePersonalizationUI(isActive, text) {
       document.getElementById('char-editor-wrapper').classList.toggle('hidden', !isActive);
-      
-      // Disable global controls when personalizing
+     
       document.getElementById('global-color-wrapper').classList.toggle('control-disabled', isActive);
       document.getElementById('global-text-effect-wrapper').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="dotted"]').classList.toggle('control-disabled', isActive);
       document.querySelector('[data-style="rainbow"]').classList.toggle('control-disabled', isActive);
-      
+     
       if (isActive) {
           renderPersonalizationSelector(text);
-          // Unset global styles/effects that conflict
           const currentStyle = document.querySelector('.text-style-btn.bg-indigo-600')?.dataset.style;
           if (currentStyle === 'dotted' || currentStyle === 'rainbow') {
               updateButtonGroupState('.text-style-btn', 'style', 'normal');
           }
-          const currentGlobalEffect = document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect;
-          if (currentGlobalEffect !== 'none') {
-              updateButtonGroupState('.text-effect-btn', 'effect', 'none');
+          const currentGlobalMoveEffect = document.querySelector('.text-effect-btn[data-group="move"].bg-indigo-600')?.dataset.effect;
+          if (currentGlobalMoveEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn[data-group="move"]', 'effect', 'none');
+          }
+           const currentGlobalScaleEffect = document.querySelector('.text-effect-btn[data-group="scale"].bg-indigo-600')?.dataset.effect;
+          if (currentGlobalScaleEffect !== 'none') {
+              updateButtonGroupState('.text-effect-btn[data-group="scale"]', 'effect', 'none');
+          }
+          if (document.querySelector('.text-effect-btn[data-group="other"].bg-indigo-600')) {
+             const blinkBtn = document.querySelector('.text-effect-btn[data-effect="blink"]');
+             blinkBtn.classList.remove('bg-indigo-600');
+             blinkBtn.classList.add('bg-gray-700');
           }
       } else {
         document.getElementById('personal-effect-sliders').classList.add('hidden');
@@ -1076,7 +1105,6 @@
       selector.innerHTML = '';
       textBlocks = []; // Reset blocks
 
-      // Create blocks of text, separating by whitespace
       const words = text.split(/(\s+)/);
       let charCount = 0;
       words.forEach(word => {
@@ -1090,28 +1118,26 @@
           }
       });
 
-      // Create buttons for non-space blocks
       textBlocks.forEach((block, index) => {
-          if (block.text.trim().length === 0) return; // Skip whitespace blocks
+          if (block.text.trim().length === 0) return;
 
           const btn = document.createElement('button');
           btn.className = 'char-btn p-1 rounded-md bg-gray-800 text-white font-mono';
           btn.textContent = block.text;
           btn.dataset.blockIndex = index;
-          
+         
           if (selectedBlockIndices.has(index)) {
             btn.classList.add('char-btn-active');
           }
 
-          // Use first char's color as representative color for the block button
           if (controllerState.charColors[block.startIndex]) {
              btn.style.backgroundColor = controllerState.charColors[block.startIndex];
           }
 
-          // Visual indicator logic (check if any char in the block has an effect)
           let hasEffect = false;
           for (let i = block.startIndex; i <= block.endIndex; i++) {
-              if (controllerState.charEffects[i] && controllerState.charEffects[i] !== 'none') {
+              const effects = controllerState.charEffects[i];
+              if (effects && (effects.move !== 'none' || effects.scale !== 'none' || effects.blink)) {
                   hasEffect = true;
                   break;
               }
@@ -1121,7 +1147,7 @@
               indicator.className = 'effect-indicator';
               btn.appendChild(indicator);
           }
-          
+         
           btn.addEventListener('click', () => {
               btn.classList.toggle('char-btn-active');
               if (selectedBlockIndices.has(index)) {
@@ -1138,59 +1164,74 @@
   }
 
   function updatePersonalEffectPickerUI() {
-    const buttons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn');
-    buttons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    const moveButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"]');
+    const scaleButtons = document.querySelectorAll('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"]');
+    const blinkButton = document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="blink"]');
+    
+    moveButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    scaleButtons.forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+    blinkButton.classList.replace('bg-indigo-600', 'bg-gray-700');
 
     if (selectedBlockIndices.size === 0) {
-        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
+        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"][data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
+        document.querySelector('#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"][data-effect="none"]').classList.replace('bg-gray-700', 'bg-indigo-600');
         return;
     }
 
-    const firstBlockIndex = selectedBlockIndices.values().next().value;
+    const firstBlockIndex = Array.from(selectedBlockIndices)[0];
     const firstBlock = textBlocks[firstBlockIndex];
     if (!firstBlock) return;
+    
+    const defaultEffect = { move: 'none', scale: 'none', blink: false };
+    const firstCharEffects = controllerState.charEffects[firstBlock.startIndex] || defaultEffect;
+    let isMoveConsistent = true, isScaleConsistent = true, isBlinkConsistent = true;
 
-    const firstEffect = controllerState.charEffects[firstBlock.startIndex] || 'none';
-
-    let isConsistent = true;
     for (const blockIndex of selectedBlockIndices) {
         const block = textBlocks[blockIndex];
-        if (block && (controllerState.charEffects[block.startIndex] || 'none') !== firstEffect) {
-            isConsistent = false;
-            break;
+        for (let i = block.startIndex; i <= block.endIndex; i++) {
+            const currentEffects = controllerState.charEffects[i] || defaultEffect;
+            if (currentEffects.move !== firstCharEffects.move) isMoveConsistent = false;
+            if (currentEffects.scale !== firstCharEffects.scale) isScaleConsistent = false;
+            if (currentEffects.blink !== firstCharEffects.blink) isBlinkConsistent = false;
         }
     }
 
-    const effectToActivate = isConsistent ? firstEffect : 'none';
-    const activeButton = document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-effect="${effectToActivate}"]`);
-    if (activeButton) {
-        activeButton.classList.replace('bg-gray-700', 'bg-indigo-600');
+    const moveEffectToShow = isMoveConsistent ? firstCharEffects.move : 'none';
+    document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-move"][data-effect="${moveEffectToShow}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
+
+    const scaleEffectToShow = isScaleConsistent ? firstCharEffects.scale : 'none';
+    document.querySelector(`#personal-char-effect-picker .personal-char-effect-btn[data-group="personal-scale"][data-effect="${scaleEffectToShow}"]`).classList.replace('bg-gray-700', 'bg-indigo-600');
+
+    if (isBlinkConsistent && firstCharEffects.blink) {
+        blinkButton.classList.replace('bg-gray-700', 'bg-indigo-600');
     }
   }
 
   function updatePersonalEffectSlidersUI() {
     const controls = document.getElementById('personal-effect-sliders');
-    let showSliders = false;
     let effectType = '';
 
     if (selectedBlockIndices.size > 0) {
-        const firstBlockIndex = selectedBlockIndices.values().next().value;
+        const firstBlockIndex = Array.from(selectedBlockIndices)[0];
         const block = textBlocks[firstBlockIndex];
         if (block) {
-            const firstCharEffect = controllerState.charEffects[block.startIndex];
-            if (['jump', 'wave', 'heartbeat'].includes(firstCharEffect)) {
-                showSliders = true;
-                effectType = firstCharEffect;
+            const effects = controllerState.charEffects[block.startIndex] || {};
+            // 優先顯示位移效果的滑桿
+            if (effects.move && effects.move !== 'none') {
+                effectType = effects.move;
+            } else if (effects.scale && effects.scale !== 'none') {
+                effectType = effects.scale;
             }
         }
     }
-    controls.classList.toggle('hidden', !showSliders);
+   
+    controls.classList.toggle('hidden', !['jump', 'wave', 'heartbeat'].includes(effectType));
 
-    if (showSliders) {
+    if (['jump', 'wave', 'heartbeat'].includes(effectType)) {
         document.getElementById('personal-wavelength-wrapper').style.display = (effectType === 'heartbeat') ? 'none' : 'block';
         const ampUnit = (effectType === 'heartbeat') ? '' : 'px';
 
-        const firstBlockIndex = selectedBlockIndices.values().next().value;
+        const firstBlockIndex = Array.from(selectedBlockIndices)[0];
         const firstBlock = textBlocks[firstBlockIndex];
         const startIndex = firstBlock.startIndex;
 
@@ -1242,7 +1283,7 @@
                     if (document.getElementById('char-personalization-toggle').checked) {
                         const correctLength = Array.from(value).length;
                         controllerState.charColors = new Array(correctLength).fill(null);
-                        controllerState.charEffects = new Array(correctLength).fill(null);
+                        controllerState.charEffects = new Array(correctLength).fill(null).map(() => ({move: 'none', scale: 'none', blink: false}));
                         controllerState.charWavelengths = new Array(correctLength).fill(null);
                         controllerState.charAmplitudes = new Array(correctLength).fill(null);
                         controllerState.charFrequencies = new Array(correctLength).fill(null);
@@ -1277,14 +1318,14 @@
         document.getElementById('fixed-size-value').textContent = fixedFontSize;
         updateSessionDebounced();
     });
-    
+   
     document.getElementById('char-personalization-toggle').addEventListener('change', (e) => {
         const isActive = e.target.checked;
         const text = document.getElementById('text-input').value;
         if (isActive) {
             const correctLength = Array.from(text).length;
             if (controllerState.charColors.length !== correctLength) controllerState.charColors = new Array(correctLength).fill(null);
-            if (controllerState.charEffects.length !== correctLength) controllerState.charEffects = new Array(correctLength).fill(null);
+            if (controllerState.charEffects.length !== correctLength) controllerState.charEffects = new Array(correctLength).fill(null).map(() => ({move: 'none', scale: 'none', blink: false}));
             if (controllerState.charWavelengths.length !== correctLength) controllerState.charWavelengths = new Array(correctLength).fill(null);
             if (controllerState.charAmplitudes.length !== correctLength) controllerState.charAmplitudes = new Array(correctLength).fill(null);
             if (controllerState.charFrequencies.length !== correctLength) controllerState.charFrequencies = new Array(correctLength).fill(null);
@@ -1351,15 +1392,35 @@
     });
 
     // --- 其他一般按鈕群組的事件處理 ---
-    document.querySelectorAll('.direction-btn, .orientation-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn, .text-effect-btn').forEach(btn => {
+    document.querySelectorAll('.direction-btn, .orientation-btn, .grid-style-btn, .text-style-btn, .border-style-btn, .bg-effect-btn, .blend-mode-btn, .font-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const target = e.currentTarget;
             if (target.classList.contains('control-disabled')) return;
-            
+           
             const group = target.classList[0];
             document.querySelectorAll(`.${group}`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
             target.classList.replace('bg-gray-700', 'bg-indigo-600');
-            
+           
+            updateSession();
+        });
+    });
+
+    // --- 特效按鈕群組的專屬事件處理 ---
+    document.querySelectorAll('.text-effect-btn[data-group="move"], .text-effect-btn[data-group="scale"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.currentTarget.classList.contains('control-disabled')) return;
+            const group = e.currentTarget.dataset.group;
+            document.querySelectorAll(`.text-effect-btn[data-group="${group}"]`).forEach(b => b.classList.replace('bg-indigo-600', 'bg-gray-700'));
+            e.currentTarget.classList.replace('bg-gray-700', 'bg-indigo-600');
+            updateSession();
+        });
+    });
+
+    document.querySelectorAll('.text-effect-btn[data-group="other"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (e.currentTarget.classList.contains('control-disabled')) return;
+            e.currentTarget.classList.toggle('bg-indigo-600');
+            e.currentTarget.classList.toggle('bg-gray-700');
             updateSession();
         });
     });
@@ -1407,15 +1468,20 @@
         const el = e.target.closest('.personal-char-effect-btn');
         if(el) {
             const effect = el.dataset.effect;
+            const group = el.dataset.group;
+
             selectedBlockIndices.forEach(blockIndex => {
                 const block = textBlocks[blockIndex];
                 if (block) {
                     for (let i = block.startIndex; i <= block.endIndex; i++) {
-                        controllerState.charEffects[i] = effect;
-                        if (effect === 'none' || effect === 'blink') {
-                            controllerState.charAmplitudes[i] = null;
-                            controllerState.charFrequencies[i] = null;
-                            controllerState.charWavelengths[i] = null;
+                        if (!controllerState.charEffects[i]) controllerState.charEffects[i] = {move: 'none', scale: 'none', blink: false};
+                       
+                        if (group === 'personal-move') {
+                           controllerState.charEffects[i].move = effect;
+                        } else if (group === 'personal-scale') {
+                           controllerState.charEffects[i].scale = effect;
+                        } else if (group === 'additive') {
+                           controllerState.charEffects[i].blink = !controllerState.charEffects[i].blink;
                         }
                     }
                 }
@@ -1437,6 +1503,10 @@
   }
 
   function getSettings(){
+    const moveEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="move"].bg-indigo-600')?.dataset.effect || 'none';
+    const scaleEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="scale"].bg-indigo-600')?.dataset.effect || 'none';
+    const blinkEffect = document.querySelector('#global-text-effect-wrapper .text-effect-btn[data-group="other"].bg-indigo-600') != null;
+
     const settings = {
       text: document.getElementById('text-input').value,
       fontSizeMode: currentFontSizeMode,
@@ -1472,7 +1542,9 @@
       fontFamily: document.querySelector('.font-btn.bg-indigo-600')?.dataset.font || defaultSettings.fontFamily,
       fontSize: fillHeightPercentage,
       fixedFontSize: fixedFontSize,
-      textEffect: document.querySelector('.text-effect-btn.bg-indigo-600')?.dataset.effect || 'none',
+      textEffectMove: moveEffect,
+      textEffectScale: scaleEffect,
+      textEffectBlink: blinkEffect,
       jumpAmplitude: document.getElementById('jump-amplitude-slider').value,
       jumpFrequency: document.getElementById('jump-frequency-slider').value,
       jumpWavelength: document.getElementById('jump-wavelength-slider').value,
@@ -1522,7 +1594,7 @@
           inputWrap.dataset.color = color;
           picker.querySelectorAll('div').forEach(div => div.classList.remove('control-btn-active'));
           inputWrap.classList.add('control-btn-active');
-          
+         
           if(pickerId === 'personal-char-color-picker'){
              selectedBlockIndices.forEach(blockIndex => {
                  const block = textBlocks[blockIndex];
@@ -1549,7 +1621,7 @@
   function createPickers(){
     const create = (id, palette, isGradient=false, hasCustomPicker=false)=>{
       const picker = document.getElementById(id); if (!picker) return; picker.innerHTML='';
-      
+     
       if(hasCustomPicker) {
         let settingsKey, stateKey = null;
         if(id.includes('text-color')) { settingsKey = 'textColor'; stateKey = 'textColorMode'; }
@@ -1557,7 +1629,7 @@
         if(id.includes('grid-color')) { settingsKey = 'gridColor'; stateKey = 'gridColorMode'; }
         if(id.includes('gap-color')) { settingsKey = 'gapColor'; }
         if(id.includes('outline-color')) { settingsKey = 'outlineColor'; }
-        
+       
         picker.appendChild(createCustomColorInput(id, settingsKey, stateKey));
       }
 
@@ -1569,13 +1641,13 @@
         picker.appendChild(el);
       });
     };
-    
+   
     create('text-color-picker', solid16, false, true);
     create('bg-color-picker', bgSolid16, false, true);
     create('grid-color-picker', gridSolid16, false, true);
     create('gap-color-picker', gapSolid16, false, true);
     create('outline-color-picker', outlineSolid, false, true);
-    
+   
     create('text-gradient-picker', gradients16, true);
     create('bg-gradient-picker', bgGradients16, true);
     create('grid-gradient-picker', gridGradients16, true);
@@ -1626,5 +1698,3 @@
 </script>
 </body>
 </html>
-
-
